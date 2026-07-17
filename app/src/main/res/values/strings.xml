@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GPS Location Phone Tracker</string>
+    <string name="app_logo">Application logo</string>
+    <string name="base_ready">Base Android project is ready for feature development.</string>
+    <string name="base_stack">Included foundation</string>
+    <string name="base_stack_detail">MVVM • ViewBinding • Hilt\nDataStore • Coroutines • StateFlow\nProduction and staging flavors</string>
+    <string name="current_route">Navigation state</string>
+    <string name="app_open_count">App open count</string>
+    <string name="home_route">home</string>
+    <string name="open_map">Open map state</string>
+    <string name="start_tracking">Start tracking state</string>
+    <string name="back_home">Back to home state</string>
+</resources>
