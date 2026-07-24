@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+
+    android:id="@+id/directionNavigationBottom"
+
+    android:layout_width="match_parent"
+
+    android:layout_height="wrap_content"
+
+    android:layout_gravity="bottom"
+
+    android:layout_margin="16dp"
+
+    app:cardCornerRadius="20dp"
+
+    app:cardElevation="8dp"
+
+    app:cardBackgroundColor="#F6FFFFFF">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <!-- Handle -->
+
+        <View
+            android:layout_width="42dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center"
+            android:background="@drawable/bg_handle"/>
+
+        <TextView
+            android:id="@+id/tvRouteTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="6 min (2.1 km)"
+            android:textSize="16sp"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/tvTraffic"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textSize="12sp"
+            android:text="Fastest route, light traffic"
+            android:textColor="#777777"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnStartNavigation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Start Navigation"
+            android:textAllCaps="false"
+            android:textColor="@android:color/white"
+            app:cornerRadius="100dp"
+            app:icon="@drawable/ic_location_direction"
+            app:iconGravity="textStart"
+            app:backgroundTint="#3FDD69"/>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>
