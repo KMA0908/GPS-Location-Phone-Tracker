@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_gradient"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="16dp"
+        android:layout_marginTop="30dp"
+        android:paddingBottom="20dp">
+
+        <!-- Back -->
+
+        <ImageView
+            android:id="@+id/imgBack"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:contentDescription="@string/back"
+            android:src="@drawable/ic_back" />
+
+        <!-- Title -->
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="24dp"
+            android:text="@string/permissions"
+            android:textColor="#35C759"
+            android:textSize="30sp"
+            android:textStyle="bold" />
+
+        <!-- Description -->
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:text="@string/allow_permissions_to_use_all_nearby_app_10_features_smoothly"
+            android:textColor="#7B7B7B"
+            android:textSize="15sp" />
+        <!-- Permission Image -->
+
+        <ImageView
+            android:id="@+id/imgPermission"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:adjustViewBounds="true"
+            android:contentDescription="@string/img_permissions"
+            android:scaleType="fitCenter"
+            android:layout_marginTop="32dp"
+            android:layout_marginBottom="30dp"
+            android:src="@drawable/ic_permission" />
+
+        <!-- Permission Cards -->
+
+        <include
+            android:id="@+id/cardLocation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            layout="@layout/item_location" />
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="14dp" />
+
+        <include
+            android:id="@+id/cardCamera"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            layout="@layout/item_camera" />
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="14dp" />
+
+        <include
+            android:id="@+id/cardNotification"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            layout="@layout/item_notification" />
+
+        <!-- Continue -->
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnContinue"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="18dp"
+            android:text="@string/c"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:layout_marginTop="42dp"
+            app:backgroundTint="#35C759"
+            app:iconGravity="textEnd"
+            app:icon="@drawable/ic_continue"
+            app:cornerRadius="29dp" />
+
+        <!-- Later -->
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnLater"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/remind_me_later"
+            android:textAllCaps="false"
+            android:textColor="#5D5D5D"
+            app:backgroundTint="#FFFFFF"
+            android:textSize="16sp"
+            app:cornerRadius="28dp"
+            app:strokeColor="#DDE8DD"
+            app:strokeWidth="1dp"
+            app:icon="@drawable/ic_remind"
+            app:iconTint="#516351"
+            app:iconGravity="textStart" />
+
+    </LinearLayout>
+
+</ScrollView>

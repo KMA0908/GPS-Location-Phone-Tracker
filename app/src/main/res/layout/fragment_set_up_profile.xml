@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@drawable/bg_gradient">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginTop="30dp">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            tools:ignore="UselessParent">
+            <!-- Back -->
+
+            <ImageView
+                android:id="@+id/imgBack"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="@string/back"
+                android:src="@drawable/ic_back" />
+
+            <!-- Title -->
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="24dp"
+                android:text="@string/set_up_your_profile"
+                android:textColor="#35C759"
+                android:textSize="30sp"
+                android:textStyle="bold" />
+
+            <!-- Description -->
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:text="@string/add_your_information_to_get_started_and_personalize_your_experience"
+                android:textColor="#666666"
+                android:textSize="14sp" />
+
+            <!-- Illustration -->
+
+            <ImageView
+                android:id="@+id/imgProfile"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="24dp"
+                android:src="@drawable/ic_profile"
+                android:contentDescription="@string/set_up_your_profile"
+                android:scaleType="fitCenter"/>
+
+            <!-- Name Card -->
+
+            <include
+                android:id="@+id/cardName"
+                layout="@layout/item_input_name"/>
+
+            <!-- Phone Card -->
+
+            <include
+                android:id="@+id/cardPhone"
+                layout="@layout/item_input_phone"/>
+
+            <!-- Save -->
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSave"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="28dp"
+                android:text="@string/save_continue"
+                android:textAllCaps="false"
+                android:textColor="#B5B5B5"
+                android:textSize="17sp"
+                app:backgroundTint="#1A181D18"
+                app:cornerRadius="29dp"
+                app:icon="@drawable/ic_continue"
+                app:iconGravity="textEnd"
+                app:iconPadding="8dp"
+                app:iconTint="#B5B5B5"/>
+
+            <!-- Security -->
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="14dp"
+                    android:orientation="horizontal"
+                    tools:ignore="UseCompoundDrawables">
+
+                    <ImageView
+                        android:id="@+id/imgSecurity"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/ic_your_info"
+                        android:contentDescription="@string/set_up_your_profile" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:text="@string/your_information_is_secure_and_protected"
+                        android:textColor="#6F6F6F"
+                        android:textSize="12sp"/>
+
+                </LinearLayout>
+
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_marginTop="60dp"
+                android:layout_height="match_parent">
+
+                <!-- Bottom Wave -->
+
+                <ImageView
+                    android:id="@+id/imgBottom"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_bottom"
+                    android:contentDescription="@string/img_bottom"
+                    android:scaleType="fitXY"/>
+            </LinearLayout>
+
+    </LinearLayout>
+
+
+</ScrollView>
