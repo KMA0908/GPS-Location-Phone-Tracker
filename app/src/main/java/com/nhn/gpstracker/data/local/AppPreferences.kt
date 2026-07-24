@@ -3,6 +3,7 @@ package com.nhn.gpstracker.data.local
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
@@ -37,6 +38,46 @@ class AppPreferences @Inject constructor(
 
     suspend fun currentAppOpenCount(): Int = appOpenCount.first()
 
+    val isLocationEnabled: Flow<Boolean> = context.appDataStore.safeData.map { preferences ->
+        preferences[LOCATION_ENABLED] ?: false
+    }
+
+    val isCameraEnabled: Flow<Boolean> = context.appDataStore.safeData.map { preferences ->
+        preferences[CAMERA_ENABLED] ?: false
+    }
+
+    val isNotificationEnabled: Flow<Boolean> = context.appDataStore.safeData.map { preferences ->
+        preferences[NOTIFICATION_ENABLED] ?: false
+    }
+
+    suspend fun setLocationEnabled(enabled: Boolean) {
+        context.appDataStore.edit { preferences ->
+            preferences[LOCATION_ENABLED] = enabled
+        }
+    }
+
+    suspend fun setCameraEnabled(enabled: Boolean) {
+        context.appDataStore.edit { preferences ->
+            preferences[CAMERA_ENABLED] = enabled
+        }
+    }
+
+    suspend fun setNotificationEnabled(enabled: Boolean) {
+        context.appDataStore.edit { preferences ->
+            preferences[NOTIFICATION_ENABLED] = enabled
+        }
+    }
+
+    val isPermissionShown: Flow<Boolean> = context.appDataStore.safeData.map { preferences ->
+        preferences[PERMISSION_SHOWN] ?: false
+    }
+
+    suspend fun setPermissionShown(shown: Boolean) {
+        context.appDataStore.edit { preferences ->
+            preferences[PERMISSION_SHOWN] = shown
+        }
+    }
+
     private val DataStore<Preferences>.safeData: Flow<Preferences>
         get() = data.catch { throwable ->
             if (throwable is IOException) {
@@ -48,5 +89,9 @@ class AppPreferences @Inject constructor(
 
     private companion object {
         val APP_OPEN_COUNT = intPreferencesKey("app_open_count")
+        val LOCATION_ENABLED = booleanPreferencesKey("location_enabled")
+        val CAMERA_ENABLED = booleanPreferencesKey("camera_enabled")
+        val NOTIFICATION_ENABLED = booleanPreferencesKey("notification_enabled")
+        val PERMISSION_SHOWN = booleanPreferencesKey("permission_shown")
     }
 }

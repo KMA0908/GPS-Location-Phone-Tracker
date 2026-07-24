@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+
+    android:id="@+id/bottomSheet"
+
+    android:layout_width="match_parent"
+
+    android:layout_height="wrap_content"
+
+    android:layout_gravity="bottom"
+
+    android:layout_margin="12dp"
+
+    app:cardCornerRadius="20dp"
+
+    app:cardElevation="4dp"
+
+    app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/bg_gradient_light"
+        android:alpha="0.9"
+        android:padding="20dp">
+
+        <!-- Handle -->
+        <View
+            android:layout_width="40dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center"
+            android:layout_marginBottom="20dp"
+            android:background="@drawable/bg_handle"/>
+
+        <include layout="@layout/item_info_location_detail"/>
+
+        <include layout="@layout/item_info_distance_detail"/>
+
+        <include layout="@layout/item_info_last_seen_detail"/>
+
+        <!-- Notify -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textSize="12sp"
+                android:text="@string/notify_me_when_they_leave"
+                android:textStyle="bold"/>
+
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/swNotifyWhenTheyLeave"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+
+            android:layout_marginBottom="16dp"
+            android:orientation="horizontal">
+
+            <include
+                layout="@layout/item_action_direction"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="12dp"/>
+
+            <include
+                layout="@layout/item_action_view_history"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"/>
+
+        </LinearLayout>
+
+        <include
+            layout="@layout/item_message_box"/>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>
