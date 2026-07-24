@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/tabLayoutRoot"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginTop="20dp"
+    android:background="@drawable/bg_tab_container"
+    android:orientation="horizontal"
+    android:padding="8dp">
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnScanQR"
+        style="@style/Widget.Material3.Button.UnelevatedButton"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:text="Scan QR"
+        android:textAllCaps="false"
+        android:textColor="#2DBE4D"
+        android:textSize="16sp"
+        android:padding="16dp"
+        android:textStyle="bold"
+        app:backgroundTint="#FFFFFF"
+        app:cornerRadius="25dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnEnterCode"
+        style="@style/Widget.Material3.Button.UnelevatedButton"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:text="Enter code"
+        android:textAllCaps="false"
+        android:textColor="#505050"
+        android:textSize="16sp"
+        android:padding="16dp"
+        app:backgroundTint="@android:color/transparent"
+        app:cornerRadius="25dp" />
+
+</LinearLayout>
