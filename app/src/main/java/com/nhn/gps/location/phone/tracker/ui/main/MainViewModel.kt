@@ -7,7 +7,10 @@ import com.nhn.gps.location.phone.tracker.navigation.AppDestination
 import com.nhn.gps.location.phone.tracker.navigation.NavigationManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
@@ -18,6 +21,13 @@ class MainViewModel @Inject constructor(
     private val preferences: AppPreferences,
     private val navigationManager: NavigationManager,
 ) : BaseViewModel() {
+
+    private val _isLocationPermanentlyEnabled = MutableStateFlow(false)
+    val isLocationPermanentlyEnabled: StateFlow<Boolean> =
+        _isLocationPermanentlyEnabled.asStateFlow()
+
+    private val _isSessionLocationGranted = MutableStateFlow(false)
+    val isSessionLocationGranted: StateFlow<Boolean> = _isSessionLocationGranted.asStateFlow()
 
     val uiState = combine(
         preferences.appOpenCount,
@@ -37,6 +47,15 @@ class MainViewModel @Inject constructor(
         launchCatching {
             preferences.incrementAppOpenCount()
         }
+        viewModelScope.launch {
+            preferences.isLocationEnabled.collect {
+                _isLocationPermanentlyEnabled.value = it
+            }
+        }
+    }
+
+    fun setSessionLocationGranted(granted: Boolean) {
+        _isSessionLocationGranted.value = granted
     }
 
     fun handleIntent(destinationRoute: String?) {
@@ -48,6 +67,7 @@ class MainViewModel @Inject constructor(
                         val userName = preferences.userName.first()
                         if (userName.isBlank()) AppDestination.SetUpProfile else AppDestination.Home
                     }
+
                     else -> AppDestination.Home
                 }
                 navigationManager.navigateTo(destination)

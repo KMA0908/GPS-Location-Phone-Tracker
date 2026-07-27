@@ -61,6 +61,7 @@
             android:layout_marginTop="28dp"
             android:text="@string/allow_while_using_app"
             android:textAllCaps="false"
+            android:padding="@dimen/d_16"
             android:textColor="@android:color/white"
             android:textSize="16sp"
             app:backgroundTint="#35C759"
@@ -74,6 +75,7 @@
             android:layout_marginTop="14dp"
             android:text="@string/allow_once"
             android:textAllCaps="false"
+            android:padding="@dimen/d_16"
             android:textColor="#35C759"
             android:textSize="16sp"
             app:backgroundTint="#F5FAF5"
@@ -90,6 +92,7 @@
             android:text="@string/not_now"
             android:textColor="#5D5D5D"
             android:textSize="16sp"
+            android:padding="@dimen/d_16"
             android:textStyle="normal"/>
 
     </LinearLayout>

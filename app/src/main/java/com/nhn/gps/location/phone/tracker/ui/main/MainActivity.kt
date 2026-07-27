@@ -13,6 +13,7 @@ import androidx.fragment.app.Fragment
 import com.nhn.gps.location.phone.tracker.R
 import com.nhn.gps.location.phone.tracker.databinding.ActivityMainBinding
 import com.nhn.gps.location.phone.tracker.navigation.AppDestination
+import com.nhn.gps.location.phone.tracker.ui.location.LocationFragment
 import com.nhn.gps.location.phone.tracker.ui.permission.PermissionFragment
 import com.nhn.gps.location.phone.tracker.ui.setup_profile.SetUpProfileFragment
 import dagger.hilt.android.AndroidEntryPoint
@@ -53,6 +54,7 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>() {
             AppDestination.Permission.route -> PermissionFragment.newInstance()
             AppDestination.SetUpProfile.route -> SetUpProfileFragment.newInstance()
             AppDestination.Home.route -> HomeFragment.newInstance()
+            AppDestination.Map.route -> LocationFragment.newInstance()
             else -> HomeFragment.newInstance()
         }
         replaceFragment(fragment)

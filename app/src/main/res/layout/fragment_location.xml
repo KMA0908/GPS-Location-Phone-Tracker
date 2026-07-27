@@ -71,11 +71,11 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <include layout="@layout/item_map_notification"/>
-        <include layout="@layout/item_map_location"/>
-        <include layout="@layout/item_map_layer_stack"/>
-        <include layout="@layout/item_map_compass"/>
-        <include layout="@layout/item_map_camera"/>
+        <include android:id="@+id/itemNotification" layout="@layout/item_map_notification"/>
+        <include android:id="@+id/itemLocation" layout="@layout/item_map_location"/>
+        <include android:id="@+id/itemLayerStack" layout="@layout/item_map_layer_stack"/>
+        <include android:id="@+id/itemCompass" layout="@layout/item_map_compass"/>
+        <include android:id="@+id/itemCamera" layout="@layout/item_map_camera"/>
 
     </LinearLayout>
 
@@ -93,7 +93,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
-
+        <!-- ... (giữ nguyên content bên trong) -->
         <LinearLayout
             android:id="@+id/layoutSearchTool"
             android:layout_width="match_parent"
@@ -157,8 +157,33 @@
                 android:layout_height="wrap_content"/>
 
         </LinearLayout>
-
-
     </com.google.android.material.card.MaterialCardView>
+
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/groupMapUI"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:constraint_referenced_ids="cardBack,txtTitle,layoutTools,cardSearch" />
+
+    <View
+        android:id="@+id/viewDim"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#80000000"
+        android:visibility="gone"
+        android:clickable="true"
+        android:focusable="true"/>
+
+    <ImageView
+        android:id="@+id/imgAccessLocation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/d_100"
+        android:src="@drawable/ic_allow_location_access"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:visibility="gone"
+        app:layout_constraintHorizontal_bias="0.497"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -48,6 +48,8 @@
                 android:background="@android:color/transparent"
                 android:hint="@string/enter_your_name"
                 android:inputType=""
+                android:imeOptions="actionDone"
+                android:singleLine="true"
                 android:textSize="15sp"
                 android:textColor="#222222"
                 android:textColorHint="#9A9A9A"/>

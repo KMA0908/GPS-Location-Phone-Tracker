@@ -19,8 +19,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class PermissionViewModel @Inject constructor(
-    private val appPreferences: AppPreferences,
-    private val navigationManager: NavigationManager
+    private val appPreferences: AppPreferences, private val navigationManager: NavigationManager
 ) : BaseViewModel() {
 
     private val _permissionState = MutableStateFlow(PermissionState())

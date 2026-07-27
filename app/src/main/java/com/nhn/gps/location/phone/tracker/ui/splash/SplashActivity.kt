@@ -35,6 +35,7 @@ class SplashActivity : BaseActivity<ActivitySplashBinding, SplashViewModel>() {
                         is SplashNavigation.ToMain -> {
                             intent.putExtra("TARGET_DESTINATION", "home")
                         }
+
                         is SplashNavigation.ToPermission -> {
                             intent.putExtra("TARGET_DESTINATION", "permission")
                         }

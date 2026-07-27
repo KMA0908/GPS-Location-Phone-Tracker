@@ -191,6 +191,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/d_20"
                 android:text="Explore nearby"
+                android:layout_marginBottom="@dimen/d_12"
                 android:textStyle="bold"
                 android:textSize="@dimen/sp_16"/>
 

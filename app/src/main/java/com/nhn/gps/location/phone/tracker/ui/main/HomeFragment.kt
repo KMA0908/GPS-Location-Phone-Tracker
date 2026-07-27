@@ -11,15 +11,17 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class HomeFragment : BaseFragment<FragmentHomeBinding, MainViewModel>() {
 
-    override val viewModel: MainViewModel by viewModels()
+    override val viewModel: MainViewModel by viewModels({ requireActivity() })
 
     override fun createBinding(
         inflater: LayoutInflater,
         container: ViewGroup?
     ): FragmentHomeBinding = FragmentHomeBinding.inflate(inflater, container, false)
 
-    override fun setupViews(savedInstanceState: Bundle?) {
-        // Setup home views logic here (moved from MainActivity)
+    override fun setupViews(savedInstanceState: Bundle?) = with(binding) {
+        navLocation.setOnClickListener {
+            viewModel.openMap()
+        }
     }
 
     companion object {
