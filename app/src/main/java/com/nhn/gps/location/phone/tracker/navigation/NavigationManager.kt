@@ -1,4 +1,4 @@
-package com.nhn.gpstracker.navigation
+package com.nhn.gps.location.phone.tracker.navigation
 
 import javax.inject.Inject
 import javax.inject.Singleton

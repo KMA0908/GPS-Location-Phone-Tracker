@@ -1,4 +1,4 @@
-package com.nhn.gpstracker.ui.main
+package com.nhn.gps.location.phone.tracker.ui.main
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -7,9 +7,9 @@ import androidx.activity.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import com.nhn.gpstracker.base.BaseActivity
-import com.nhn.gpstracker.base.UiMessage
-import com.nhn.gpstracker.databinding.ActivityMainBinding
+import com.nhn.gps.location.phone.tracker.base.BaseActivity
+import com.nhn.gps.location.phone.tracker.base.UiMessage
+import com.nhn.gps.location.phone.tracker.databinding.ActivityMainBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 

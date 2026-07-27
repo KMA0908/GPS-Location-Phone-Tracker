@@ -1,4 +1,4 @@
-package com.nhn.gpstracker.base
+package com.nhn.gps.location.phone.tracker.base
 
 import android.os.Bundle
 import android.view.LayoutInflater

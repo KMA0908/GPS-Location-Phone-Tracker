@@ -1,4 +1,4 @@
-package com.nhn.gpstracker.di
+package com.nhn.gps.location.phone.tracker.di
 
 import dagger.Module
 import dagger.Provides

@@ -1,4 +1,4 @@
-package com.nhn.gpstracker.data.local
+package com.nhn.gps.location.phone.tracker.data.local
 
 import android.content.Context
 import androidx.datastore.core.DataStore

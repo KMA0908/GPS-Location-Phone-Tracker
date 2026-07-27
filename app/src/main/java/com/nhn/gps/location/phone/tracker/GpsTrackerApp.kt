@@ -1,4 +1,4 @@
-package com.nhn.gpstracker
+package com.nhn.gps.location.phone.tracker
 
 import android.app.Application
 import dagger.hilt.android.HiltAndroidApp

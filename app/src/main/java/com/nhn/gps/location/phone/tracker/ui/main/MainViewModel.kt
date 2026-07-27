@@ -1,10 +1,10 @@
-package com.nhn.gpstracker.ui.main
+package com.nhn.gps.location.phone.tracker.ui.main
 
 import androidx.lifecycle.viewModelScope
-import com.nhn.gpstracker.base.BaseViewModel
-import com.nhn.gpstracker.data.local.AppPreferences
-import com.nhn.gpstracker.navigation.AppDestination
-import com.nhn.gpstracker.navigation.NavigationManager
+import com.nhn.gps.location.phone.tracker.base.BaseViewModel
+import com.nhn.gps.location.phone.tracker.data.local.AppPreferences
+import com.nhn.gps.location.phone.tracker.navigation.AppDestination
+import com.nhn.gps.location.phone.tracker.navigation.NavigationManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted

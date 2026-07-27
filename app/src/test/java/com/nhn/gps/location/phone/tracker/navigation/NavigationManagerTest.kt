@@ -1,4 +1,4 @@
-package com.nhn.gpstracker.navigation
+package com.nhn.gps.location.phone.tracker.navigation
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull

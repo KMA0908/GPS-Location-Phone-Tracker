@@ -1,4 +1,4 @@
-package com.nhn.gpstracker.ui.main
+package com.nhn.gps.location.phone.tracker.ui.main
 
 data class MainUiState(
     val appOpenCount: Int = 0,

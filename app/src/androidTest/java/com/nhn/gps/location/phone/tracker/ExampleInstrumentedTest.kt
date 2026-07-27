@@ -1,4 +1,4 @@
-package com.nhn.gpstracker
+package com.nhn.gps.location.phone.tracker
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -12,6 +12,6 @@ class ExampleInstrumentedTest {
     @Test
     fun applicationPackage_usesGpsTrackerNamespace() {
         val packageName = InstrumentationRegistry.getInstrumentation().targetContext.packageName
-        assertTrue(packageName.startsWith("com.nhn.gpstracker"))
+        assertTrue(packageName.startsWith("com.nhn.gps.location.phone.tracker"))
     }
 }

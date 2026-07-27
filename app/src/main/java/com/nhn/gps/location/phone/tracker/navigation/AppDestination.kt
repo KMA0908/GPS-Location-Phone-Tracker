@@ -1,4 +1,4 @@
-package com.nhn.gpstracker.navigation
+package com.nhn.gps.location.phone.tracker.navigation
 
 sealed class AppDestination(val route: String) {
     data object Home : AppDestination("home")

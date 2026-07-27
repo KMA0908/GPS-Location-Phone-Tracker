@@ -2,16 +2,17 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.hilt.android)
+    alias(libs.plugins.google.services)
     id("kotlin-kapt")
     id("kotlin-parcelize")
 }
 
 android {
-    namespace = "com.nhn.gpstracker"
+    namespace = "com.nhn.gps.location.phone.tracker"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.nhn.gpstracker"
+        applicationId = "com.nhn.gps.location.phone.tracker"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
@@ -37,7 +38,6 @@ android {
 
     buildTypes {
         debug {
-            applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
             isDebuggable = true
         }
@@ -76,6 +76,9 @@ dependencies {
 
     implementation(libs.hilt.android)
     kapt(libs.hilt.compiler)
+
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
