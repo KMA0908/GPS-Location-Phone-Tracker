@@ -3,6 +3,8 @@ package com.nhn.gpstracker.ui.permission
 import androidx.lifecycle.viewModelScope
 import com.nhn.gpstracker.base.BaseViewModel
 import com.nhn.gpstracker.data.local.AppPreferences
+import com.nhn.gpstracker.navigation.AppDestination
+import com.nhn.gpstracker.navigation.NavigationManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,20 +19,17 @@ import javax.inject.Inject
 
 @HiltViewModel
 class PermissionViewModel @Inject constructor(
-    private val appPreferences: AppPreferences
+    private val appPreferences: AppPreferences,
+    private val navigationManager: NavigationManager
 ) : BaseViewModel() {
 
     private val _permissionState = MutableStateFlow(PermissionState())
     val permissionState: StateFlow<PermissionState> = _permissionState.asStateFlow()
 
-    private val _navigateToMain = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
-    val navigateToMain: SharedFlow<Unit> = _navigateToMain.asSharedFlow()
-
     private val _requestPermission = MutableSharedFlow<PermissionType>(extraBufferCapacity = 1)
     val requestPermission: SharedFlow<PermissionType> = _requestPermission.asSharedFlow()
 
     init {
-        // Thứ 3: Quan sát trạng thái quyền từ DataStore để cập nhật UI
         viewModelScope.launch {
             appPreferences.isLocationEnabled.collectLatest { enabled ->
                 _permissionState.update { it.copy(isLocationGranted = enabled) }
@@ -60,10 +59,8 @@ class PermissionViewModel @Inject constructor(
 
     fun onPermissionSwitchClicked(type: PermissionType, isChecked: Boolean) {
         if (isChecked) {
-            // Thứ 1: Click cho quyền thì request luôn, không hiện dialog
             _requestPermission.tryEmit(type)
         } else {
-            // Thứ 3: Click tắt thì chỉ cập nhật trạng thái trong DataStore thành false
             updatePermission(type, false)
         }
     }
@@ -71,14 +68,14 @@ class PermissionViewModel @Inject constructor(
     fun onContinueClicked() {
         viewModelScope.launch {
             appPreferences.setPermissionShown(true)
-            _navigateToMain.tryEmit(Unit)
+            navigationManager.navigateTo(AppDestination.SetUpProfile)
         }
     }
 
     fun onLaterClicked() {
         viewModelScope.launch {
             appPreferences.setPermissionShown(true)
-            _navigateToMain.tryEmit(Unit)
+            navigationManager.navigateTo(AppDestination.SetUpProfile)
         }
     }
 }

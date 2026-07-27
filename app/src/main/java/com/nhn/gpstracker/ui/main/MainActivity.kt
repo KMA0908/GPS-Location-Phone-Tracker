@@ -9,8 +9,14 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.nhn.gpstracker.base.BaseActivity
 import com.nhn.gpstracker.base.UiMessage
+import androidx.fragment.app.Fragment
+import com.nhn.gpstracker.R
 import com.nhn.gpstracker.databinding.ActivityMainBinding
+import com.nhn.gpstracker.navigation.AppDestination
+import com.nhn.gpstracker.ui.permission.PermissionFragment
+import com.nhn.gpstracker.ui.setup_profile.SetUpProfileFragment
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -21,17 +27,18 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>() {
     override fun createBinding(inflater: LayoutInflater): ActivityMainBinding =
         ActivityMainBinding.inflate(inflater)
 
-    override fun setupViews(savedInstanceState: Bundle?) = with(binding) {
-        openMapButton.setOnClickListener { viewModel.openMap() }
-        startTrackingButton.setOnClickListener { viewModel.startTracking() }
-        homeButton.setOnClickListener { viewModel.goHome() }
+    override fun setupViews(savedInstanceState: Bundle?) {
+        val target = intent.getStringExtra("TARGET_DESTINATION")
+        viewModel.handleIntent(target)
     }
 
     override fun observeData() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
-                    viewModel.uiState.collect(::render)
+                    viewModel.uiState.collectLatest { state ->
+                        render(state)
+                    }
                 }
                 launch {
                     viewModel.messages.collect(::showMessage)
@@ -40,9 +47,25 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>() {
         }
     }
 
-    private fun render(state: MainUiState) = with(binding) {
-        routeValue.text = state.currentRoute
-        openCountValue.text = state.appOpenCount.toString()
+    private fun render(state: MainUiState) {
+        val route = state.currentRoute ?: return
+        val fragment = when (route) {
+            AppDestination.Permission.route -> PermissionFragment.newInstance()
+            AppDestination.SetUpProfile.route -> SetUpProfileFragment.newInstance()
+            AppDestination.Home.route -> HomeFragment.newInstance()
+            else -> HomeFragment.newInstance()
+        }
+        replaceFragment(fragment)
+    }
+
+    private fun replaceFragment(fragment: Fragment) {
+        val currentFragment = supportFragmentManager.findFragmentById(R.id.fragment_container)
+        if (currentFragment != null && currentFragment::class == fragment::class) {
+            return
+        }
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, fragment)
+            .commit()
     }
 
     private fun showMessage(message: UiMessage) {

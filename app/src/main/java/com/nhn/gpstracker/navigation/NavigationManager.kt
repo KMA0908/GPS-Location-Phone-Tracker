@@ -9,8 +9,8 @@ import kotlinx.coroutines.flow.asStateFlow
 @Singleton
 class NavigationManager @Inject constructor() {
 
-    private val _currentDestination = MutableStateFlow<AppDestination>(AppDestination.Home)
-    val currentDestination: StateFlow<AppDestination> = _currentDestination.asStateFlow()
+    private val _currentDestination = MutableStateFlow<AppDestination?>(null)
+    val currentDestination: StateFlow<AppDestination?> = _currentDestination.asStateFlow()
 
     private val _previousDestination = MutableStateFlow<AppDestination?>(null)
     val previousDestination: StateFlow<AppDestination?> = _previousDestination.asStateFlow()

@@ -11,7 +11,6 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.nhn.gpstracker.base.BaseActivity
 import com.nhn.gpstracker.databinding.ActivitySplashBinding
 import com.nhn.gpstracker.ui.main.MainActivity
-import com.nhn.gpstracker.ui.permission.PermissionActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -31,14 +30,16 @@ class SplashActivity : BaseActivity<ActivitySplashBinding, SplashViewModel>() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.navigationEvent.collect { event ->
+                    val intent = Intent(this@SplashActivity, MainActivity::class.java)
                     when (event) {
                         is SplashNavigation.ToMain -> {
-                            startActivity(Intent(this@SplashActivity, MainActivity::class.java))
+                            intent.putExtra("TARGET_DESTINATION", "home")
                         }
                         is SplashNavigation.ToPermission -> {
-                            startActivity(Intent(this@SplashActivity, PermissionActivity::class.java))
+                            intent.putExtra("TARGET_DESTINATION", "permission")
                         }
                     }
+                    startActivity(intent)
                     finish()
                 }
             }

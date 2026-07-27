@@ -26,7 +26,6 @@ class SplashViewModel @Inject constructor(
 
     private fun startSplashTimer() {
         viewModelScope.launch {
-            //đợi 2s
             delay(2000)
             val isPermissionShown = appPreferences.isPermissionShown.first()
             if (isPermissionShown) {

@@ -78,6 +78,26 @@ class AppPreferences @Inject constructor(
         }
     }
 
+    val userName: Flow<String> = context.appDataStore.safeData.map { preferences ->
+        preferences[USER_NAME] ?: ""
+    }
+
+    suspend fun setUserName(name: String) {
+        context.appDataStore.edit { preferences ->
+            preferences[USER_NAME] = name
+        }
+    }
+
+    val userPhone: Flow<String> = context.appDataStore.safeData.map { preferences ->
+        preferences[USER_PHONE] ?: ""
+    }
+
+    suspend fun setUserPhone(phone: String) {
+        context.appDataStore.edit { preferences ->
+            preferences[USER_PHONE] = phone
+        }
+    }
+
     private val DataStore<Preferences>.safeData: Flow<Preferences>
         get() = data.catch { throwable ->
             if (throwable is IOException) {
@@ -93,5 +113,7 @@ class AppPreferences @Inject constructor(
         val CAMERA_ENABLED = booleanPreferencesKey("camera_enabled")
         val NOTIFICATION_ENABLED = booleanPreferencesKey("notification_enabled")
         val PERMISSION_SHOWN = booleanPreferencesKey("permission_shown")
+        val USER_NAME = androidx.datastore.preferences.core.stringPreferencesKey("user_name")
+        val USER_PHONE = androidx.datastore.preferences.core.stringPreferencesKey("user_phone")
     }
 }

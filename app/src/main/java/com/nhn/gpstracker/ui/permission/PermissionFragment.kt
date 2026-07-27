@@ -1,27 +1,27 @@
 package com.nhn.gpstracker.ui.permission
 
 import android.Manifest
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.viewModels
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import com.nhn.gpstracker.base.BaseActivity
-import com.nhn.gpstracker.databinding.ActivityPermissionBinding
-import com.nhn.gpstracker.ui.main.MainActivity
+import com.nhn.gpstracker.R
+import com.nhn.gpstracker.base.BaseFragment
+import com.nhn.gpstracker.databinding.FragmentPermissionBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
-class PermissionActivity : BaseActivity<ActivityPermissionBinding, PermissionViewModel>() {
+class PermissionFragment : BaseFragment<FragmentPermissionBinding, PermissionViewModel>() {
 
     override val viewModel: PermissionViewModel by viewModels()
 
@@ -38,13 +38,14 @@ class PermissionActivity : BaseActivity<ActivityPermissionBinding, PermissionVie
         viewModel.updatePermission(PermissionType.NOTIFICATION, granted)
     }
 
-    override fun createBinding(inflater: LayoutInflater): ActivityPermissionBinding =
-        ActivityPermissionBinding.inflate(inflater)
+    override fun createBinding(
+        inflater: LayoutInflater,
+        container: ViewGroup?
+    ): FragmentPermissionBinding = FragmentPermissionBinding.inflate(inflater, container, false)
 
     override fun setupViews(savedInstanceState: Bundle?) = with(binding) {
-        imgBack.setOnClickListener { finish() }
+        imgBack.setOnClickListener { requireActivity().onBackPressedDispatcher.onBackPressed() }
 
-        // Thứ 2: Sử dụng ViewBinding thay cho findViewById
         cardLocation.swPermission.setOnClickListener {
             viewModel.onPermissionSwitchClicked(PermissionType.LOCATION, cardLocation.swPermission.isChecked)
         }
@@ -71,21 +72,13 @@ class PermissionActivity : BaseActivity<ActivityPermissionBinding, PermissionVie
     }
 
     override fun observeData() {
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     viewModel.permissionState.collect { state ->
-                        // Cập nhật UI thông qua binding trực tiếp
                         updateSwitchUi(binding.cardLocation.swPermission, state.isLocationGranted)
                         updateSwitchUi(binding.cardCamera.swPermission, state.isCameraGranted)
                         updateSwitchUi(binding.cardNotification.swPermission, state.isNotificationGranted)
-                    }
-                }
-
-                launch {
-                    viewModel.navigateToMain.collect {
-                        startActivity(Intent(this@PermissionActivity, MainActivity::class.java))
-                        finish()
                     }
                 }
 
@@ -114,7 +107,6 @@ class PermissionActivity : BaseActivity<ActivityPermissionBinding, PermissionVie
     }
 
     private fun checkPermissions() {
-        // Nếu quyền hệ thống vẫn còn nhưng người dùng tắt trong App thì không tự bật lại.
         if (!isPermissionGranted(Manifest.permission.ACCESS_FINE_LOCATION)) {
             viewModel.updatePermission(PermissionType.LOCATION, false)
         }
@@ -133,15 +125,19 @@ class PermissionActivity : BaseActivity<ActivityPermissionBinding, PermissionVie
     private fun updateSwitchUi(sw: com.google.android.material.materialswitch.MaterialSwitch, isGranted: Boolean) {
         sw.isChecked = isGranted
         if (isGranted) {
-            sw.trackTintList = ColorStateList.valueOf(Color.parseColor("#35C759"))
+            sw.trackTintList = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.bg_switch_permission))
             sw.thumbTintList = ColorStateList.valueOf(Color.WHITE)
         } else {
-            sw.trackTintList = ColorStateList.valueOf(Color.DKGRAY)
-            sw.thumbTintList = ColorStateList.valueOf(Color.WHITE)
+            sw.trackTintList = ColorStateList.valueOf(Color.WHITE)
+            sw.thumbTintList = ColorStateList.valueOf(Color.DKGRAY)
         }
     }
 
     private fun isPermissionGranted(permission: String): Boolean {
-        return ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
+        return ContextCompat.checkSelfPermission(requireContext(), permission) == PackageManager.PERMISSION_GRANTED
+    }
+
+    companion object {
+        fun newInstance() = PermissionFragment()
     }
 }

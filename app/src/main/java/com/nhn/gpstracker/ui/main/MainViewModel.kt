@@ -9,7 +9,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
@@ -23,7 +25,7 @@ class MainViewModel @Inject constructor(
     ) { appOpenCount, destination ->
         MainUiState(
             appOpenCount = appOpenCount,
-            currentRoute = destination.route,
+            currentRoute = destination?.route,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -35,6 +37,36 @@ class MainViewModel @Inject constructor(
         launchCatching {
             preferences.incrementAppOpenCount()
         }
+    }
+
+    fun handleIntent(destinationRoute: String?) {
+        viewModelScope.launch {
+            if (destinationRoute != null) {
+                val destination = when (destinationRoute) {
+                    "permission" -> AppDestination.Permission
+                    "home" -> {
+                        val userName = preferences.userName.first()
+                        if (userName.isBlank()) AppDestination.SetUpProfile else AppDestination.Home
+                    }
+                    else -> AppDestination.Home
+                }
+                navigationManager.navigateTo(destination)
+            } else {
+                checkInitialDestination()
+            }
+        }
+    }
+
+    private suspend fun checkInitialDestination() {
+        val isPermissionShown = preferences.isPermissionShown.first()
+        val userName = preferences.userName.first()
+
+        val destination = when {
+            !isPermissionShown -> AppDestination.Permission
+            userName.isBlank() -> AppDestination.SetUpProfile
+            else -> AppDestination.Home
+        }
+        navigationManager.navigateTo(destination)
     }
 
     fun openMap() {
