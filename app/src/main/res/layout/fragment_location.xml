@@ -75,7 +75,6 @@
         <include android:id="@+id/itemLocation" layout="@layout/item_map_location"/>
         <include android:id="@+id/itemLayerStack" layout="@layout/item_map_layer_stack"/>
         <include android:id="@+id/itemCompass" layout="@layout/item_map_compass"/>
-        <include android:id="@+id/itemCamera" layout="@layout/item_map_camera"/>
 
     </LinearLayout>
 
@@ -116,10 +115,8 @@
                 android:id="@+id/search"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                app:cardBackgroundColor="#F6FFF8"
                 app:cardCornerRadius="30dp"
-                app:strokeColor="#D3F6FC"
-                app:strokeWidth="1dp">
+                app:strokeWidth="0dp">
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -147,14 +144,14 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <ImageView
-                android:id="@+id/imgSearch"
-                android:contentDescription="@string/todo"
-                android:src="@drawable/ic_chat"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
+<!--            <ImageView-->
+<!--                android:id="@+id/imgSearch"-->
+<!--                android:contentDescription="@string/todo"-->
+<!--                android:src="@drawable/ic_chat"-->
+<!--                android:paddingStart="10dp"-->
+<!--                android:paddingEnd="10dp"-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"/>-->
 
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
