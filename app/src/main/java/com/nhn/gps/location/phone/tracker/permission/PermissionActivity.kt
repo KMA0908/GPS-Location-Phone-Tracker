@@ -1,4 +1,4 @@
-package com.nhn.gpstracker.ui.permission
+package com.nhn.gps.location.phone.tracker.permission
 
 import android.Manifest
 import android.content.Intent
@@ -14,11 +14,13 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import com.nhn.gpstracker.base.BaseActivity
-import com.nhn.gpstracker.databinding.ActivityPermissionBinding
-import com.nhn.gpstracker.ui.main.MainActivity
+import com.google.android.material.materialswitch.MaterialSwitch
+import com.nhn.gps.location.phone.tracker.base.BaseActivity
+import com.nhn.gps.location.phone.tracker.databinding.ActivityPermissionBinding
+import com.nhn.gps.location.phone.tracker.ui.main.MainActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import kotlin.jvm.java
 
 @AndroidEntryPoint
 class PermissionActivity : BaseActivity<ActivityPermissionBinding, PermissionViewModel>() {
@@ -130,7 +132,7 @@ class PermissionActivity : BaseActivity<ActivityPermissionBinding, PermissionVie
         }
     }
 
-    private fun updateSwitchUi(sw: com.google.android.material.materialswitch.MaterialSwitch, isGranted: Boolean) {
+    private fun updateSwitchUi(sw: MaterialSwitch, isGranted: Boolean) {
         sw.isChecked = isGranted
         if (isGranted) {
             sw.trackTintList = ColorStateList.valueOf(Color.parseColor("#35C759"))

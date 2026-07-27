@@ -1,4 +1,4 @@
-package com.nhn.gpstracker.ui.splash
+package com.nhn.gps.location.phone.tracker.splash
 
 import android.annotation.SuppressLint
 import android.content.Intent
@@ -8,10 +8,10 @@ import androidx.activity.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import com.nhn.gpstracker.base.BaseActivity
-import com.nhn.gpstracker.databinding.ActivitySplashBinding
-import com.nhn.gpstracker.ui.main.MainActivity
-import com.nhn.gpstracker.ui.permission.PermissionActivity
+import com.nhn.gps.location.phone.tracker.base.BaseActivity
+import com.nhn.gps.location.phone.tracker.databinding.ActivitySplashBinding
+import com.nhn.gps.location.phone.tracker.permission.PermissionActivity
+import com.nhn.gps.location.phone.tracker.ui.main.MainActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 

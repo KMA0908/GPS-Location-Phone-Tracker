@@ -1,8 +1,8 @@
-package com.nhn.gpstracker.ui.splash
+package com.nhn.gps.location.phone.tracker.splash
 
 import androidx.lifecycle.viewModelScope
-import com.nhn.gpstracker.base.BaseViewModel
-import com.nhn.gpstracker.data.local.AppPreferences
+import com.nhn.gps.location.phone.tracker.base.BaseViewModel
+import com.nhn.gps.location.phone.tracker.data.local.AppPreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow

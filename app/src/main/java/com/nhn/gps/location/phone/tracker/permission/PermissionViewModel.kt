@@ -1,8 +1,8 @@
-package com.nhn.gpstracker.ui.permission
+package com.nhn.gps.location.phone.tracker.permission
 
 import androidx.lifecycle.viewModelScope
-import com.nhn.gpstracker.base.BaseViewModel
-import com.nhn.gpstracker.data.local.AppPreferences
+import com.nhn.gps.location.phone.tracker.base.BaseViewModel
+import com.nhn.gps.location.phone.tracker.data.local.AppPreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
