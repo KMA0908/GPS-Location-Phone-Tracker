@@ -18,7 +18,7 @@ Ads SDK, Firebase, Google Services, Crashlytics và Billing **chưa được tí
 ## Cấu trúc chính
 
 ```text
-app/src/main/java/com/nhn/gpstracker/
+app/src/main/java/com/nhn/gps/location/phone/tracker/
 ├── base/             # Base UI và ViewModel
 ├── data/local/       # DataStore/local sources
 ├── di/               # Hilt modules và qualifiers
