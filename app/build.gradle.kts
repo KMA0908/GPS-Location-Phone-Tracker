@@ -64,6 +64,8 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.camera.view)
+    implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.activity.ktx)
@@ -75,6 +77,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
 
     implementation(libs.hilt.android)
+    implementation(libs.play.services.maps)
     kapt(libs.hilt.compiler)
 
     implementation(platform(libs.firebase.bom))
