@@ -11,4 +11,10 @@
 
     <color name="color_Polygon">#4D35C759</color>
     <color name="bg_switch_permission">#35C759</color>
+    <color name="bg_botton_add_friend">#505050</color>
+    <color name="bg_botton_friend">#27B64D</color>
+    <color name="bg_bottom_nav_selected">#C7FFC5</color>
+    <color name="bottom_nav_border_start">#E9F8ED</color>
+    <color name="bottom_nav_border_end">#A7EDF8</color>
+
 </resources>

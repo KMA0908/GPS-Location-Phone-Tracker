@@ -44,6 +44,7 @@
         android:textAllCaps="false"
         android:textColor="@android:color/white"
         app:cornerRadius="28dp"
+        android:padding="@dimen/d_16"
         app:iconGravity="textStart"
         app:icon="@drawable/ic_add_friend"
         app:backgroundTint="#30D158"/>

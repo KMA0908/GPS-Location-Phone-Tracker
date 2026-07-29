@@ -29,6 +29,12 @@ class MainViewModel @Inject constructor(
     private val _isSessionLocationGranted = MutableStateFlow(false)
     val isSessionLocationGranted: StateFlow<Boolean> = _isSessionLocationGranted.asStateFlow()
 
+    val userAvatar: StateFlow<String> = preferences.userAvatar.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = ""
+    )
+
     val uiState = combine(
         preferences.appOpenCount,
         navigationManager.currentDestination,
@@ -99,5 +105,9 @@ class MainViewModel @Inject constructor(
 
     fun goHome() {
         navigationManager.navigateTo(AppDestination.Home)
+    }
+
+    fun navigateBack(): Boolean {
+        return navigationManager.navigateBack()
     }
 }

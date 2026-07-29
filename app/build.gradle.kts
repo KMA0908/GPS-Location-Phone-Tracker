@@ -83,6 +83,8 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.firestore)
+    implementation(libs.firebase.database)
+    implementation(libs.firebase.auth)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -90,4 +92,8 @@ dependencies {
 
     implementation(libs.play.services.locations)
     implementation(libs.android.maps.utils)
+    implementation(libs.glide)
+    kapt(libs.glide.compiler)
+    implementation(libs.zxing.core)
+    implementation(libs.zxing.android.embedded)
 }

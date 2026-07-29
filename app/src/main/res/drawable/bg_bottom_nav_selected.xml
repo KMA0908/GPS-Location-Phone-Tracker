@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Gradient Border Layer -->
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="50dp" />
+            <gradient
+                android:angle="0"
+                android:startColor="@color/bottom_nav_border_start"
+                android:endColor="@color/bottom_nav_border_end"
+                android:type="linear" />
+        </shape>
+    </item>
+
+    <!-- Main Background Layer (Inset by 1dp to show the border) -->
+    <item
+        android:left="1dp"
+        android:top="1dp"
+        android:right="1dp"
+        android:bottom="1dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="50dp" />
+            <solid android:color="@color/bg_bottom_nav_selected" />
+        </shape>
+    </item>
+
+</layer-list>

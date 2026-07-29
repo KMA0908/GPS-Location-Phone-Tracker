@@ -98,6 +98,16 @@ class AppPreferences @Inject constructor(
         }
     }
 
+    val userAvatar: Flow<String> = context.appDataStore.safeData.map { preferences ->
+        preferences[USER_AVATAR] ?: ""
+    }
+
+    suspend fun setUserAvatar(avatar: String) {
+        context.appDataStore.edit { preferences ->
+            preferences[USER_AVATAR] = avatar
+        }
+    }
+
     private val DataStore<Preferences>.safeData: Flow<Preferences>
         get() = data.catch { throwable ->
             if (throwable is IOException) {
@@ -115,5 +125,6 @@ class AppPreferences @Inject constructor(
         val PERMISSION_SHOWN = booleanPreferencesKey("permission_shown")
         val USER_NAME = androidx.datastore.preferences.core.stringPreferencesKey("user_name")
         val USER_PHONE = androidx.datastore.preferences.core.stringPreferencesKey("user_phone")
+        val USER_AVATAR = androidx.datastore.preferences.core.stringPreferencesKey("user_avatar")
     }
 }

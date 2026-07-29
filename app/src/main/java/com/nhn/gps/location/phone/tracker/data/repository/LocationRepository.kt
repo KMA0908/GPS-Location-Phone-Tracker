@@ -1,50 +1,58 @@
 package com.nhn.gps.location.phone.tracker.data.repository
 
-import android.util.Log
-import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import com.nhn.gps.location.phone.tracker.data.model.FriendLocation
-import com.nhn.gps.location.phone.tracker.ui.permission.LocationPermissionBottomSheet.Companion.TAG
 import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.channels.onFailure
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 
 interface LocationRepository {
-    fun getFriendsLocations(): Flow<List<FriendLocation>>
+    fun getAllUsersLocations(): Flow<List<FriendLocation>>
+    suspend fun updateSelfLocation(uid: String, location: FriendLocation): Result<Unit>
 }
 
 @Singleton
 class LocationRepositoryImpl @Inject constructor(
-    private val firestore: FirebaseFirestore
+    private val database: FirebaseDatabase
 ) : LocationRepository {
 
-    override fun getFriendsLocations(): Flow<List<FriendLocation>> =
-        callbackFlow {
+    private val friendsRef = database.getReference("friends")
 
-            val listener = firestore
-                .collection("friends")
-                .addSnapshotListener { snapshot, error ->
-
-                    if (error != null) {
-                        close(error)
-                        return@addSnapshotListener
-                    }
-
-                    snapshot?.let {
-                        trySend(it.toObjects(FriendLocation::class.java))
-                            .onFailure {
-                                Log.w(TAG, "Cannot send friends update", it)
-                            }
+    override fun getAllUsersLocations(): Flow<List<FriendLocation>> = callbackFlow {
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val locations = mutableListOf<FriendLocation>()
+                for (child in snapshot.children) {
+                    child.getValue(FriendLocation::class.java)?.let { location ->
+                        location.id = child.key ?: ""
+                        locations.add(location)
                     }
                 }
-
-            awaitClose {
-                listener.remove()
+                trySend(locations)
             }
 
+            override fun onCancelled(error: DatabaseError) {
+                close(error.toException())
+            }
         }
-            .distinctUntilChanged()
+
+        friendsRef.addValueEventListener(listener)
+        awaitClose { friendsRef.removeEventListener(listener) }
+    }
+
+    override suspend fun updateSelfLocation(uid: String, location: FriendLocation): Result<Unit> {
+        return try {
+            friendsRef.child(uid).setValue(location).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            Result.failure(e)
+        }
+    }
 }

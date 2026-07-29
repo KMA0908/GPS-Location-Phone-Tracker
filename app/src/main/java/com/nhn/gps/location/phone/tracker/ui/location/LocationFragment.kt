@@ -1,30 +1,40 @@
 package com.nhn.gps.location.phone.tracker.ui.location
 
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.content.ContextCompat
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.bumptech.glide.Glide
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import com.google.android.gms.maps.model.GroundOverlay
+import com.google.android.gms.maps.model.GroundOverlayOptions
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
-import com.google.android.gms.maps.model.Polygon
-import com.google.android.gms.maps.model.PolygonOptions
-import com.google.maps.android.SphericalUtil
 import com.nhn.gps.location.phone.tracker.R
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
 import com.nhn.gps.location.phone.tracker.databinding.FragmentLocationBinding
+import com.nhn.gps.location.phone.tracker.databinding.LayoutCustomMarkerBinding
 import com.nhn.gps.location.phone.tracker.navigation.AppDestination
 import com.nhn.gps.location.phone.tracker.navigation.NavigationManager
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.card.MaterialCardView
+import com.nhn.gps.location.phone.tracker.ui.friend.FriendAdapter
 import com.nhn.gps.location.phone.tracker.ui.main.MainViewModel
 import com.nhn.gps.location.phone.tracker.ui.permission.LocationPermissionBottomSheet
 import dagger.hilt.android.AndroidEntryPoint
@@ -37,7 +47,7 @@ import javax.inject.Inject
 class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel>(),
     OnMapReadyCallback {
 
-    override val viewModel: LocationViewModel by viewModels()
+    override val viewModel: LocationViewModel by activityViewModels()
     private val mainViewModel: MainViewModel by viewModels({ requireActivity() })
 
     @Inject
@@ -48,13 +58,20 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
 
     private var googleMap: GoogleMap? = null
     private val DEFAULT_ZOOM = 15f
-    private val BASE_CONE_LENGTH = 180.0 // Chiều dài cơ sở tại zoom 15
+    private val BASE_CONE_HEIGHT = 500.0 // Chiều dài cơ sở tại zoom 15
 
     private var selfMarker: Marker? = null
-    private var directionCone: Polygon? = null
+    private var directionOverlay: GroundOverlay? = null
     private val friendMarkers = mutableMapOf<String, Marker>()
+    private val friendAvatars = mutableMapOf<String, String>()
+    private var selfAvatarUrl: String? = null
+
+    private lateinit var bottomSheetBehavior: BottomSheetBehavior<MaterialCardView>
+    private var bottomSheetCallback: BottomSheetBehavior.BottomSheetCallback? = null
+    private lateinit var friendAdapter: FriendAdapter
 
     private var isCompassEnabled = false
+    private var hasAutoZoomed = false
 
     override fun createBinding(
         inflater: LayoutInflater,
@@ -81,6 +98,86 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         itemCompass.root.setOnClickListener {
             toggleCompass()
         }
+
+        cardImgFriend.setOnClickListener {
+            if (bottomSheetBehavior.state == BottomSheetBehavior.STATE_EXPANDED) {
+                bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+            } else {
+                bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+            }
+        }
+
+        setupFriendBottomSheet()
+    }
+
+    private fun setupFriendBottomSheet() = with(binding) {
+        bottomSheetBehavior = BottomSheetBehavior.from(friendBottomSheetLayout.friendBottomSheet)
+        bottomSheetBehavior.isHideable = true
+        bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+
+        friendAdapter = FriendAdapter { _ ->
+            bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+            navigationManager.navigateTo(AppDestination.MyFriend)
+        }
+
+        friendBottomSheetLayout.rvFriends.layoutManager = LinearLayoutManager(requireContext())
+        friendBottomSheetLayout.rvFriends.adapter = friendAdapter
+
+        friendBottomSheetLayout.layoutEmpty.btnAddFriendEmpty.setOnClickListener {
+            if (isAdded) {
+                bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+                navigationManager.navigateTo(AppDestination.AddFriend)
+            }
+        }
+
+        friendBottomSheetLayout.btnAddFriend.setOnClickListener {
+            if (isAdded) {
+                bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+                navigationManager.navigateTo(AppDestination.AddFriend)
+            }
+        }
+
+        friendBottomSheetLayout.tvViewAll.setOnClickListener {
+            if (isAdded) {
+                bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+                navigationManager.navigateTo(AppDestination.MyFriend)
+            }
+        }
+
+        bottomSheetCallback = object : BottomSheetBehavior.BottomSheetCallback() {
+            override fun onStateChanged(bottomSheet: View, newState: Int) {
+                withBinding {
+                    if (newState == BottomSheetBehavior.STATE_EXPANDED) {
+                        cardImgFriend.setCardBackgroundColor(
+                            resources.getColor(
+                                R.color.bg_botton_friend,
+                                null
+                            )
+                        )
+                    } else {
+                        cardImgFriend.setCardBackgroundColor(android.graphics.Color.TRANSPARENT)
+                    }
+                }
+            }
+
+            override fun onSlide(bottomSheet: View, slideOffset: Float) {
+                withBinding {
+                    val bottomSheetTop = bottomSheet.top
+                    val margin = 16 * resources.displayMetrics.density
+                    val parentHeight = (root as ViewGroup).height
+
+                    if (bottomSheetTop < parentHeight) {
+                        val targetTranslationY = -(parentHeight - bottomSheetTop + margin)
+                        // Bù đắp cho margin mặc định 28dp của cardSearch
+                        val defaultBottomMargin = 28 * resources.displayMetrics.density
+                        cardSearch.translationY = targetTranslationY + defaultBottomMargin
+                    } else {
+                        cardSearch.translationY = 0f
+                    }
+                }
+            }
+        }
+        bottomSheetBehavior.addBottomSheetCallback(bottomSheetCallback!!)
     }
 
     override fun observeData() {
@@ -95,6 +192,9 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                         permanent || session
                     }.collectLatest { isGranted ->
                         updateUiForPermission(isGranted)
+                        if (isGranted) {
+                            viewModel.getCurrentLocation()
+                        }
                     }
                 }
 
@@ -102,11 +202,16 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                 launch {
                     combine(
                         viewModel.selfLocation,
-                        viewModel.friendsLocations
-                    ) { self, friends ->
-                        Pair(self, friends)
-                    }.collectLatest { (self, friends) ->
-                        updateMarkers(self, friends)
+                        viewModel.friendsLocations,
+                        mainViewModel.userAvatar
+                    ) { self, friends, avatar ->
+                        Triple(self, friends, avatar)
+                    }.collectLatest { (self, friends, avatar) ->
+                        updateMarkersWithAvatars(self, friends, avatar)
+                        if (!hasAutoZoomed && self != null) {
+                            centerCameraOnAll()
+                            hasAutoZoomed = true
+                        }
                         if (isCompassEnabled) {
                             updateDirectionUI(compassManager.bearing.value)
                         }
@@ -121,9 +226,34 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                         }
                     }
                 }
+
+                // Quan sát danh sách bạn bè cho Bottom Sheet
+                launch {
+                    viewModel.friendsLocations.collectLatest { friends ->
+                        val displayList = if (friends.size > 2) friends.take(2) else friends
+                        friendAdapter.submitList(displayList)
+                        updateBottomSheetUi(friends)
+                    }
+                }
             }
         }
     }
+
+    private fun updateBottomSheetUi(friends: List<com.nhn.gps.location.phone.tracker.data.model.FriendLocation>) =
+        with(binding.friendBottomSheetLayout) {
+            tvFriendCount.text = "Friends (${friends.size})"
+            if (friends.isEmpty()) {
+                layoutEmpty.root.visibility = View.VISIBLE
+                rvFriends.visibility = View.GONE
+                btnAddFriend.visibility = View.GONE
+                tvViewAll.visibility = View.GONE
+            } else {
+                layoutEmpty.root.visibility = View.GONE
+                rvFriends.visibility = View.VISIBLE
+                btnAddFriend.visibility = View.VISIBLE
+                tvViewAll.visibility = if (friends.size > 2) View.VISIBLE else View.GONE
+            }
+        }
 
     private fun updateUiForPermission(isGranted: Boolean) = with(binding) {
         if (isGranted) {
@@ -143,14 +273,15 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         }
     }
 
-    private fun updateMarkers(
+    private fun updateMarkersWithAvatars(
         self: LatLng?,
-        friends: List<com.nhn.gps.location.phone.tracker.data.model.FriendLocation>
+        friends: List<com.nhn.gps.location.phone.tracker.data.model.FriendLocation>,
+        selfAvatar: String
     ) {
         if (googleMap == null) return
 
-        self?.let {
-            showSelfMarker(it)
+        self?.let { latLng ->
+            showSelfMarker(latLng, selfAvatar) 
         }
 
         showFriendMarkers(friends)
@@ -158,20 +289,31 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         updateCamera(self, friends)
     }
 
-    private fun showSelfMarker(location: LatLng) {
+    private fun showSelfMarker(location: LatLng, avatarUrl: String) {
         val map = googleMap ?: return
         if (selfMarker == null) {
             selfMarker = map.addMarker(
                 MarkerOptions()
                     .position(location)
                     .anchor(0.5f, 1f)
-                    //.icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_map_my_location))
-                    .flat(true)
+                    .flat(false)
                     .zIndex(10f)
             )
+            updateMarkerIcon(selfMarker!!, avatarUrl)
         } else {
             selfMarker?.position = location
+            if (selfAvatarUrl != avatarUrl) {
+                updateMarkerIcon(selfMarker!!, avatarUrl)
+            }
         }
+        selfAvatarUrl = avatarUrl
+
+        if (directionOverlay == null) {
+            createDirectionCone(map, location)
+        } else {
+            directionOverlay?.position = location
+        }
+        directionOverlay?.isVisible = isCompassEnabled
     }
 
     private fun showFriendMarkers(friends: List<com.nhn.gps.location.phone.tracker.data.model.FriendLocation>) {
@@ -184,6 +326,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
             if (!friendIds.contains(entry.key)) {
                 entry.value.remove()
                 iterator.remove()
+                friendAvatars.remove(entry.key)
             }
         }
 
@@ -196,47 +339,103 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                         .position(position)
                         .title(friend.name)
                         .snippet(friend.id)
+                        .anchor(0.5f, 1f)
+                        .flat(false)
+                        .rotation(0f)
                 )
                 if (marker != null) {
                     friendMarkers[friend.id] = marker
+                    updateMarkerIcon(marker, friend.avatarUrl)
                 }
             } else {
                 existingMarker.position = position
                 existingMarker.title = friend.name
+                existingMarker.rotation = 0f
+                existingMarker.isFlat = false
+                if (friendAvatars[friend.id] != friend.avatarUrl) {
+                    updateMarkerIcon(existingMarker, friend.avatarUrl)
+                }
             }
+            friendAvatars[friend.id] = friend.avatarUrl
         }
+    }
+
+    private fun updateMarkerIcon(marker: Marker, avatarUrl: String) {
+        val markerViewBinding = LayoutCustomMarkerBinding.inflate(layoutInflater)
+        
+        if (avatarUrl.isEmpty()) {
+            markerViewBinding.imgAvatar.setImageResource(R.drawable.ic_avt_location)
+            val bitmap = createBitmapFromView(markerViewBinding.root)
+            marker.setIcon(BitmapDescriptorFactory.fromBitmap(bitmap))
+            return
+        }
+
+        Glide.with(this)
+            .asBitmap()
+            .load(avatarUrl)
+            .circleCrop()
+            .into(object : CustomTarget<Bitmap>() {
+                override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                    markerViewBinding.imgAvatar.setImageBitmap(resource)
+                    val bitmap = createBitmapFromView(markerViewBinding.root)
+                    marker.setIcon(BitmapDescriptorFactory.fromBitmap(bitmap))
+                }
+
+                override fun onLoadCleared(placeholder: android.graphics.drawable.Drawable?) {
+                }
+
+                override fun onLoadFailed(errorDrawable: android.graphics.drawable.Drawable?) {
+                    markerViewBinding.imgAvatar.setImageResource(R.drawable.ic_avt_location)
+                    val bitmap = createBitmapFromView(markerViewBinding.root)
+                    marker.setIcon(BitmapDescriptorFactory.fromBitmap(bitmap))
+                }
+            })
+    }
+
+    private fun createBitmapFromView(view: View): Bitmap {
+        view.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
+        view.layout(0, 0, view.measuredWidth, view.measuredHeight)
+        val bitmap = Bitmap.createBitmap(view.measuredWidth, view.measuredHeight, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        view.draw(canvas)
+        return bitmap
     }
 
     private fun updateCamera(
         self: LatLng?,
         friends: List<com.nhn.gps.location.phone.tracker.data.model.FriendLocation>
     ) {
-        val map = googleMap ?: return
-
-        if (friends.isEmpty()) {
-            self?.let {
-                if ((googleMap?.cameraPosition?.zoom ?: 0f) < 2f) {
-                    map.animateCamera(CameraUpdateFactory.newLatLngZoom(it, DEFAULT_ZOOM))
-                }
-            }
-        } else {
-            val builder = LatLngBounds.Builder()
-            self?.let { builder.include(it) }
-            friends.forEach {
-                builder.include(LatLng(it.latitude, it.longitude))
-            }
-            try {
-                val bounds = builder.build()
-                map.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 150))
-            } catch (e: Exception) {
-            }
-        }
+        // This function can be kept for incremental updates if needed,
+        // but the user wants explicit logic for fitting all.
     }
 
     private fun centerCameraOnSelf() {
         val map = googleMap ?: return
         viewModel.selfLocation.value?.let {
             map.animateCamera(CameraUpdateFactory.newLatLngZoom(it, DEFAULT_ZOOM))
+        }
+    }
+
+    private fun centerCameraOnAll() {
+        val map = googleMap ?: return
+        val self = viewModel.selfLocation.value
+        val friends = viewModel.friendsLocations.value
+
+        if (self == null && friends.isEmpty()) return
+
+        val builder = LatLngBounds.Builder()
+        self?.let { builder.include(it) }
+        friends.forEach {
+            builder.include(LatLng(it.latitude, it.longitude))
+        }
+
+        try {
+            val bounds = builder.build()
+            map.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 150))
+        } catch (e: Exception) {
+            self?.let {
+                map.animateCamera(CameraUpdateFactory.newLatLngZoom(it, DEFAULT_ZOOM))
+            }
         }
     }
 
@@ -253,6 +452,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
 
     private fun toggleCompass() {
         isCompassEnabled = !isCompassEnabled
+        directionOverlay?.isVisible = isCompassEnabled
         if (isCompassEnabled) {
             compassManager.start()
             binding.itemCompass.root.setCardBackgroundColor(
@@ -264,66 +464,53 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         } else {
             compassManager.stop()
             selfMarker?.rotation = 0f
-            directionCone?.isVisible = false
             binding.itemCompass.root.setCardBackgroundColor(android.graphics.Color.WHITE)
         }
     }
 
-    /**
-     * Cập nhật hướng xoay của Self Marker và tọa độ của Direction Cone.
-     */
     private fun updateDirectionUI(bearing: Float) {
         val selfLoc = viewModel.selfLocation.value ?: return
         val map = googleMap ?: return
 
-        // 1. Xoay Marker (Đã yêu cầu giữ nguyên icon self nên set rotation = 0)
         selfMarker?.rotation = 0f
 
-        // 2. Tính toán độ dài Cone dựa trên Zoom
-        val currentZoom = map.cameraPosition.zoom
-        // Công thức: Chiều dài tăng dần theo mức zoom để dễ quan sát khi phóng to
-        // Tại zoom 15 là BASE_CONE_LENGTH (100m). Mỗi đơn vị zoom tăng/giảm, chiều dài thay đổi theo hệ số 1.5
-        val coneLength =
-            (BASE_CONE_LENGTH * Math.pow(1.5, (currentZoom - 15).toDouble())).coerceIn(10.0, 1000.0)
-
-        // 3. Cập nhật Direction Cone (Polygon)
-        val coneAngle = 40.0 // Góc mở của hình quạt (độ)
-
-        // Tính toán 2 đỉnh ngoài của tam giác
-        val leftEdge =
-            SphericalUtil.computeOffset(selfLoc, coneLength, (bearing - coneAngle / 2).toDouble())
-        val rightEdge =
-            SphericalUtil.computeOffset(selfLoc, coneLength, (bearing + coneAngle / 2).toDouble())
-
-        val points = listOf(selfLoc, leftEdge, rightEdge)
-
-        if (directionCone == null) {
-            directionCone = map.addPolygon(
-                PolygonOptions()
-                    .addAll(points)
-                    .fillColor(
-                        ContextCompat.getColor(
-                            requireContext(),
-                            R.color.color_Polygon
-                        )
-                    ) // Màu xanh 30% alpha
-                    .strokeWidth(0f)
-                    .zIndex(9f) // Nằm ngay dưới Self Marker (10f)
-            )
-        } else {
-            directionCone?.points = points
-            directionCone?.isVisible = true
+        if (directionOverlay == null) {
+            createDirectionCone(map, selfLoc)
         }
+
+        directionOverlay?.isVisible = isCompassEnabled
+        directionOverlay?.position = selfLoc
+        directionOverlay?.bearing = bearing
+        updateDirectionConeSize(map.cameraPosition.zoom)
+    }
+
+    private fun createDirectionCone(map: GoogleMap, location: LatLng) {
+        directionOverlay = map.addGroundOverlay(
+            GroundOverlayOptions()
+                .image(BitmapDescriptorFactory.fromResource(R.drawable.ic_polygon))
+                .position(location, 10f)
+                .anchor(0.5f, 1f)
+                .zIndex(9f)
+        )
+    }
+
+    private fun updateDirectionConeSize(zoom: Float) {
+        val height = (BASE_CONE_HEIGHT * Math.pow(1.5, (zoom - 15).toDouble()))
+            .coerceIn(20.0, 300.0).toFloat()
+        val width = height * 0.6f
+        directionOverlay?.setDimensions(width, height)
     }
 
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
-
-        // Lắng nghe khi camera dừng di chuyển (bao gồm cả khi kết thúc thao tác zoom)
+        
         map.setOnCameraIdleListener {
             if (isCompassEnabled) {
                 updateDirectionUI(compassManager.bearing.value)
             }
+
+            // Check if all markers are in view, if not, auto-zoom logic could go here
+            // but the user only wanted it "once" or on button click.
         }
     }
 
@@ -336,14 +523,19 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
 
     override fun onStop() {
         super.onStop()
-        // Dừng sensor để tiết kiệm tài nguyên khi không ở trong màn hình
         compassManager.stop()
     }
 
     override fun onDestroyView() {
+        bottomSheetCallback?.let {
+            if (::bottomSheetBehavior.isInitialized) {
+                bottomSheetBehavior.removeBottomSheetCallback(it)
+            }
+        }
+        bottomSheetCallback = null
         super.onDestroyView()
         selfMarker = null
-        directionCone = null
+        directionOverlay = null
         friendMarkers.clear()
     }
 

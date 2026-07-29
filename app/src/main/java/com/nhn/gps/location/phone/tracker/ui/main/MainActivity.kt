@@ -3,6 +3,7 @@ package com.nhn.gps.location.phone.tracker.ui.main
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -13,6 +14,9 @@ import androidx.fragment.app.Fragment
 import com.nhn.gps.location.phone.tracker.R
 import com.nhn.gps.location.phone.tracker.databinding.ActivityMainBinding
 import com.nhn.gps.location.phone.tracker.navigation.AppDestination
+import com.nhn.gps.location.phone.tracker.ui.friend.AddFriendFragment
+import com.nhn.gps.location.phone.tracker.ui.friend.MyFriendFragment
+import com.nhn.gps.location.phone.tracker.ui.friend.ShowQrFriendFragment
 import com.nhn.gps.location.phone.tracker.ui.location.LocationFragment
 import com.nhn.gps.location.phone.tracker.ui.permission.PermissionFragment
 import com.nhn.gps.location.phone.tracker.ui.setup_profile.SetUpProfileFragment
@@ -31,6 +35,22 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>() {
     override fun setupViews(savedInstanceState: Bundle?) {
         val target = intent.getStringExtra("TARGET_DESTINATION")
         viewModel.handleIntent(target)
+        setupBackPress()
+    }
+
+    private fun setupBackPress() {
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                val currentRoute = viewModel.uiState.value.currentRoute
+                if (currentRoute == AppDestination.Permission.route) {
+                    finish()
+                } else {
+                    if (!viewModel.navigateBack()) {
+                        finish()
+                    }
+                }
+            }
+        })
     }
 
     override fun observeData() {
@@ -55,6 +75,9 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>() {
             AppDestination.SetUpProfile.route -> SetUpProfileFragment.newInstance()
             AppDestination.Home.route -> HomeFragment.newInstance()
             AppDestination.Map.route -> LocationFragment.newInstance()
+            AppDestination.AddFriend.route -> AddFriendFragment.newInstance()
+            AppDestination.MyFriend.route -> MyFriendFragment.newInstance()
+            AppDestination.ShowQrFriend.route -> ShowQrFriendFragment.newInstance()
             else -> HomeFragment.newInstance()
         }
         replaceFragment(fragment)
@@ -67,7 +90,7 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>() {
         }
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, fragment)
-            .commit()
+            .commitAllowingStateLoss()
     }
 
     private fun showMessage(message: UiMessage) {

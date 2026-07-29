@@ -6,19 +6,18 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Camera Preview -->
-    <androidx.camera.view.PreviewView
-        android:id="@+id/previewView"
+    <!-- Camera Preview (Integrated Custom Scanner) -->
+    <com.nhn.gps.location.phone.tracker.ui.friend.CustomBarcodeView
+        android:id="@+id/barcodeScanner"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:implementationMode="performance"
-        app:scaleType="fillCenter"
+        app:zxing_preview_scaling_strategy="centerCrop"
+        app:zxing_use_texture_view="true"
 
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        tools:ignore="MissingClass" />
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- Dark Overlay -->
     <View
@@ -45,8 +44,8 @@
     <!-- QR Frame -->
     <ImageView
         android:id="@+id/imgQrFrame"
-        android:layout_width="220dp"
-        android:layout_height="220dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:src="@drawable/ic_qr_frame"
 
         app:layout_constraintBottom_toBottomOf="parent"
@@ -121,9 +120,6 @@
             app:cornerRadius="60dp"
             android:padding="16dp"
 
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-
             android:textColor="#000000"
             app:iconTint="#000000"
 
@@ -149,9 +145,6 @@
 
             app:cornerRadius="60dp"
             android:padding="16dp"
-
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
 
             android:layout_weight="1"
             app:iconGravity="textStart"

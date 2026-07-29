@@ -29,6 +29,7 @@
         <!-- Handle -->
 
         <View
+            android:id="@+id/action_bar_friend"
             android:layout_width="42dp"
             android:layout_height="4dp"
             android:layout_gravity="center"
@@ -64,7 +65,7 @@
                 android:id="@+id/btnAddFriend"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_card"
+                android:background="#FFFFFF"
                 android:src="@drawable/ic_add_friend_mini"
                 android:visibility="gone"/>
 
@@ -74,6 +75,7 @@
 
         <include
             android:id="@+id/layoutEmpty"
+            android:visibility="visible"
             layout="@layout/layout_friend_empty"/>
 
         <!-- LIST -->
@@ -94,13 +96,19 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_marginTop="20dp"
+
+            app:strokeWidth="@dimen/d_1"
+            app:strokeColor="#36FFFFFF"
+            android:elevation="@dimen/d_16"
+
             android:text="@string/view_all_friends"
             android:textColor="#30D158"
             android:textStyle="bold"
+            android:padding="@dimen/d_16"
             app:icon="@drawable/ic_continue"
             app:iconTint="#30D158"
             app:iconGravity="textEnd"
-            android:backgroundTint="#19FFFFFF"
+            android:backgroundTint="#F1FAFAFA"
             app:cornerRadius="40dp"
             android:visibility="gone"/>
 

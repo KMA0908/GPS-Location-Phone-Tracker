@@ -33,7 +33,7 @@
         android:layout_weight="1"
         android:text="Enter code"
         android:textAllCaps="false"
-        android:textColor="#505050"
+        android:textColor="@color/bg_botton_add_friend"
         android:textSize="16sp"
         android:padding="16dp"
         app:backgroundTint="@android:color/transparent"
