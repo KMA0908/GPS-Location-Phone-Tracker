@@ -15,11 +15,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
 import com.nhn.gps.location.phone.tracker.databinding.FragmentMyFriendBinding
 import com.nhn.gps.location.phone.tracker.navigation.AppDestination
-import com.nhn.gps.location.phone.tracker.navigation.NavigationManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class MyFriendFragment : BaseFragment<FragmentMyFriendBinding, FriendListViewModel>() {
@@ -28,16 +26,13 @@ class MyFriendFragment : BaseFragment<FragmentMyFriendBinding, FriendListViewMod
     private val locationViewModel: com.nhn.gps.location.phone.tracker.ui.location.LocationViewModel by activityViewModels()
     private lateinit var adapter: FriendAdapter
 
-    @Inject
-    lateinit var navigationManager: NavigationManager
-
     override fun createBinding(
         inflater: LayoutInflater,
         container: ViewGroup?
     ): FragmentMyFriendBinding = FragmentMyFriendBinding.inflate(inflater, container, false)
 
     override fun setupViews(savedInstanceState: Bundle?) = with(binding) {
-        header.btnBack.setOnClickListener { requireActivity().onBackPressedDispatcher.onBackPressed() }
+        header.btnBack.setOnClickListener { handleToolbarBack() }
         
         header.btnRight.setOnClickListener {
             if (isAdded) {

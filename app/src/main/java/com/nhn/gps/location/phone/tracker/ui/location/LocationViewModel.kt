@@ -18,7 +18,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -36,6 +35,9 @@ class LocationViewModel @Inject constructor(
 
     private val _friendsLocations = MutableStateFlow<List<FriendLocation>>(emptyList())
     val friendsLocations: StateFlow<List<FriendLocation>> = _friendsLocations.asStateFlow()
+
+    private val _isFriendsDataLoaded = MutableStateFlow(false)
+    val isFriendsDataLoaded: StateFlow<Boolean> = _isFriendsDataLoaded.asStateFlow()
 
     private val locationCallback = object : LocationCallback() {
         override fun onLocationResult(result: LocationResult) {
@@ -77,8 +79,17 @@ class LocationViewModel @Inject constructor(
                 // Filter out self from friends list if needed, or keep for unified display
                 val filtered = locations.filter { it.id != myUid }
                 _friendsLocations.value = filtered
+                _isFriendsDataLoaded.value = true
             }
         }
+    }
+
+    fun stopLocationUpdates() {
+        fusedLocationClient.removeLocationUpdates(locationCallback)
+    }
+
+    fun clearLocationData() {
+        _selfLocation.value = null
     }
 
     private fun syncLocationWithFirebase(latLng: LatLng) {

@@ -5,7 +5,6 @@ import android.graphics.Rect
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.widget.Toast
@@ -28,7 +27,6 @@ import com.nhn.gps.location.phone.tracker.R
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
 import com.nhn.gps.location.phone.tracker.databinding.FragmentAddFriendBinding
 import com.nhn.gps.location.phone.tracker.navigation.AppDestination
-import com.nhn.gps.location.phone.tracker.navigation.NavigationManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -40,9 +38,6 @@ import javax.inject.Inject
 class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewModel>() {
 
     override val viewModel: AddFriendViewModel by viewModels()
-
-    @Inject
-    lateinit var navigationManager: NavigationManager
 
     private val barcodeCallback = object : BarcodeCallback {
         override fun barcodeResult(result: BarcodeResult?) {
@@ -65,7 +60,7 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
 
     override fun setupViews(savedInstanceState: Bundle?) = with(binding) {
         header.btnBack.setOnClickListener { 
-            navigationManager.navigateTo(AppDestination.Map)
+            handleToolbarBack()
         }
 
         tabLayout.btnScanQR.setOnClickListener {

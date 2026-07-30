@@ -67,14 +67,14 @@ class PermissionViewModel @Inject constructor(
     fun onContinueClicked() {
         viewModelScope.launch {
             appPreferences.setPermissionShown(true)
-            navigationManager.navigateTo(AppDestination.SetUpProfile)
+            navigationManager.navigateTo(AppDestination.SetUpProfile, clearStack = true)
         }
     }
 
     fun onLaterClicked() {
         viewModelScope.launch {
             appPreferences.setPermissionShown(true)
-            navigationManager.navigateTo(AppDestination.SetUpProfile)
+            navigationManager.navigateTo(AppDestination.SetUpProfile, clearStack = true)
         }
     }
 }

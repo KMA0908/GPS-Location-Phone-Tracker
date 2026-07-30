@@ -33,7 +33,7 @@ class ShowQrFriendFragment : BaseFragment<FragmentShowQrFriendBinding, FriendLis
     ): FragmentShowQrFriendBinding = FragmentShowQrFriendBinding.inflate(inflater, container, false)
 
     override fun setupViews(savedInstanceState: Bundle?) {
-        binding.btnBack.setOnClickListener { requireActivity().onBackPressedDispatcher.onBackPressed() }
+        binding.btnBack.setOnClickListener { handleToolbarBack() }
         
         viewLifecycleOwner.lifecycleScope.launch {
             val userId = appPreferences.userName.first() // Use userName as ID for demo

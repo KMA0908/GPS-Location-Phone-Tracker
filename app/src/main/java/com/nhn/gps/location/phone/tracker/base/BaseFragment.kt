@@ -7,8 +7,14 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.viewbinding.ViewBinding
+import com.nhn.gps.location.phone.tracker.navigation.AppDestination
+import com.nhn.gps.location.phone.tracker.navigation.NavigationManager
+import javax.inject.Inject
 
 abstract class BaseFragment<VB : ViewBinding, VM : ViewModel> : Fragment() {
+
+    @Inject
+    lateinit var navigationManager: NavigationManager
 
     private var _binding: VB? = null
 
@@ -42,6 +48,19 @@ abstract class BaseFragment<VB : ViewBinding, VM : ViewModel> : Fragment() {
 
     protected fun withBinding(block: VB.() -> Unit) {
         _binding?.block()
+    }
+
+    protected fun handleToolbarBack() {
+        val currentDestination = navigationManager.currentDestination.value
+        // Theo yêu cầu: Permission và Home là màn hình gốc -> Exit app
+        if (currentDestination is AppDestination.Permission || currentDestination is AppDestination.Home) {
+            requireActivity().finish()
+        } else {
+            // Các màn hình khác: Quay lại stack trước đó
+            if (!navigationManager.navigateBack()) {
+                requireActivity().finish()
+            }
+        }
     }
 
     override fun onDestroyView() {

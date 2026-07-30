@@ -18,15 +18,24 @@ class NavigationManager @Inject constructor() {
     private var lastNavigateTime = 0L
     private val NAVIGATE_THRESHOLD = 500L
 
-    fun navigateTo(destination: AppDestination) {
+    fun navigateTo(destination: AppDestination, clearStack: Boolean = false) {
         val currentTime = System.currentTimeMillis()
         if (currentTime - lastNavigateTime < NAVIGATE_THRESHOLD) return
         lastNavigateTime = currentTime
 
+        // Kiểm tra tránh điều hướng trùng màn hình hiện tại
         if (destination == _currentDestination.value) return
-        
-        _currentDestination.value?.let { 
-            backStack.push(it)
+
+        if (clearStack) {
+            backStack.clear()
+        } else {
+            // Chỉ push vào stack nếu màn hình hiện tại không null
+            _currentDestination.value?.let {
+                // Tránh duplicate màn hình liên tiếp trong stack (nếu có logic phức tạp sau này)
+                if (backStack.isEmpty() || backStack.peek() != it) {
+                    backStack.push(it)
+                }
+            }
         }
         _currentDestination.value = destination
     }

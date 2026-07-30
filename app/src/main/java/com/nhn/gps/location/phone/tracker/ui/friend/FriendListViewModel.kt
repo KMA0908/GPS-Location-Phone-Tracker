@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.nhn.gps.location.phone.tracker.base.BaseViewModel
-import com.nhn.gps.location.phone.tracker.data.local.AppPreferences
 import com.nhn.gps.location.phone.tracker.data.model.FriendLocation
 import com.nhn.gps.location.phone.tracker.data.repository.FriendRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,8 +20,7 @@ import javax.inject.Inject
 @HiltViewModel
 class FriendListViewModel @Inject constructor(
     private val repository: FriendRepository,
-    private val auth: FirebaseAuth,
-    private val appPreferences: AppPreferences
+    private val auth: FirebaseAuth
 ) : BaseViewModel() {
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)

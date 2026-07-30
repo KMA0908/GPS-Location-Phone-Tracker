@@ -42,9 +42,12 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 val currentRoute = viewModel.uiState.value.currentRoute
-                if (currentRoute == AppDestination.Permission.route) {
+                // Đồng bộ logic: Home và Permission nhấn Back hệ thống -> Thoát app
+                if (currentRoute == AppDestination.Permission.route || 
+                    currentRoute == AppDestination.Home.route) {
                     finish()
                 } else {
+                    // Các màn hình khác: navigateBack
                     if (!viewModel.navigateBack()) {
                         finish()
                     }

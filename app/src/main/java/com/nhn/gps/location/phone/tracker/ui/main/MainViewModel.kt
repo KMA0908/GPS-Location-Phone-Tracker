@@ -76,7 +76,7 @@ class MainViewModel @Inject constructor(
 
                     else -> AppDestination.Home
                 }
-                navigationManager.navigateTo(destination)
+                navigationManager.navigateTo(destination, clearStack = true)
             } else {
                 checkInitialDestination()
             }
@@ -87,24 +87,26 @@ class MainViewModel @Inject constructor(
         val isPermissionShown = preferences.isPermissionShown.first()
         val userName = preferences.userName.first()
 
-        val destination = when {
-            !isPermissionShown -> AppDestination.Permission
-            userName.isBlank() -> AppDestination.SetUpProfile
-            else -> AppDestination.Home
+        val (destination, clearStack) = when {
+            !isPermissionShown -> AppDestination.Permission to false
+            userName.isBlank() -> AppDestination.SetUpProfile to true
+            else -> AppDestination.Home to true
         }
-        navigationManager.navigateTo(destination)
+        navigationManager.navigateTo(destination, clearStack = clearStack)
     }
 
     fun openMap() {
         navigationManager.navigateTo(AppDestination.Map)
     }
 
-    fun startTracking() {
-        navigationManager.navigateTo(AppDestination.Tracking)
-    }
-
     fun goHome() {
         navigationManager.navigateTo(AppDestination.Home)
+    }
+
+    fun updateLocationPermissionStatus(isGranted: Boolean) {
+        viewModelScope.launch {
+            preferences.setLocationEnabled(isGranted)
+        }
     }
 
     fun navigateBack(): Boolean {

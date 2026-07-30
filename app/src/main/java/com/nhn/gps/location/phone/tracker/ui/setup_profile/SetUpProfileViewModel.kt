@@ -43,7 +43,7 @@ class SetUpProfileViewModel @Inject constructor(
         viewModelScope.launch {
             appPreferences.setUserName(_name.value)
             appPreferences.setUserPhone(_phone.value)
-            navigationManager.navigateTo(AppDestination.Home)
+            navigationManager.navigateTo(AppDestination.Home, clearStack = true)
         }
     }
 }

@@ -30,7 +30,6 @@ import com.nhn.gps.location.phone.tracker.base.BaseFragment
 import com.nhn.gps.location.phone.tracker.databinding.FragmentLocationBinding
 import com.nhn.gps.location.phone.tracker.databinding.LayoutCustomMarkerBinding
 import com.nhn.gps.location.phone.tracker.navigation.AppDestination
-import com.nhn.gps.location.phone.tracker.navigation.NavigationManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.card.MaterialCardView
@@ -51,9 +50,6 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     private val mainViewModel: MainViewModel by viewModels({ requireActivity() })
 
     @Inject
-    lateinit var navigationManager: NavigationManager
-
-    @Inject
     lateinit var compassManager: CompassManager
 
     private var googleMap: GoogleMap? = null
@@ -72,6 +68,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
 
     private var isCompassEnabled = false
     private var hasAutoZoomed = false
+    private var pendingDestination: AppDestination? = null
 
     override fun createBinding(
         inflater: LayoutInflater,
@@ -84,7 +81,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         mapFragment.getMapAsync(this@LocationFragment)
 
         cardBack.setOnClickListener {
-            navigationManager.navigateTo(AppDestination.Home)
+            handleToolbarBack()
         }
 
         itemLocation.root.setOnClickListener {
@@ -125,37 +122,46 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
 
         friendBottomSheetLayout.layoutEmpty.btnAddFriendEmpty.setOnClickListener {
             if (isAdded) {
+                pendingDestination = AppDestination.AddFriend
                 bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
-                navigationManager.navigateTo(AppDestination.AddFriend)
             }
         }
 
         friendBottomSheetLayout.btnAddFriend.setOnClickListener {
             if (isAdded) {
+                pendingDestination = AppDestination.AddFriend
                 bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
-                navigationManager.navigateTo(AppDestination.AddFriend)
             }
         }
 
         friendBottomSheetLayout.tvViewAll.setOnClickListener {
             if (isAdded) {
+                pendingDestination = AppDestination.MyFriend
                 bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
-                navigationManager.navigateTo(AppDestination.MyFriend)
             }
         }
 
         bottomSheetCallback = object : BottomSheetBehavior.BottomSheetCallback() {
             override fun onStateChanged(bottomSheet: View, newState: Int) {
                 withBinding {
-                    if (newState == BottomSheetBehavior.STATE_EXPANDED) {
-                        cardImgFriend.setCardBackgroundColor(
-                            resources.getColor(
-                                R.color.bg_botton_friend,
-                                null
+                    when (newState) {
+                        BottomSheetBehavior.STATE_EXPANDED,
+                        BottomSheetBehavior.STATE_HALF_EXPANDED,
+                        BottomSheetBehavior.STATE_DRAGGING,
+                        BottomSheetBehavior.STATE_SETTLING -> {
+                            cardImgFriend.setCardBackgroundColor(
+                                resources.getColor(R.color.bg_botton_friend, null)
                             )
-                        )
-                    } else {
-                        cardImgFriend.setCardBackgroundColor(android.graphics.Color.TRANSPARENT)
+                        }
+
+                        BottomSheetBehavior.STATE_HIDDEN,
+                        BottomSheetBehavior.STATE_COLLAPSED -> {
+                            cardImgFriend.setCardBackgroundColor(android.graphics.Color.TRANSPARENT)
+                            pendingDestination?.let {
+                                navigationManager.navigateTo(it)
+                                pendingDestination = null
+                            }
+                        }
                     }
                 }
             }
@@ -203,12 +209,13 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                     combine(
                         viewModel.selfLocation,
                         viewModel.friendsLocations,
-                        mainViewModel.userAvatar
-                    ) { self, friends, avatar ->
-                        Triple(self, friends, avatar)
-                    }.collectLatest { (self, friends, avatar) ->
-                        updateMarkersWithAvatars(self, friends, avatar)
-                        if (!hasAutoZoomed && self != null) {
+                        mainViewModel.userAvatar,
+                        viewModel.isFriendsDataLoaded
+                    ) { self, friends, avatar, friendsLoaded ->
+                        DataPackage(self, friends, avatar, friendsLoaded)
+                    }.collectLatest { data ->
+                        updateMarkersWithAvatars(data.self, data.friends, data.avatar)
+                        if (!hasAutoZoomed && data.self != null && data.friendsLoaded) {
                             centerCameraOnAll()
                             hasAutoZoomed = true
                         }
@@ -285,8 +292,6 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         }
 
         showFriendMarkers(friends)
-
-        updateCamera(self, friends)
     }
 
     private fun showSelfMarker(location: LatLng, avatarUrl: String) {
@@ -401,14 +406,6 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         return bitmap
     }
 
-    private fun updateCamera(
-        self: LatLng?,
-        friends: List<com.nhn.gps.location.phone.tracker.data.model.FriendLocation>
-    ) {
-        // This function can be kept for incremental updates if needed,
-        // but the user wants explicit logic for fitting all.
-    }
-
     private fun centerCameraOnSelf() {
         val map = googleMap ?: return
         viewModel.selfLocation.value?.let {
@@ -521,6 +518,33 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        checkLocationPermission()
+    }
+
+    private fun checkLocationPermission() {
+        val fineLocationGranted = androidx.core.content.ContextCompat.checkSelfPermission(
+            requireContext(),
+            android.Manifest.permission.ACCESS_FINE_LOCATION
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        val coarseLocationGranted = androidx.core.content.ContextCompat.checkSelfPermission(
+            requireContext(),
+            android.Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+        val isGranted = fineLocationGranted || coarseLocationGranted
+        
+        mainViewModel.updateLocationPermissionStatus(isGranted)
+
+        if (!isGranted) {
+            viewModel.stopLocationUpdates()
+            viewModel.clearLocationData()
+        } else {
+            viewModel.getCurrentLocation()
+        }
+    }
+
     override fun onStop() {
         super.onStop()
         compassManager.stop()
@@ -541,5 +565,12 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
 
     companion object {
         fun newInstance() = LocationFragment()
+
+        private data class DataPackage(
+            val self: LatLng?,
+            val friends: List<com.nhn.gps.location.phone.tracker.data.model.FriendLocation>,
+            val avatar: String,
+            val friendsLoaded: Boolean
+        )
     }
 }

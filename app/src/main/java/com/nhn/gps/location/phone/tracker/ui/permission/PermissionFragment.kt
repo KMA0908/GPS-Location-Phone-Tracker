@@ -30,16 +30,25 @@ class PermissionFragment : BaseFragment<FragmentPermissionBinding, PermissionVie
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
             val granted = results.values.all { it }
             viewModel.updatePermission(PermissionType.LOCATION, granted)
+            withBinding {
+                updateSwitchUi(cardLocation.swPermission, granted)
+            }
         }
 
     private val cameraLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             viewModel.updatePermission(PermissionType.CAMERA, granted)
+            withBinding {
+                updateSwitchUi(cardCamera.swPermission, granted)
+            }
         }
 
     private val notificationLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             viewModel.updatePermission(PermissionType.NOTIFICATION, granted)
+            withBinding {
+                updateSwitchUi(cardNotification.swPermission, granted)
+            }
         }
 
     override fun createBinding(
@@ -47,7 +56,7 @@ class PermissionFragment : BaseFragment<FragmentPermissionBinding, PermissionVie
     ): FragmentPermissionBinding = FragmentPermissionBinding.inflate(inflater, container, false)
 
     override fun setupViews(savedInstanceState: Bundle?) = with(binding) {
-        imgBack.setOnClickListener { requireActivity().onBackPressedDispatcher.onBackPressed() }
+        imgBack.setOnClickListener { handleToolbarBack() }
 
         cardLocation.swPermission.setOnClickListener {
             viewModel.onPermissionSwitchClicked(

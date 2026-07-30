@@ -28,7 +28,7 @@ class SetUpProfileFragment : BaseFragment<FragmentSetUpProfileBinding, SetUpProf
     ): FragmentSetUpProfileBinding = FragmentSetUpProfileBinding.inflate(inflater, container, false)
 
     override fun setupViews(savedInstanceState: Bundle?) = with(binding) {
-        imgBack.setOnClickListener { requireActivity().onBackPressedDispatcher.onBackPressed() }
+        imgBack.setOnClickListener { handleToolbarBack() }
 
         cardName.edtValue.addTextChangedListener {
             viewModel.onNameChanged(it?.toString() ?: "")
