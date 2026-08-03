@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:background="@color/app_background" android:padding="16dp">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical">
+        <ImageButton android:id="@+id/btnBack" android:layout_width="44dp" android:layout_height="44dp" android:background="@drawable/bg_card" android:src="@drawable/ic_back" android:contentDescription="Back"/>
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="12dp" android:text="Notification center" android:textSize="22sp" android:textStyle="bold" android:textColor="@color/text_primary"/>
+    </LinearLayout>
+    <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content" android:scrollbars="none" android:layout_marginTop="12dp">
+        <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal">
+            <TextView android:id="@+id/btnAll" style="@style/ZoneFilterChip" android:text="All"/>
+            <TextView android:id="@+id/btnZones" style="@style/ZoneFilterChip" android:text="Zones"/>
+            <TextView android:id="@+id/btnDangerous" style="@style/ZoneFilterChip" android:text="Dangerous"/>
+        </LinearLayout>
+    </HorizontalScrollView>
+    <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="12dp">
+        <androidx.recyclerview.widget.RecyclerView android:id="@+id/recyclerNotifications" android:layout_width="match_parent" android:layout_height="match_parent"/>
+        <TextView android:id="@+id/emptyState" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:text="No notifications" android:textColor="@color/text_secondary"/>
+    </FrameLayout>
+</LinearLayout>

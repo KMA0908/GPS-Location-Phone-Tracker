@@ -118,6 +118,26 @@ class AppPreferences @Inject constructor(
         }
     }
 
+    val zonesJson: Flow<String> = context.appDataStore.safeData.map { preferences ->
+        preferences[ZONES_JSON] ?: "[]"
+    }
+
+    val zoneAlertsJson: Flow<String> = context.appDataStore.safeData.map { preferences ->
+        preferences[ZONE_ALERTS_JSON] ?: "[]"
+    }
+
+    val zoneStatesJson: Flow<String> = context.appDataStore.safeData.map { preferences ->
+        preferences[ZONE_STATES_JSON] ?: "{}"
+    }
+
+    suspend fun saveZoneData(zones: String, alerts: String, states: String) {
+        context.appDataStore.edit { preferences ->
+            preferences[ZONES_JSON] = zones
+            preferences[ZONE_ALERTS_JSON] = alerts
+            preferences[ZONE_STATES_JSON] = states
+        }
+    }
+
     private val DataStore<Preferences>.safeData: Flow<Preferences>
         get() = data.catch { throwable ->
             if (throwable is IOException) {
@@ -137,5 +157,8 @@ class AppPreferences @Inject constructor(
         val USER_PHONE = androidx.datastore.preferences.core.stringPreferencesKey("user_phone")
         val USER_AVATAR = androidx.datastore.preferences.core.stringPreferencesKey("user_avatar")
         val USER_ID = androidx.datastore.preferences.core.stringPreferencesKey("user_id")
+        val ZONES_JSON = androidx.datastore.preferences.core.stringPreferencesKey("zones_json")
+        val ZONE_ALERTS_JSON = androidx.datastore.preferences.core.stringPreferencesKey("zone_alerts_json")
+        val ZONE_STATES_JSON = androidx.datastore.preferences.core.stringPreferencesKey("zone_states_json")
     }
 }

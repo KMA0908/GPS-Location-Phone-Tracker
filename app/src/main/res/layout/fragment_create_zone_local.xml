@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:background="@color/app_background" android:padding="16dp">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical">
+        <ImageButton android:id="@+id/btnBack" android:layout_width="44dp" android:layout_height="44dp" android:background="@drawable/bg_card" android:src="@drawable/ic_back" android:contentDescription="Back"/>
+        <TextView android:id="@+id/tvTitle" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="12dp" android:text="Create zone" android:textSize="22sp" android:textStyle="bold" android:textColor="@color/text_primary"/>
+    </LinearLayout>
+    <androidx.cardview.widget.CardView android:layout_width="match_parent" android:layout_height="200dp" android:layout_marginTop="12dp" app:cardCornerRadius="18dp">
+        <androidx.fragment.app.FragmentContainerView android:id="@+id/zoneMap" android:name="com.google.android.gms.maps.SupportMapFragment" android:layout_width="match_parent" android:layout_height="match_parent"/>
+    </androidx.cardview.widget.CardView>
+    <ScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="12dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+            <EditText android:id="@+id/edtAddress" android:layout_width="match_parent" android:layout_height="52dp" android:hint="Address (optional)" android:background="@drawable/bg_card" android:paddingHorizontal="16dp"/>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="14dp" android:text="Radius" android:textStyle="bold" android:textColor="@color/text_primary"/>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical">
+                <com.google.android.material.slider.Slider android:id="@+id/sliderRadius" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:valueFrom="40" android:valueTo="500" android:value="100" android:stepSize="1" app:trackColorActive="@color/bg_switch_permission"/>
+                <TextView android:id="@+id/tvRadius" android:layout_width="58dp" android:layout_height="wrap_content" android:gravity="end" android:text="100 m" android:textColor="@color/text_primary"/>
+            </LinearLayout>
+            <EditText android:id="@+id/edtName" android:layout_width="match_parent" android:layout_height="52dp" android:layout_marginTop="8dp" android:hint="Zone name" android:background="@drawable/bg_card" android:paddingHorizontal="16dp" android:singleLine="true"/>
+            <RadioGroup android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="12dp">
+                <RadioButton android:id="@+id/radioSafe" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Safe" android:checked="true"/>
+                <RadioButton android:id="@+id/radioDangerous" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Dangerous"/>
+            </RadioGroup>
+            <com.google.android.material.switchmaterial.SwitchMaterial android:id="@+id/switchEnter" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Alert on enter" android:checked="true"/>
+            <com.google.android.material.switchmaterial.SwitchMaterial android:id="@+id/switchLeave" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Alert on leave" android:checked="true"/>
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnSave" android:layout_width="match_parent" android:layout_height="54dp" android:layout_marginTop="12dp" android:text="Create zone" android:textColor="@color/brand_on_primary" android:backgroundTint="@color/bg_switch_permission"/>
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

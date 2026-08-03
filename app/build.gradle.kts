@@ -63,6 +63,14 @@ android {
 
 }
 
+// Firebase has a production client only. Keep staging buildable until its own
+// google-services.json is added, without accidentally using production config.
+tasks.configureEach {
+    if (name.contains("Staging") && name.endsWith("GoogleServices")) {
+        enabled = false
+    }
+}
+
 dependencies {
     implementation(libs.androidx.camera.view)
     implementation(libs.androidx.constraintlayout)
