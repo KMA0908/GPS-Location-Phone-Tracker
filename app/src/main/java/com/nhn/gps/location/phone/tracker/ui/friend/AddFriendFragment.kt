@@ -16,6 +16,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.bumptech.glide.Glide
 import com.google.zxing.BinaryBitmap
 import com.google.zxing.MultiFormatReader
 import com.google.zxing.RGBLuminanceSource
@@ -220,6 +221,19 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
     private fun showFriendFound(friend: com.nhn.gps.location.phone.tracker.data.model.FriendLocation) = with(binding) {
         layoutFriendFound.tvName.text = friend.name
         layoutFriendFound.tvId.text = friend.id
+        
+        // Load Avatar
+        val avatarUrl = friend.avatarUrl
+        if (avatarUrl.isEmpty() || avatarUrl == "null") {
+            layoutFriendFound.imgAvatar.setImageResource(R.drawable.ic_avt_find_friend)
+        } else {
+            Glide.with(this@AddFriendFragment)
+                .load(avatarUrl)
+                .circleCrop()
+                .placeholder(R.drawable.ic_avt_find_friend)
+                .error(R.drawable.ic_avt_find_friend)
+                .into(layoutFriendFound.imgAvatar)
+        }
         
         viewDim.isVisible = true
         popupContainer.isVisible = true

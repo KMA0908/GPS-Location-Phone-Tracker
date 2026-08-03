@@ -72,6 +72,25 @@
             android:id="@+id/layoutFriendProfile"
             layout="@layout/fragment_friend_profile"
             android:visibility="gone"/>
+
+        <!-- Remove Friend Dialog -->
+        <include
+            android:id="@+id/viewRemoveDialog"
+            layout="@layout/dialog_remove_friend"
+            android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"/>
+
+        <!-- Success Dialog -->
+        <include
+            android:id="@+id/viewSuccessDialog"
+            layout="@layout/dialog_success"
+            android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"/>
+
     </FrameLayout>
 
 

@@ -3,7 +3,7 @@
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-
+    android:id="@+id/dialogRemoveFriendContainer"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="16dp"
@@ -45,7 +45,7 @@
             android:id="@+id/tvTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Remove Nga Nguyen?"
+            android:text="@string/remove_friend_title"
             android:textStyle="bold"
             android:textSize="22sp"
             android:textColor="#222"
@@ -63,7 +63,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
 
-            android:text="You will no longer see their location."
+            android:text="@string/remove_friend_desc"
             android:textColor="#666"
             android:textSize="14sp"
 
@@ -79,7 +79,7 @@
             android:id="@+id/btnCancel"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Cancel"
+            android:text="@string/cancel"
             android:textSize="16sp"
             android:padding="12dp"
             android:textColor="#333"
@@ -101,7 +101,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
 
-            android:text="Remove"
+            android:text="@string/remove"
             android:textSize="16sp"
             android:textColor="@android:color/white"
 

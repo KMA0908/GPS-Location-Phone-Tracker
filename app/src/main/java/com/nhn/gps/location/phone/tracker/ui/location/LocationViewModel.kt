@@ -1,6 +1,7 @@
 package com.nhn.gps.location.phone.tracker.ui.location
 
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -8,10 +9,11 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.model.LatLng
-import com.google.firebase.auth.FirebaseAuth
 import com.nhn.gps.location.phone.tracker.base.BaseViewModel
 import com.nhn.gps.location.phone.tracker.data.local.AppPreferences
 import com.nhn.gps.location.phone.tracker.data.model.FriendLocation
+import com.nhn.gps.location.phone.tracker.data.model.UserLocation
+import com.nhn.gps.location.phone.tracker.data.repository.FriendRepository
 import com.nhn.gps.location.phone.tracker.data.repository.LocationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,9 +27,9 @@ import javax.inject.Inject
 @HiltViewModel
 class LocationViewModel @Inject constructor(
     private val repository: LocationRepository,
+    private val friendRepository: FriendRepository,
     private val fusedLocationClient: FusedLocationProviderClient,
-    private val appPreferences: AppPreferences,
-    private val auth: FirebaseAuth
+    private val appPreferences: AppPreferences
 ) : BaseViewModel() {
 
     private val _selfLocation = MutableStateFlow<LatLng?>(null)
@@ -74,11 +76,11 @@ class LocationViewModel @Inject constructor(
 
     private fun observeAllLocations() {
         launchCatching {
-            repository.getAllUsersLocations().collectLatest { locations ->
-                val myUid = auth.currentUser?.uid
-                // Filter out self from friends list if needed, or keep for unified display
-                val filtered = locations.filter { it.id != myUid }
-                _friendsLocations.value = filtered
+            val myUid = appPreferences.userId.first() ?: return@launchCatching
+            Log.d("LocationVM", "Observing friends locations for $myUid")
+            friendRepository.getFriends(myUid).collectLatest { locations ->
+                Log.d("LocationVM", "Received ${locations.size} friends locations")
+                _friendsLocations.value = locations
                 _isFriendsDataLoaded.value = true
             }
         }
@@ -93,18 +95,14 @@ class LocationViewModel @Inject constructor(
     }
 
     private fun syncLocationWithFirebase(latLng: LatLng) {
-        val uid = auth.currentUser?.uid ?: return
         viewModelScope.launch {
-            val name = appPreferences.userName.first()
-            val avatarUrl = appPreferences.userAvatar.first()
-            val friendLocation = FriendLocation(
-                name = name,
-                avatarUrl = avatarUrl,
+            val uid = appPreferences.userId.first() ?: return@launch
+            val userLocation = UserLocation(
                 latitude = latLng.latitude,
                 longitude = latLng.longitude,
                 updatedAt = System.currentTimeMillis()
             )
-            repository.updateSelfLocation(uid, friendLocation)
+            repository.updateSelfLocation(uid, userLocation)
         }
     }
 

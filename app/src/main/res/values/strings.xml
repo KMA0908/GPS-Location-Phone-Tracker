@@ -55,4 +55,11 @@
     <string name="view_all_friends">View all friends</string>
     <string name="add_friends_to_see_their_locations_on_the_map_in_real_time">Add friends to see their locations\non the map in real-time.</string>
     <string name="no_friend_yet">No friend yet</string>
+    <string name="remove_friend_title">Remove %1$s?</string>
+    <string name="remove_friend_desc">You will no longer see their location.</string>
+    <string name="remove_friend_success_title">Success</string>
+    <string name="remove_friend_success_desc">Friend removed successfully</string>
+    <string name="cancel">Cancel</string>
+    <string name="remove">Remove</string>
+    <string name="ok">OK</string>
 </resources>

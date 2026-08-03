@@ -70,8 +70,8 @@ class MainViewModel @Inject constructor(
                 val destination = when (destinationRoute) {
                     "permission" -> AppDestination.Permission
                     "home" -> {
-                        val userName = preferences.userName.first()
-                        if (userName.isBlank()) AppDestination.SetUpProfile else AppDestination.Home
+                        val userId = preferences.userId.first()
+                        if (userId.isNullOrBlank()) AppDestination.SetUpProfile else AppDestination.Home
                     }
 
                     else -> AppDestination.Home
@@ -84,13 +84,13 @@ class MainViewModel @Inject constructor(
     }
 
     private suspend fun checkInitialDestination() {
+        val userId = preferences.userId.first()
         val isPermissionShown = preferences.isPermissionShown.first()
-        val userName = preferences.userName.first()
 
         val (destination, clearStack) = when {
+            !userId.isNullOrBlank() -> AppDestination.Home to true
             !isPermissionShown -> AppDestination.Permission to false
-            userName.isBlank() -> AppDestination.SetUpProfile to true
-            else -> AppDestination.Home to true
+            else -> AppDestination.SetUpProfile to true
         }
         navigationManager.navigateTo(destination, clearStack = clearStack)
     }

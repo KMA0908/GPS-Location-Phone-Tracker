@@ -108,6 +108,16 @@ class AppPreferences @Inject constructor(
         }
     }
 
+    val userId: Flow<String?> = context.appDataStore.safeData.map { preferences ->
+        preferences[USER_ID]
+    }
+
+    suspend fun setUserId(id: String) {
+        context.appDataStore.edit { preferences ->
+            preferences[USER_ID] = id
+        }
+    }
+
     private val DataStore<Preferences>.safeData: Flow<Preferences>
         get() = data.catch { throwable ->
             if (throwable is IOException) {
@@ -126,5 +136,6 @@ class AppPreferences @Inject constructor(
         val USER_NAME = androidx.datastore.preferences.core.stringPreferencesKey("user_name")
         val USER_PHONE = androidx.datastore.preferences.core.stringPreferencesKey("user_phone")
         val USER_AVATAR = androidx.datastore.preferences.core.stringPreferencesKey("user_avatar")
+        val USER_ID = androidx.datastore.preferences.core.stringPreferencesKey("user_id")
     }
 }

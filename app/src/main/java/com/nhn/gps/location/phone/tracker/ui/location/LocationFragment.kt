@@ -112,10 +112,13 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         bottomSheetBehavior.isHideable = true
         bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
 
-        friendAdapter = FriendAdapter { _ ->
-            bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
-            navigationManager.navigateTo(AppDestination.MyFriend)
-        }
+        friendAdapter = FriendAdapter(
+            showMoreButton = false,
+            onItemClick = { _ ->
+                bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+                navigationManager.navigateTo(AppDestination.MyFriend)
+            }
+        )
 
         friendBottomSheetLayout.rvFriends.layoutManager = LinearLayoutManager(requireContext())
         friendBottomSheetLayout.rvFriends.adapter = friendAdapter
@@ -368,7 +371,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     private fun updateMarkerIcon(marker: Marker, avatarUrl: String) {
         val markerViewBinding = LayoutCustomMarkerBinding.inflate(layoutInflater)
         
-        if (avatarUrl.isEmpty()) {
+        if (avatarUrl.isEmpty() || avatarUrl == "null") {
             markerViewBinding.imgAvatar.setImageResource(R.drawable.ic_avt_location)
             val bitmap = createBitmapFromView(markerViewBinding.root)
             marker.setIcon(BitmapDescriptorFactory.fromBitmap(bitmap))

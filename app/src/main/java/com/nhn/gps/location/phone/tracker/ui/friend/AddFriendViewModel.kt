@@ -1,7 +1,7 @@
 package com.nhn.gps.location.phone.tracker.ui.friend
 
+import android.util.Log
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.auth.FirebaseAuth
 import com.nhn.gps.location.phone.tracker.base.BaseViewModel
 import com.nhn.gps.location.phone.tracker.data.local.AppPreferences
 import com.nhn.gps.location.phone.tracker.data.model.FriendLocation
@@ -20,8 +20,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AddFriendViewModel @Inject constructor(
     private val repository: FriendRepository,
-    private val appPreferences: AppPreferences,
-    private val auth: FirebaseAuth
+    private val appPreferences: AppPreferences
 ) : BaseViewModel() {
 
     private val _isLoading = MutableStateFlow(false)
@@ -38,14 +37,22 @@ class AddFriendViewModel @Inject constructor(
 
     fun findFriend(code: String) {
         if (code.isBlank()) return
+        Log.d("AddFriendVM", "Finding friend with code: $code")
         
         viewModelScope.launch {
             _isLoading.value = true
             repository.findFriendById(code).fold(
-                onSuccess = {
-                    _friendFound.value = it
+                onSuccess = { profile ->
+                    Log.d("AddFriendVM", "Friend found: ${profile.name}")
+                    // Map UserProfile to FriendLocation for UI
+                    _friendFound.value = FriendLocation(
+                        id = profile.uid,
+                        name = profile.name,
+                        avatarUrl = profile.avatarUrl
+                    )
                 },
                 onFailure = {
+                    Log.d("AddFriendVM", "Friend not found")
                     _friendNotFound.emit(Unit)
                 }
             )
@@ -55,19 +62,23 @@ class AddFriendViewModel @Inject constructor(
 
     fun addFriend() {
         val friend = _friendFound.value ?: return
-        val myUid = auth.currentUser?.uid ?: return
+        Log.d("AddFriendVM", "Adding friend: ${friend.name} (${friend.id})")
         
         viewModelScope.launch {
             _isLoading.value = true
-            val myName = appPreferences.userName.first()
+            val myUid = appPreferences.userId.first()
             
-            repository.addFriend(myUid, myName, friend).fold(
-                onSuccess = {
-                    _addSuccess.emit(Unit)
-                },
-                onFailure = {
-                }
-            )
+            if (myUid != null) {
+                repository.addFriend(myUid, friend.id).fold(
+                    onSuccess = {
+                        Log.d("AddFriendVM", "Friend added successfully")
+                        _addSuccess.emit(Unit)
+                    },
+                    onFailure = {
+                        Log.e("AddFriendVM", "Failed to add friend", it)
+                    }
+                )
+            }
             _isLoading.value = false
         }
     }

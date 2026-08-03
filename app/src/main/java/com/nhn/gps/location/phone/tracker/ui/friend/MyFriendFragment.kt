@@ -2,6 +2,7 @@ package com.nhn.gps.location.phone.tracker.ui.friend
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import android.view.LayoutInflater
 import android.view.View
@@ -12,6 +13,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.bumptech.glide.Glide
+import com.nhn.gps.location.phone.tracker.R
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
 import com.nhn.gps.location.phone.tracker.databinding.FragmentMyFriendBinding
 import com.nhn.gps.location.phone.tracker.navigation.AppDestination
@@ -40,9 +43,11 @@ class MyFriendFragment : BaseFragment<FragmentMyFriendBinding, FriendListViewMod
             }
         }
 
-        adapter = FriendAdapter { friend ->
-            showProfile(friend)
-        }
+        adapter = FriendAdapter(
+            showMoreButton = true,
+            onItemClick = { friend -> viewModel.onFriendClicked(friend) },
+            onMoreClick = { friend -> viewModel.onMoreClicked(friend) }
+        )
         
         layoutFriendList.rvFriends.layoutManager = LinearLayoutManager(requireContext())
         layoutFriendList.rvFriends.adapter = adapter
@@ -72,15 +77,82 @@ class MyFriendFragment : BaseFragment<FragmentMyFriendBinding, FriendListViewMod
             shareProfile()
         }
 
-        viewDim.setOnClickListener {
-            hideProfile()
+        // Remove Friend Dialog listeners
+        binding.viewRemoveDialog.btnCancel.setOnClickListener {
+            viewModel.clearSelectedFriend()
         }
+
+        binding.viewRemoveDialog.ivClose.setOnClickListener {
+            viewModel.clearSelectedFriend()
+        }
+
+        binding.viewRemoveDialog.btnRemove.setOnClickListener {
+            Log.d("TEST", "Remove clicked")
+            viewModel.removeFriend()
+        }
+
+        binding.viewSuccessDialog.btnOk.setOnClickListener {
+            binding.viewSuccessDialog.dialogSuccessContainer.visibility = View.GONE
+            binding.viewDim.visibility = View.GONE
+        }
+
+        binding.viewDim.setOnClickListener {
+            hideProfile()
+            viewModel.clearSelectedFriend()
+            binding.viewSuccessDialog.dialogSuccessContainer.visibility = View.GONE
+        }
+    }
+
+    private fun showRemoveDialog(friend: com.nhn.gps.location.phone.tracker.data.model.FriendLocation) = with(binding) {
+        viewRemoveDialog.tvTitle.text = getString(R.string.remove_friend_title, friend.name)
+        
+        // Glide avatar for dialog
+        val avatarUrl = friend.avatarUrl
+        if (avatarUrl.isEmpty() || avatarUrl == "null") {
+            viewRemoveDialog.imgDelete.setImageResource(R.drawable.ic_avt_location)
+        } else {
+            Glide.with(this@MyFriendFragment)
+                .load(avatarUrl)
+                .circleCrop()
+                .placeholder(R.drawable.ic_avt_location)
+                .error(R.drawable.ic_avt_location)
+                .into(viewRemoveDialog.imgDelete)
+        }
+
+        viewDim.visibility = View.VISIBLE
+        viewRemoveDialog.dialogRemoveFriendContainer.visibility = View.VISIBLE
+    }
+
+    private fun hideRemoveDialog() = with(binding) {
+        viewRemoveDialog.dialogRemoveFriendContainer.visibility = View.GONE
+        if (layoutFriendProfile.root.visibility == View.GONE && viewSuccessDialog.dialogSuccessContainer.visibility == View.GONE) {
+            viewDim.visibility = View.GONE
+        }
+    }
+
+    private fun showSuccessDialog() = with(binding) {
+        viewRemoveDialog.dialogRemoveFriendContainer.visibility = View.GONE
+        viewSuccessDialog.dialogSuccessContainer.visibility = View.VISIBLE
+        viewDim.visibility = View.VISIBLE
     }
 
     private fun showProfile(friend: com.nhn.gps.location.phone.tracker.data.model.FriendLocation) = with(binding) {
         layoutFriendProfile.tvName.text = friend.name
         layoutFriendProfile.tvUserId.text = "ID: ${friend.id}"
         layoutFriendProfile.tvPhoneNumber.text = "+84 000 0000"
+
+        // Load Avatar
+        val avatarUrl = friend.avatarUrl
+        if (avatarUrl.isEmpty() || avatarUrl == "null") {
+            layoutFriendProfile.imgAvatar.setImageResource(R.drawable.ic_avt_location)
+        } else {
+            Glide.with(this@MyFriendFragment)
+                .load(avatarUrl)
+                .circleCrop()
+                .placeholder(R.drawable.ic_avt_location)
+                .error(R.drawable.ic_avt_location)
+                .into(layoutFriendProfile.imgAvatar)
+        }
 
         viewDim.visibility = View.VISIBLE
         layoutFriendProfile.root.visibility = View.VISIBLE
@@ -113,6 +185,22 @@ class MyFriendFragment : BaseFragment<FragmentMyFriendBinding, FriendListViewMod
                 launch {
                     viewModel.navigateToDetail.collect { friend ->
                         showProfile(friend)
+                    }
+                }
+
+                launch {
+                    viewModel.selectedFriend.collect { friend ->
+                        if (friend != null) {
+                            showRemoveDialog(friend)
+                        } else {
+                            hideRemoveDialog()
+                        }
+                    }
+                }
+
+                launch {
+                    viewModel.removeSuccess.collect {
+                        showSuccessDialog()
                     }
                 }
             }

@@ -5,11 +5,15 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
+import com.nhn.gps.location.phone.tracker.R
 import com.nhn.gps.location.phone.tracker.data.model.FriendLocation
 import com.nhn.gps.location.phone.tracker.databinding.ItemFriendBinding
 
 class FriendAdapter(
-    private val onItemClick: (FriendLocation) -> Unit
+    private val showMoreButton: Boolean = true,
+    private val onItemClick: (FriendLocation) -> Unit,
+    private val onMoreClick: ((FriendLocation) -> Unit)? = null
 ) : ListAdapter<FriendLocation, FriendAdapter.FriendViewHolder>(FriendDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FriendViewHolder {
@@ -25,6 +29,29 @@ class FriendAdapter(
         fun bind(friend: FriendLocation) = with(binding) {
             tvName.text = friend.name
             tvAddress.text = "ID: ${friend.id}"
+            
+            // Load Avatar
+            if (friend.avatarUrl.isEmpty() || friend.avatarUrl == "null") {
+                imgAvatar.setImageResource(R.drawable.ic_avt)
+            } else {
+                Glide.with(root.context)
+                    .load(friend.avatarUrl)
+                    .circleCrop()
+                    .placeholder(R.drawable.ic_avt)
+                    .error(R.drawable.ic_avt)
+                    .into(imgAvatar)
+            }
+            
+            if (showMoreButton) {
+                btnMore.visibility = android.view.View.VISIBLE
+                tvLastSeen.visibility = android.view.View.GONE
+                btnMore.setOnClickListener { onMoreClick?.invoke(friend) }
+            } else {
+                btnMore.visibility = android.view.View.GONE
+                tvLastSeen.visibility = android.view.View.VISIBLE
+                tvLastSeen.text = com.nhn.gps.location.phone.tracker.util.TimeAgo.format(friend.updatedAt)
+            }
+
             root.setOnClickListener { onItemClick(friend) }
         }
     }

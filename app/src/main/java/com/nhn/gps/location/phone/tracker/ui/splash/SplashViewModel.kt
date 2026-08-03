@@ -27,11 +27,18 @@ class SplashViewModel @Inject constructor(
     private fun startSplashTimer() {
         viewModelScope.launch {
             delay(2000)
-            val isPermissionShown = appPreferences.isPermissionShown.first()
-            if (isPermissionShown) {
+            val userId = appPreferences.userId.first()
+            if (!userId.isNullOrBlank()) {
+                // User already registered
                 _navigationEvent.emit(SplashNavigation.ToMain)
             } else {
-                _navigationEvent.emit(SplashNavigation.ToPermission)
+                // New user or not set up
+                val isPermissionShown = appPreferences.isPermissionShown.first()
+                if (isPermissionShown) {
+                    _navigationEvent.emit(SplashNavigation.ToMain)
+                } else {
+                    _navigationEvent.emit(SplashNavigation.ToPermission)
+                }
             }
         }
     }

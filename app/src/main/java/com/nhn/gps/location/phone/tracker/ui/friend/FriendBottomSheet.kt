@@ -46,10 +46,10 @@ class FriendBottomSheet : BottomSheetDialogFragment() {
     }
 
     private fun setupViews() = with(binding) {
-        adapter = FriendAdapter { friend ->
+        adapter = FriendAdapter(onItemClick = { friend ->
             dismiss()
             navigationManager.navigateTo(AppDestination.MyFriend)
-        }
+        })
         
         rvFriends.layoutManager = LinearLayoutManager(requireContext())
         rvFriends.adapter = adapter
