@@ -10,4 +10,5 @@ sealed class AppDestination(val route: String) {
     data object ShowQrFriend : AppDestination("show_qr_friend")
     data object Tracking : AppDestination("tracking")
     data object Settings : AppDestination("settings")
+    data object PhoneLocator : AppDestination("phone_locator")
 }

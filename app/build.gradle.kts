@@ -96,4 +96,5 @@ dependencies {
     kapt(libs.glide.compiler)
     implementation(libs.zxing.core)
     implementation(libs.zxing.android.embedded)
+    implementation(libs.ccp)
 }

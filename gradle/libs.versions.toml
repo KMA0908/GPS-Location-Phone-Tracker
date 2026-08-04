@@ -21,6 +21,7 @@ playServicesLocation = "21.3.0"
 cameraView = "1.6.1"
 mapsUtils = "3.9.0"
 glide = "4.16.0"
+ccp = "2.5.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -51,6 +52,7 @@ glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "gl
 glide-compiler = { group = "com.github.bumptech.glide", name = "compiler", version.ref = "glide" }
 zxing-core = { group = "com.google.zxing", name = "core", version = "3.5.3" }
 zxing-android-embedded = { group = "com.journeyapps", name = "zxing-android-embedded", version = "4.3.0" }
+ccp = { group = "com.hbb20", name = "ccp", version.ref = "ccp" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

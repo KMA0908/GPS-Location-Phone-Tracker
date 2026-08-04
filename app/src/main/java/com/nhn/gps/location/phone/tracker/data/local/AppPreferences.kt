@@ -88,10 +88,6 @@ class AppPreferences @Inject constructor(
         }
     }
 
-    val userPhone: Flow<String> = context.appDataStore.safeData.map { preferences ->
-        preferences[USER_PHONE] ?: ""
-    }
-
     suspend fun setUserPhone(phone: String) {
         context.appDataStore.edit { preferences ->
             preferences[USER_PHONE] = phone
@@ -100,12 +96,6 @@ class AppPreferences @Inject constructor(
 
     val userAvatar: Flow<String> = context.appDataStore.safeData.map { preferences ->
         preferences[USER_AVATAR] ?: ""
-    }
-
-    suspend fun setUserAvatar(avatar: String) {
-        context.appDataStore.edit { preferences ->
-            preferences[USER_AVATAR] = avatar
-        }
     }
 
     val userId: Flow<String?> = context.appDataStore.safeData.map { preferences ->

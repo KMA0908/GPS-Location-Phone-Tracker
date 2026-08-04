@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Sử dụng màu nền đặc thay vì gradient để tránh bị vỡ màu khi view co giãn -->
+    <solid android:color="#F6FFF8" />
+
+    <!-- Bo góc cho phần đầu Bottom Sheet -->
+    <corners
+        android:topLeftRadius="24dp"
+        android:topRightRadius="24dp" />
+
+    <!-- Viền nhẹ để tạo chiều sâu -->
+    <stroke
+        android:width="1dp"
+        android:color="#E3E3EF" />
+
+</shape>

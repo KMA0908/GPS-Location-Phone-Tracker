@@ -99,6 +99,10 @@ class MainViewModel @Inject constructor(
         navigationManager.navigateTo(AppDestination.Map)
     }
 
+    fun openPhoneLocator() {
+        navigationManager.navigateTo(AppDestination.PhoneLocator)
+    }
+
     fun goHome() {
         navigationManager.navigateTo(AppDestination.Home)
     }

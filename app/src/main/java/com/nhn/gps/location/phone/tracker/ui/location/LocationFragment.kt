@@ -36,6 +36,8 @@ import com.google.android.material.card.MaterialCardView
 import com.nhn.gps.location.phone.tracker.ui.friend.FriendAdapter
 import com.nhn.gps.location.phone.tracker.ui.main.MainViewModel
 import com.nhn.gps.location.phone.tracker.ui.permission.LocationPermissionBottomSheet
+import com.nhn.gps.location.phone.tracker.util.MapMarkerHelper
+import com.nhn.gps.location.phone.tracker.util.MapUtils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
@@ -369,44 +371,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     }
 
     private fun updateMarkerIcon(marker: Marker, avatarUrl: String) {
-        val markerViewBinding = LayoutCustomMarkerBinding.inflate(layoutInflater)
-        
-        if (avatarUrl.isEmpty() || avatarUrl == "null") {
-            markerViewBinding.imgAvatar.setImageResource(R.drawable.ic_avt_location)
-            val bitmap = createBitmapFromView(markerViewBinding.root)
-            marker.setIcon(BitmapDescriptorFactory.fromBitmap(bitmap))
-            return
-        }
-
-        Glide.with(this)
-            .asBitmap()
-            .load(avatarUrl)
-            .circleCrop()
-            .into(object : CustomTarget<Bitmap>() {
-                override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
-                    markerViewBinding.imgAvatar.setImageBitmap(resource)
-                    val bitmap = createBitmapFromView(markerViewBinding.root)
-                    marker.setIcon(BitmapDescriptorFactory.fromBitmap(bitmap))
-                }
-
-                override fun onLoadCleared(placeholder: android.graphics.drawable.Drawable?) {
-                }
-
-                override fun onLoadFailed(errorDrawable: android.graphics.drawable.Drawable?) {
-                    markerViewBinding.imgAvatar.setImageResource(R.drawable.ic_avt_location)
-                    val bitmap = createBitmapFromView(markerViewBinding.root)
-                    marker.setIcon(BitmapDescriptorFactory.fromBitmap(bitmap))
-                }
-            })
-    }
-
-    private fun createBitmapFromView(view: View): Bitmap {
-        view.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
-        view.layout(0, 0, view.measuredWidth, view.measuredHeight)
-        val bitmap = Bitmap.createBitmap(view.measuredWidth, view.measuredHeight, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-        view.draw(canvas)
-        return bitmap
+        MapMarkerHelper.updateMarkerIcon(requireContext(), marker, avatarUrl, style = MapMarkerHelper.MarkerStyle.DEFAULT)
     }
 
     private fun centerCameraOnSelf() {

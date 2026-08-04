@@ -62,4 +62,14 @@
     <string name="cancel">Cancel</string>
     <string name="remove">Remove</string>
     <string name="ok">OK</string>
+
+    <!-- Phone Locator -->
+    <string name="err_enter_phone">Please enter phone number</string>
+    <string name="err_location_not_available">User found, but their location is not available.</string>
+    <string name="err_no_user_found">No user found with this number.</string>
+    <string name="country_format">%1$s %2$s (%3$s)</string>
+    <string name="country_region">Country / Region</string>
+    <string name="updating">Updating...</string>
+    <string name="carrier">Carrier</string>
+    <string name="mobile">Mobile</string>
 </resources>

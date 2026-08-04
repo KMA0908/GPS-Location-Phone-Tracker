@@ -19,6 +19,7 @@ import com.nhn.gps.location.phone.tracker.ui.friend.MyFriendFragment
 import com.nhn.gps.location.phone.tracker.ui.friend.ShowQrFriendFragment
 import com.nhn.gps.location.phone.tracker.ui.location.LocationFragment
 import com.nhn.gps.location.phone.tracker.ui.permission.PermissionFragment
+import com.nhn.gps.location.phone.tracker.ui.phone_number_locator.PhoneLocatorFragment
 import com.nhn.gps.location.phone.tracker.ui.setup_profile.SetUpProfileFragment
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
@@ -81,6 +82,7 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>() {
             AppDestination.AddFriend.route -> AddFriendFragment.newInstance()
             AppDestination.MyFriend.route -> MyFriendFragment.newInstance()
             AppDestination.ShowQrFriend.route -> ShowQrFriendFragment.newInstance()
+            AppDestination.PhoneLocator.route -> PhoneLocatorFragment.newInstance()
             else -> HomeFragment.newInstance()
         }
         replaceFragment(fragment)

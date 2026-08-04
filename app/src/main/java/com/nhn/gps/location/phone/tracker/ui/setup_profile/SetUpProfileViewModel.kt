@@ -1,11 +1,10 @@
 package com.nhn.gps.location.phone.tracker.ui.setup_profile
 
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.FirebaseDatabase
 import com.nhn.gps.location.phone.tracker.base.BaseViewModel
 import com.nhn.gps.location.phone.tracker.data.local.AppPreferences
 import com.nhn.gps.location.phone.tracker.data.model.UserProfile
+import com.nhn.gps.location.phone.tracker.data.repository.UserRepository
 import com.nhn.gps.location.phone.tracker.navigation.AppDestination
 import com.nhn.gps.location.phone.tracker.navigation.NavigationManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,15 +14,21 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
+
+sealed interface SetUpProfileUiState {
+    object Idle : SetUpProfileUiState
+    object Loading : SetUpProfileUiState
+    object Success : SetUpProfileUiState
+    object PhoneAlreadyExists : SetUpProfileUiState
+    data class Error(val message: String) : SetUpProfileUiState
+}
 
 @HiltViewModel
 class SetUpProfileViewModel @Inject constructor(
     private val appPreferences: AppPreferences,
     private val navigationManager: NavigationManager,
-    private val database: FirebaseDatabase,
-    private val auth: FirebaseAuth
+    private val userRepository: UserRepository
 ) : BaseViewModel() {
 
     private val _name = MutableStateFlow("")
@@ -32,8 +37,11 @@ class SetUpProfileViewModel @Inject constructor(
     private val _phone = MutableStateFlow("")
     val phone: StateFlow<String> = _phone.asStateFlow()
 
-    val isSaveEnabled: StateFlow<Boolean> = combine(_name, _phone) { name, phone ->
-        name.isNotBlank() && phone.isNotBlank() && isValidPhone(phone)
+    private val _uiState = MutableStateFlow<SetUpProfileUiState>(SetUpProfileUiState.Idle)
+    val uiState: StateFlow<SetUpProfileUiState> = _uiState.asStateFlow()
+
+    val isSaveEnabled: StateFlow<Boolean> = combine(_name, _phone, _uiState) { name, phone, state ->
+        name.isNotBlank() && phone.isNotBlank() && isValidPhone(phone) && state !is SetUpProfileUiState.Loading
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     private fun isValidPhone(phone: String): Boolean {
@@ -52,33 +60,50 @@ class SetUpProfileViewModel @Inject constructor(
         if (!isSaveEnabled.value) return
 
         launchCatching {
-            // 1. Ensure anonymous authentication
-            var currentUser = auth.currentUser
-            if (currentUser == null) {
-                auth.signInAnonymously().await()
-                currentUser = auth.currentUser
-            }
+            _uiState.value = SetUpProfileUiState.Loading
             
-            val uid = currentUser?.uid ?: return@launchCatching
+            val phone = _phone.value
+            val name = _name.value
 
-            // 2. Prepare Profile Object
+            // 1. Kiểm tra số điện thoại đã tồn tại chưa
+            val existingUser = userRepository.findUserByPhone(phone)
+            
+            if (existingUser != null) {
+                // Nếu tồn tại: Tải thông tin về lưu local và đi tới Home (như đăng nhập)
+                appPreferences.setUserId(existingUser.uid)
+                appPreferences.setUserName(existingUser.name)
+                appPreferences.setUserPhone(existingUser.phone)
+                
+                _uiState.value = SetUpProfileUiState.Success
+                navigationManager.navigateTo(AppDestination.Home, clearStack = true)
+                return@launchCatching
+            }
+
+            // 2. Nếu chưa tồn tại: Thực hiện tạo user mới (Sử dụng anonymous auth)
+            val uid = userRepository.signInAnonymously()
+
             val profile = UserProfile(
                 uid = uid,
-                name = _name.value,
-                phone = _phone.value,
-                avatarUrl = "" // Default or handle if UI allows
+                name = name,
+                phone = phone,
+                avatarUrl = ""
             )
 
-            // 3. Save to Firebase: users/{uid}/profile
-            database.getReference("users").child(uid).child("profile").setValue(profile).await()
+            // 3. Lưu profile lên Firebase
+            userRepository.saveUserProfile(uid, profile)
 
-            // 4. Save to DataStore for local state consistency
+            // 4. Lưu local preferences
             appPreferences.setUserId(uid)
-            appPreferences.setUserName(_name.value)
-            appPreferences.setUserPhone(_phone.value)
+            appPreferences.setUserName(name)
+            appPreferences.setUserPhone(phone)
 
-            // 5. Navigate Home
+            // 5. Thành công và Điều hướng
+            _uiState.value = SetUpProfileUiState.Success
             navigationManager.navigateTo(AppDestination.Home, clearStack = true)
         }
+    }
+    
+    fun resetState() {
+        _uiState.value = SetUpProfileUiState.Idle
     }
 }

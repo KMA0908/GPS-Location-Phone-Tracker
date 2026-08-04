@@ -29,6 +29,10 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, MainViewModel>() {
             viewModel.openMap()
         }
 
+        phone.root.setOnClickListener {
+            viewModel.openPhoneLocator()
+        }
+
         // Initial selection
         updateSelectedItem(R.id.navHome)
     }
