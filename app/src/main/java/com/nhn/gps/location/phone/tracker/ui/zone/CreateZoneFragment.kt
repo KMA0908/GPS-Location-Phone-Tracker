@@ -46,9 +46,10 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
             val mapFragment = childFragmentManager.findFragmentById(R.id.zoneMap) as? SupportMapFragment
             mapFragment?.getMapAsync(this@CreateZoneFragment)
             btnBack.setOnClickListener { handleToolbarBack() }
+            btnCancel.setOnClickListener { handleToolbarBack() }
             btnSave.setOnClickListener { saveZone() }
             sliderRadius.addOnChangeListener { _, value, _ ->
-                tvRadius.text = "${value.toInt()} m"
+                tvRadius.text = "Radius: ${value.toInt()}m"
                 drawCircle()
             }
             radioSafe.setOnClickListener { drawCircle() }
@@ -67,7 +68,7 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
         edtName.setText(zone.name)
         edtAddress.setText(zone.address)
         sliderRadius.value = zone.radiusMeters.toFloat().coerceIn(40f, 500f)
-        tvRadius.text = "${zone.radiusMeters} m"
+        tvRadius.text = "Radius: ${zone.radiusMeters}m"
         radioSafe.isChecked = zone.status == ZoneStatus.SAFE
         radioDangerous.isChecked = zone.status == ZoneStatus.DANGEROUS
         switchEnter.isChecked = zone.onEnter
@@ -78,8 +79,14 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
         googleMap.uiSettings.isZoomControlsEnabled = false
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(center, 14f))
-        googleMap.setOnMapClickListener { point -> center = point; drawCircle(); googleMap.animateCamera(CameraUpdateFactory.newLatLng(point)) }
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(center, 15f))
+        
+        // Cập nhật center khi bản đồ di chuyển xong (khớp với UI Drag to center)
+        googleMap.setOnCameraIdleListener {
+            center = googleMap.cameraPosition.target
+            drawCircle()
+        }
+
         drawCircle()
     }
 

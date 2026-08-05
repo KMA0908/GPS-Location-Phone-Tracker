@@ -24,6 +24,7 @@ import com.nhn.gps.location.phone.tracker.ui.zone.CreateZoneFragment
 import com.nhn.gps.location.phone.tracker.ui.zone.MyZonesFragment
 import com.nhn.gps.location.phone.tracker.ui.zone.NotificationsFragment
 import com.nhn.gps.location.phone.tracker.ui.zone.ZoneAlertsFragment
+import com.nhn.gps.location.phone.tracker.ui.zone.ZoneDetailFragment
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -87,6 +88,7 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>() {
             AppDestination.ShowQrFriend.route -> ShowQrFriendFragment.newInstance()
             AppDestination.MyZones.route -> MyZonesFragment.newInstance()
             AppDestination.CreateZone.route -> CreateZoneFragment.newInstance()
+            AppDestination.ZoneDetail.route -> ZoneDetailFragment.newInstance()
             AppDestination.ZoneAlerts.route -> ZoneAlertsFragment.newInstance()
             AppDestination.Notifications.route -> NotificationsFragment.newInstance()
             else -> HomeFragment.newInstance()

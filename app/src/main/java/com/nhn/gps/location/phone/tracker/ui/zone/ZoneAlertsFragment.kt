@@ -4,11 +4,13 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.nhn.gps.location.phone.tracker.R
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
 import com.nhn.gps.location.phone.tracker.data.model.ZoneAlert
 import com.nhn.gps.location.phone.tracker.data.model.ZoneStatus
@@ -30,6 +32,7 @@ class ZoneAlertsFragment : BaseFragment<FragmentZoneAlertsLocalBinding, MainView
     private lateinit var adapter: ZoneAlertAdapter
     private var current: List<ZoneAlert> = emptyList()
     private var filter = Filter.ALL
+    private var searchQuery = ""
 
     private enum class Filter { ALL, ENTERED, LEFT, DANGEROUS }
 
@@ -45,6 +48,12 @@ class ZoneAlertsFragment : BaseFragment<FragmentZoneAlertsLocalBinding, MainView
         btnEntered.setOnClickListener { setFilter(Filter.ENTERED) }
         btnLeft.setOnClickListener { setFilter(Filter.LEFT) }
         btnDangerous.setOnClickListener { setFilter(Filter.DANGEROUS) }
+        
+        editSearch.doAfterTextChanged { 
+            searchQuery = it?.toString().orEmpty()
+            render()
+        }
+        
         setFilter(Filter.ALL)
     }
 
@@ -72,12 +81,19 @@ class ZoneAlertsFragment : BaseFragment<FragmentZoneAlertsLocalBinding, MainView
 
     private fun render() {
         if (!isAdded) return
-        val filtered = when (filter) {
+        var filtered = when (filter) {
             Filter.ALL -> current
             Filter.ENTERED -> current.filter { it.isEnter }
             Filter.LEFT -> current.filterNot { it.isEnter }
             Filter.DANGEROUS -> current.filter { it.status == ZoneStatus.DANGEROUS }
         }
+        
+        if (searchQuery.isNotBlank()) {
+            filtered = filtered.filter { 
+                it.zoneName.contains(searchQuery, true) || it.userName.contains(searchQuery, true)
+            }
+        }
+
         adapter.submitList(filtered)
         binding.emptyState.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
         binding.recyclerAlerts.visibility = if (filtered.isEmpty()) View.GONE else View.VISIBLE
@@ -85,12 +101,23 @@ class ZoneAlertsFragment : BaseFragment<FragmentZoneAlertsLocalBinding, MainView
 
     private fun confirmClear() {
         if (current.isEmpty()) return
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle("Clear all zone alerts?")
-            .setMessage("This action cannot be undone.")
-            .setNegativeButton("Cancel", null)
-            .setPositiveButton("Clear") { _, _ -> viewLifecycleOwner.lifecycleScope.launch { zoneRepository.clearAlerts() } }
-            .show()
+        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_confirm_clear_alerts, null)
+        val dialogBinding = com.nhn.gps.location.phone.tracker.databinding.DialogConfirmClearAlertsBinding.bind(dialogView)
+        
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setView(dialogView)
+            .create()
+            
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        dialogBinding.btnClose.setOnClickListener { dialog.dismiss() }
+        dialogBinding.btnCancel.setOnClickListener { dialog.dismiss() }
+        dialogBinding.btnClear.setOnClickListener {
+            viewLifecycleOwner.lifecycleScope.launch { zoneRepository.clearAlerts() }
+            dialog.dismiss()
+        }
+        
+        dialog.show()
     }
 
     private fun showDetails(alert: ZoneAlert) {

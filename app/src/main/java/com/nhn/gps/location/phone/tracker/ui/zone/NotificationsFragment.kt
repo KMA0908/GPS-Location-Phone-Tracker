@@ -33,15 +33,21 @@ class NotificationsFragment : BaseFragment<FragmentNotificationsLocalBinding, Ma
         adapter = ZoneAlertAdapter { alert ->
             // The alert row is intentionally shared with Zone alerts so both centers stay consistent.
             val action = if (alert.isEnter) "entered" else "left"
-            android.app.AlertDialog.Builder(requireContext())
+            com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Notification")
                 .setMessage("${alert.userName} $action ${alert.zoneName}")
                 .setPositiveButton("OK", null).show()
         }
         recyclerNotifications.adapter = adapter
         btnBack.setOnClickListener { handleToolbarBack() }
-        listOf(btnAll, btnZones, btnDangerous).forEach { chip ->
-            chip.setOnClickListener { filter = chip.text.toString(); render() }
+        
+        // Cập nhật click listeners cho các chip lọc mới
+        val filterChips = listOf(btnZones, btnFriends, btnStatus, btnDays)
+        filterChips.forEach { chip ->
+            chip.setOnClickListener { 
+                filter = chip.text.toString().replace(" ⌵", "")
+                render() 
+            }
         }
     }
 
