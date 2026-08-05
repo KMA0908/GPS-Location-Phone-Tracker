@@ -4,6 +4,9 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
+import android.content.Context
 import androidx.activity.OnBackPressedCallback
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
@@ -55,7 +58,7 @@ class MyZonesFragment : BaseFragment<FragmentMyZonesLocalBinding, MainViewModel>
             bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
             
             // Set initial peekHeight to show SearchBar + Handle + ~1-2 items
-            bottomSheetBehavior.peekHeight = (240 * resources.displayMetrics.density).toInt()
+            bottomSheetBehavior.peekHeight = (300 * resources.displayMetrics.density).toInt()
             
             bottomSheetBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
                 override fun onStateChanged(bottomSheet: View, newState: Int) {
@@ -95,6 +98,17 @@ class MyZonesFragment : BaseFragment<FragmentMyZonesLocalBinding, MainViewModel>
             
             editSearch.doAfterTextChanged { query -> applyFilter(query?.toString().orEmpty()) }
             editSearchSheet.doAfterTextChanged { query -> applyFilter(query?.toString().orEmpty()) }
+
+            val actionHandler = { v: View, actionId: Int ->
+                if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                    val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                    imm.hideSoftInputFromWindow(v.windowToken, 0)
+                    v.clearFocus()
+                    true
+                } else false
+            }
+            editSearch.setOnEditorActionListener { v, actionId, _ -> actionHandler(v, actionId) }
+            editSearchSheet.setOnEditorActionListener { v, actionId, _ -> actionHandler(v, actionId) }
             
             (childFragmentManager.findFragmentById(R.id.zonesMap) as? SupportMapFragment)?.getMapAsync(this@MyZonesFragment)
         }
@@ -197,7 +211,11 @@ class MyZonesFragment : BaseFragment<FragmentMyZonesLocalBinding, MainViewModel>
         layoutZoneDetail.isVisible = true
         
         tvSheetName.text = zone.name
-        tvSheetAddress.text = zone.address
+        tvSheetAddress.text = if (zone.address.isNotBlank()) {
+            "${zone.address} • ${zone.radiusMeters}m"
+        } else {
+            "${zone.radiusMeters}m"
+        }
         
         when (zone.type) {
             ZoneType.HOME -> {

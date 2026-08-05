@@ -72,20 +72,31 @@ class ZoneDetailFragment : BaseFragment<FragmentZoneDetailLocalBinding, MainView
         when(zone.type) {
             ZoneType.HOME -> {
                 layoutIcon.setBackgroundResource(R.drawable.bg_zone_home)
-                ivZoneIcon.setImageResource(R.drawable.ic_launcher) // Replace with ic_home if available
+                ivZoneIcon.setImageResource(R.drawable.ic_home_zone)
             }
             ZoneType.SCHOOL -> {
                 layoutIcon.setBackgroundResource(R.drawable.bg_zone_school)
-                ivZoneIcon.setImageResource(R.drawable.ic_launcher)
+                ivZoneIcon.setImageResource(R.drawable.ic_school_zone)
             }
             ZoneType.WORK -> {
                 layoutIcon.setBackgroundResource(R.drawable.bg_zone_work)
-                ivZoneIcon.setImageResource(R.drawable.ic_launcher)
+                ivZoneIcon.setImageResource(R.drawable.ic_bag_zone)
             }
             else -> {
                 layoutIcon.setBackgroundResource(R.drawable.bg_zone_home)
-                ivZoneIcon.setImageResource(R.drawable.ic_launcher)
+                ivZoneIcon.setImageResource(R.drawable.ic_home_zone)
             }
+        }
+
+        // Bind Status
+        if (zone.status == ZoneStatus.SAFE) {
+            layoutStatusBg.setBackgroundResource(R.drawable.bg_zone_school)
+            tvStatusText.text = getString(R.string.safe) + " zone"
+            ivStatusShield.setImageResource(R.drawable.ic_protect)
+        } else {
+            layoutStatusBg.setBackgroundResource(R.drawable.bg_zone_home)
+            tvStatusText.text = getString(R.string.dangerous) + " zone"
+            ivStatusShield.setImageResource(R.drawable.ic_cancel_zone)
         }
     }
 

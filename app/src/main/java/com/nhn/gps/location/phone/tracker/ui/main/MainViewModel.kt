@@ -107,6 +107,10 @@ class MainViewModel @Inject constructor(
         navigationManager.navigateTo(AppDestination.Home)
     }
 
+    fun openViewFriends() {
+        navigationManager.navigateTo(AppDestination.MyFriend)
+    }
+
     fun updateLocationPermissionStatus(isGranted: Boolean) {
         viewModelScope.launch {
             preferences.setLocationEnabled(isGranted)

@@ -17,9 +17,9 @@
 
         <ImageButton
             android:id="@+id/btnBack"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
-            android:background="@drawable/bg_button_circle_border"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_card"
             android:contentDescription="Back"
             android:padding="12dp"
             android:src="@drawable/ic_back"
@@ -34,7 +34,7 @@
             android:layout_height="wrap_content"
             android:text="Zone alerts"
             android:textColor="@color/text_primary"
-            android:textSize="18sp"
+            android:textSize="20sp"
             android:textStyle="bold"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -95,7 +95,7 @@
                 android:inputType="text"
                 android:maxLines="1"
                 android:textColor="@color/text_primary"
-                android:textSize="14sp"
+                android:textSize="16sp"
                 app:layout_constraintEnd_toStartOf="@+id/ivFilter"
                 app:layout_constraintStart_toEndOf="@id/ivSearchIcon" />
 
@@ -147,6 +147,7 @@
                 style="@style/ZoneFilterChip"
                 android:background="@drawable/selector_filter_chip"
                 android:text="All"
+                android:textSize="@dimen/sp_14"
                 android:textColor="@color/selector_segmented_text" />
 
             <TextView
@@ -154,6 +155,7 @@
                 style="@style/ZoneFilterChip"
                 android:background="@drawable/selector_filter_chip"
                 android:text="Enter zone"
+                android:textSize="@dimen/sp_14"
                 android:textColor="@color/selector_segmented_text" />
 
             <TextView
@@ -161,6 +163,7 @@
                 style="@style/ZoneFilterChip"
                 android:background="@drawable/selector_filter_chip"
                 android:text="Leave zone"
+                android:textSize="@dimen/sp_14"
                 android:textColor="@color/selector_segmented_text" />
 
             <TextView
@@ -168,6 +171,7 @@
                 style="@style/ZoneFilterChip"
                 android:background="@drawable/selector_filter_chip"
                 android:text="Dangerous"
+                android:textSize="@dimen/sp_14"
                 android:textColor="@color/selector_segmented_text" />
 
         </LinearLayout>

@@ -31,15 +31,13 @@
                 android:layout_height="match_parent"
                 android:background="@drawable/bg_circle_light" />
 
-            <TextView
+            <ImageView
                 android:id="@+id/tvAlertType"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:textColor="@color/bg_switch_permission"
-                android:textSize="10sp"
-                android:textStyle="bold"
-                tools:text="IN" />
+                android:src="@drawable/ic_enter_zone"
+                android:textStyle="bold" />
 
         </FrameLayout>
 
@@ -62,7 +60,7 @@
                 android:ellipsize="end"
                 android:maxLines="1"
                 android:textColor="@color/text_primary"
-                android:textSize="15sp"
+                android:textSize="16sp"
                 android:textStyle="bold"
                 tools:text="An entered home" />
 
@@ -82,15 +80,14 @@
         <!-- More Button -->
         <ImageButton
             android:id="@+id/btnMore"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_card"
             android:contentDescription="More"
-            android:src="@android:drawable/ic_menu_more"
+            android:src="@drawable/ic_more_choice"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:tint="@color/text_secondary" />
+            app:layout_constraintTop_toTopOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

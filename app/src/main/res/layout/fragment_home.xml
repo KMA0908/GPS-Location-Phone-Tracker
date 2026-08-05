@@ -146,7 +146,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:layout_marginEnd="@dimen/d_12"
-                    android:id="@+id/viewZone"
+                    android:id="@+id/viewMyZones"
                     layout="@layout/item_quick_action_zone"/>
 
                 <include
@@ -169,7 +169,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:layout_marginEnd="@dimen/d_12"
-                    android:id="@+id/viewMyZones"
+                    android:id="@+id/viewZone"
                     layout="@layout/item_quick_action_my_zones"/>
 
                 <View

@@ -128,6 +128,18 @@ class AppPreferences @Inject constructor(
         }
     }
 
+    suspend fun setZonesJson(json: String) {
+        context.appDataStore.edit { it[ZONES_JSON] = json }
+    }
+
+    suspend fun setZoneAlertsJson(json: String) {
+        context.appDataStore.edit { it[ZONE_ALERTS_JSON] = json }
+    }
+
+    suspend fun setZoneStatesJson(json: String) {
+        context.appDataStore.edit { it[ZONE_STATES_JSON] = json }
+    }
+
     private val DataStore<Preferences>.safeData: Flow<Preferences>
         get() = data.catch { throwable ->
             if (throwable is IOException) {

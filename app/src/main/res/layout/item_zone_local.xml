@@ -27,8 +27,8 @@
 
             <ImageView
                 android:id="@+id/ivZoneIcon"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:src="@drawable/ic_home_zone"
                 app:tint="@color/white" />
@@ -66,7 +66,7 @@
                 android:ellipsize="end"
                 android:maxLines="2"
                 android:textColor="@color/text_secondary"
-                android:textSize="13sp"
+                android:textSize="14sp"
                 tools:text="12 Chua Boc St., Quang Trung" />
 
             <!-- Hidden Meta for binding compatibility (Deprecated) -->
@@ -93,13 +93,12 @@
         <!-- Right Action Button -->
         <ImageButton
             android:id="@+id/btnAction"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="@drawable/bg_button_circle_border"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_card"
             android:contentDescription="Open"
             android:padding="12dp"
-            android:src="@drawable/ic_back"
-            android:rotation="180"
+            android:src="@drawable/ic_arrow_right"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"

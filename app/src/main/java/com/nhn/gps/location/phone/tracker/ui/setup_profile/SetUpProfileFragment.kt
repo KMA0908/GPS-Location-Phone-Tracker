@@ -81,7 +81,7 @@ class SetUpProfileFragment : BaseFragment<FragmentSetUpProfileBinding, SetUpProf
                 viewModel.resetState()
             }
             is SetUpProfileUiState.Success -> {
-                Toast.makeText(requireContext(), "Profile Saved Successfully", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Glad to see you again!", Toast.LENGTH_SHORT).show()
                 // Navigation is handled by ViewModel/NavigationManager
             }
             is SetUpProfileUiState.Error -> {

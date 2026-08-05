@@ -30,7 +30,11 @@ class ZoneAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
         fun bind(item: Zone) = with(binding) {
             tvZoneName.text = item.name
-            tvZoneAddress.text = item.address
+            tvZoneAddress.text = if (item.address.isNotBlank()) {
+                "${item.address} • ${item.radiusMeters}m"
+            } else {
+                "${item.radiusMeters}m"
+            }
             
             // Set gradient background and icon based on type
             when(item.type) {

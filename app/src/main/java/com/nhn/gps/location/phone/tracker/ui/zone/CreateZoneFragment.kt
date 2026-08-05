@@ -18,6 +18,7 @@ import com.nhn.gps.location.phone.tracker.base.BaseFragment
 import com.nhn.gps.location.phone.tracker.data.model.Zone
 import com.nhn.gps.location.phone.tracker.data.model.ZoneStatus
 import com.nhn.gps.location.phone.tracker.data.model.ZoneType
+import com.nhn.gps.location.phone.tracker.data.repository.PhoneLocatorRepository
 import com.nhn.gps.location.phone.tracker.data.repository.ZoneRepository
 import com.nhn.gps.location.phone.tracker.data.notification.ZoneMonitoringService
 import com.nhn.gps.location.phone.tracker.databinding.FragmentCreateZoneLocalBinding
@@ -31,6 +32,7 @@ import javax.inject.Inject
 class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainViewModel>(), OnMapReadyCallback {
     override val viewModel: MainViewModel by viewModels({ requireActivity() })
     @Inject lateinit var zoneRepository: ZoneRepository
+    @Inject lateinit var phoneLocatorRepository: PhoneLocatorRepository
     private var map: GoogleMap? = null
     private var circle: Circle? = null
     private var center = LatLng(21.0285, 105.8542)
@@ -71,6 +73,15 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
         tvRadius.text = "Radius: ${zone.radiusMeters}m"
         radioSafe.isChecked = zone.status == ZoneStatus.SAFE
         radioDangerous.isChecked = zone.status == ZoneStatus.DANGEROUS
+        
+        val typeButtonId = when (zone.type) {
+            ZoneType.HOME -> R.id.btnTypeHome
+            ZoneType.SCHOOL -> R.id.btnTypeSchool
+            ZoneType.WORK -> R.id.btnTypeWork
+            ZoneType.OTHER -> R.id.btnTypeOther
+        }
+        toggleZoneType.check(typeButtonId)
+
         switchEnter.isChecked = zone.onEnter
         switchLeave.isChecked = zone.onLeave
         drawCircle()
@@ -85,9 +96,17 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
         googleMap.setOnCameraIdleListener {
             center = googleMap.cameraPosition.target
             drawCircle()
+            updateAddress()
         }
 
         drawCircle()
+    }
+
+    private fun updateAddress() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val address = phoneLocatorRepository.getAddressFromLocation(center.latitude, center.longitude)
+            binding.edtAddress.setText(address ?: "Unknown location")
+        }
     }
 
     private fun drawCircle() {
@@ -101,12 +120,20 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
     private fun saveZone() {
         val name = binding.edtName.text?.toString()?.trim().orEmpty()
         if (name.isBlank()) { binding.edtName.error = "Enter a zone name"; return }
+        
+        val zoneType = when (binding.toggleZoneType.checkedButtonId) {
+            R.id.btnTypeHome -> ZoneType.HOME
+            R.id.btnTypeSchool -> ZoneType.SCHOOL
+            R.id.btnTypeWork -> ZoneType.WORK
+            else -> ZoneType.OTHER
+        }
+
         val existingId = editing?.id ?: System.currentTimeMillis()
         val zone = Zone(
             id = existingId, name = name,
             address = binding.edtAddress.text?.toString()?.trim().orEmpty(),
             latitude = center.latitude, longitude = center.longitude,
-            type = ZoneType.OTHER, radiusMeters = radius,
+            type = zoneType, radiusMeters = radius,
             onEnter = binding.switchEnter.isChecked, onLeave = binding.switchLeave.isChecked,
             status = if (binding.radioDangerous.isChecked) ZoneStatus.DANGEROUS else ZoneStatus.SAFE,
             createdAt = editing?.createdAt ?: System.currentTimeMillis()

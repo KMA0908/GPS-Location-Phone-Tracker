@@ -22,16 +22,20 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, MainViewModel>() {
     override fun setupViews(savedInstanceState: Bundle?) = with(binding) {
         navHome.setOnClickListener { updateSelectedItem(it.id) }
         navMap.setOnClickListener { updateSelectedItem(it.id) }
+        navLocation.setOnClickListener {
+            viewModel.openMap()
+        }
         navShield.setOnClickListener { updateSelectedItem(it.id) }
         navProfile.setOnClickListener { updateSelectedItem(it.id) }
 
         btnNotifications.setOnClickListener { navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.Notifications) }
+
         viewZone.root.setOnClickListener { navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.ZoneAlerts) }
         viewMyZones.root.setOnClickListener { navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.MyZones) }
         navShield.setOnClickListener { navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.ZoneAlerts) }
-        
-        navLocation.setOnClickListener {
-            viewModel.openMap()
+
+        viewFriend.root.setOnClickListener {
+            viewModel.openViewFriends()
         }
 
         phone.root.setOnClickListener {

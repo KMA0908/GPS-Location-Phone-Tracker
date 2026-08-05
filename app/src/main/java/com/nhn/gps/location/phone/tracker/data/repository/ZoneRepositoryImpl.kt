@@ -10,8 +10,8 @@ import com.nhn.gps.location.phone.tracker.data.model.ZoneType
 import com.nhn.gps.location.phone.tracker.data.notification.ZoneNotificationManager
 import dagger.Lazy
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.json.JSONArray
@@ -33,81 +33,115 @@ class ZoneRepositoryImpl @Inject constructor(
         val current = decodeZones(preferences.zonesJson.first()).toMutableList()
         val index = current.indexOfFirst { it.id == zone.id }
         if (index >= 0) current[index] = zone else current += zone
-        preferences.saveZoneData(encodeZones(current), preferences.zoneAlertsJson.first(), preferences.zoneStatesJson.first())
+        preferences.setZonesJson(encodeZones(current))
     }
 
     override suspend fun delete(zoneId: Long) = mutex.withLock {
-        val zones = decodeZones(preferences.zonesJson.first()).filterNot { it.id == zoneId }
-        val states = decodeStates(preferences.zoneStatesJson.first()).toMutableMap().also { stateMap ->
-            stateMap.keys.filter { key -> key.substringAfterLast(':') == zoneId.toString() }.forEach(stateMap::remove)
+        val currentZones = decodeZones(preferences.zonesJson.first())
+        val filteredZones = currentZones.filterNot { it.id == zoneId }
+        
+        if (currentZones.size != filteredZones.size) {
+            preferences.setZonesJson(encodeZones(filteredZones))
+            
+            val states = decodeStates(preferences.zoneStatesJson.first()).toMutableMap()
+            val keysToRemove = states.keys.filter { it.endsWith(":$zoneId") }
+            if (keysToRemove.isNotEmpty()) {
+                keysToRemove.forEach { states.remove(it) }
+                preferences.setZoneStatesJson(encodeStates(states))
+            }
         }
-        preferences.saveZoneData(encodeZones(zones), preferences.zoneAlertsJson.first(), encodeStates(states))
     }
 
     override suspend fun clearAlerts() = mutex.withLock {
-        preferences.saveZoneData(preferences.zonesJson.first(), "[]", preferences.zoneStatesJson.first())
+        preferences.setZoneAlertsJson("[]")
     }
 
     override suspend fun processLocation(location: LatLng, subjectId: String, subjectName: String) = mutex.withLock {
         val zones = decodeZones(preferences.zonesJson.first())
-        if (zones.isEmpty()) return
+        if (zones.isEmpty()) return@withLock
+        
         val states = decodeStates(preferences.zoneStatesJson.first()).toMutableMap()
         val alerts = decodeAlerts(preferences.zoneAlertsJson.first()).toMutableList()
         var changed = false
+        var alertsChanged = false
+
         zones.forEach { zone ->
-            val inside = SphericalUtil.computeDistanceBetween(
-                location,
-                LatLng(zone.latitude, zone.longitude)
-            ) <= zone.radiusMeters
+            val distance = SphericalUtil.computeDistanceBetween(location, LatLng(zone.latitude, zone.longitude))
+            val inside = distance <= zone.radiusMeters
             val key = "$subjectId:${zone.id}"
             val previous = states[key]
-            states[key] = inside
-            if (previous == null || previous == inside) return@forEach
-            val isEnter = inside
-            if ((isEnter && !zone.onEnter) || (!isEnter && !zone.onLeave)) return@forEach
-            val alert = ZoneAlert(
-                id = System.currentTimeMillis(),
-                zoneId = zone.id,
-                zoneName = zone.name,
-                isEnter = isEnter,
-                status = zone.status,
-                time = System.currentTimeMillis(),
-                latitude = location.latitude,
-                longitude = location.longitude,
-                userName = subjectName,
-            )
-            alerts.add(0, alert)
-            changed = true
-            notificationManager.get().notify(alert)
+
+            if (previous != inside) {
+                states[key] = inside
+                changed = true
+                
+                // Only alert if we had a previous known state (avoid alert on first detection)
+                if (previous != null) {
+                    val isEnter = inside
+                    if ((isEnter && zone.onEnter) || (!isEnter && zone.onLeave)) {
+                        val alert = ZoneAlert(
+                            id = System.currentTimeMillis(),
+                            zoneId = zone.id,
+                            zoneName = zone.name,
+                            isEnter = isEnter,
+                            status = zone.status,
+                            time = System.currentTimeMillis(),
+                            latitude = location.latitude,
+                            longitude = location.longitude,
+                            userName = subjectName,
+                        )
+                        alerts.add(0, alert)
+                        alertsChanged = true
+                        notificationManager.get().notify(alert)
+                    }
+                }
+            }
         }
-        if (changed || states.isNotEmpty()) {
-            preferences.saveZoneData(encodeZones(zones), encodeAlerts(alerts.take(MAX_ALERTS)), encodeStates(states))
+
+        if (changed) {
+            preferences.setZoneStatesJson(encodeStates(states))
+        }
+        if (alertsChanged) {
+            preferences.setZoneAlertsJson(encodeAlerts(alerts.take(MAX_ALERTS)))
         }
     }
 
     private fun encodeZones(items: List<Zone>) = JSONArray().apply {
         items.forEach { zone ->
             put(JSONObject().apply {
-                put("id", zone.id); put("name", zone.name); put("address", zone.address)
-                put("latitude", zone.latitude); put("longitude", zone.longitude)
-                put("type", zone.type.code); put("radius", zone.radiusMeters)
-                put("onEnter", zone.onEnter); put("onLeave", zone.onLeave)
-                put("status", zone.status.code); put("createdAt", zone.createdAt)
+                put("id", zone.id)
+                put("name", zone.name)
+                put("address", zone.address)
+                put("latitude", zone.latitude)
+                put("longitude", zone.longitude)
+                put("type", zone.type.code)
+                put("radius", zone.radiusMeters)
+                put("onEnter", zone.onEnter)
+                put("onLeave", zone.onLeave)
+                put("status", zone.status.code)
+                put("createdAt", zone.createdAt)
             })
         }
     }.toString()
 
     private fun decodeZones(raw: String): List<Zone> = runCatching {
+        if (raw.isBlank() || raw == "[]") return emptyList()
         val array = JSONArray(raw)
         buildList {
             for (i in 0 until array.length()) {
                 val item = array.getJSONObject(i)
                 add(Zone(
-                    id = item.optLong("id"), name = item.optString("name"), address = item.optString("address"),
-                    latitude = item.optDouble("latitude"), longitude = item.optDouble("longitude"),
-                    type = ZoneType.fromCode(item.optInt("type")), radiusMeters = item.optInt("radius", 100),
-                    onEnter = item.optBoolean("onEnter", true), onLeave = item.optBoolean("onLeave", true),
-                    status = ZoneStatus.fromCode(item.optInt("status")), createdAt = item.optLong("createdAt")
+                    id = item.optLong("id"),
+                    name = item.optString("name"),
+                    address = item.optString("address"),
+                    latitude = item.optDouble("latitude"),
+                    longitude = item.optDouble("longitude"),
+                    type = ZoneType.fromCode(item.optInt("type")),
+                    radiusMeters = item.optInt("radius", 100),
+                    onEnter = item.optBoolean("onEnter", true),
+                    onLeave = item.optBoolean("onLeave", true),
+                    status = ZoneStatus.fromCode(item.optInt("status")),
+                    createdAt = item.optLong("createdAt")
                 ))
             }
         }
@@ -116,22 +150,34 @@ class ZoneRepositoryImpl @Inject constructor(
     private fun encodeAlerts(items: List<ZoneAlert>) = JSONArray().apply {
         items.forEach { alert ->
             put(JSONObject().apply {
-                put("id", alert.id); put("zoneId", alert.zoneId); put("zoneName", alert.zoneName)
-                put("isEnter", alert.isEnter); put("status", alert.status.code); put("time", alert.time)
-                put("latitude", alert.latitude); put("longitude", alert.longitude); put("userName", alert.userName)
+                put("id", alert.id)
+                put("zoneId", alert.zoneId)
+                put("zoneName", alert.zoneName)
+                put("isEnter", alert.isEnter)
+                put("status", alert.status.code)
+                put("time", alert.time)
+                put("latitude", alert.latitude)
+                put("longitude", alert.longitude)
+                put("userName", alert.userName)
             })
         }
     }.toString()
 
     private fun decodeAlerts(raw: String): List<ZoneAlert> = runCatching {
+        if (raw.isBlank() || raw == "[]") return emptyList()
         val array = JSONArray(raw)
         buildList {
             for (i in 0 until array.length()) {
                 val item = array.getJSONObject(i)
                 add(ZoneAlert(
-                    id = item.optLong("id"), zoneId = item.optLong("zoneId"), zoneName = item.optString("zoneName"),
-                    isEnter = item.optBoolean("isEnter"), status = ZoneStatus.fromCode(item.optInt("status")),
-                    time = item.optLong("time"), latitude = item.optDouble("latitude"), longitude = item.optDouble("longitude"),
+                    id = item.optLong("id"),
+                    zoneId = item.optLong("zoneId"),
+                    zoneName = item.optString("zoneName"),
+                    isEnter = item.optBoolean("isEnter"),
+                    status = ZoneStatus.fromCode(item.optInt("status")),
+                    time = item.optLong("time"),
+                    latitude = item.optDouble("latitude"),
+                    longitude = item.optDouble("longitude"),
                     userName = item.optString("userName", "You")
                 ))
             }
@@ -139,10 +185,18 @@ class ZoneRepositoryImpl @Inject constructor(
     }.getOrDefault(emptyList())
 
     private fun encodeStates(states: Map<String, Boolean>) = JSONObject(states).toString()
+    
     private fun decodeStates(raw: String): Map<String, Boolean> = runCatching {
+        if (raw.isBlank() || raw == "{}") return emptyMap()
         val objectJson = JSONObject(raw)
-        buildMap { objectJson.keys().forEach { key -> put(key, objectJson.optBoolean(key)) } }
+        buildMap {
+            objectJson.keys().forEach { key ->
+                put(key, objectJson.optBoolean(key))
+            }
+        }
     }.getOrDefault(emptyMap())
 
-    private companion object { const val MAX_ALERTS = 100 }
+    private companion object {
+        const val MAX_ALERTS = 100
+    }
 }
