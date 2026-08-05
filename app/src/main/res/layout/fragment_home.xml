@@ -59,6 +59,7 @@
                 </LinearLayout>
 
                 <ImageButton
+                    android:id="@+id/btnPremium"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_card"
@@ -66,6 +67,7 @@
                     android:src="@drawable/ic_crown_home"/>
 
                 <ImageButton
+                    android:id="@+id/btnNotifications"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="10dp"

@@ -11,4 +11,9 @@ sealed class AppDestination(val route: String) {
     data object Tracking : AppDestination("tracking")
     data object Settings : AppDestination("settings")
     data object PhoneLocator : AppDestination("phone_locator")
+    data object MyZones : AppDestination("my_zones")
+    data object CreateZone : AppDestination("create_zone")
+    data object ZoneDetail : AppDestination("zone_detail")
+    data object ZoneAlerts : AppDestination("zone_alerts")
+    data object Notifications : AppDestination("notifications")
 }

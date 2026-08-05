@@ -189,4 +189,14 @@
         android:id="@+id/friendBottomSheetLayout"
         layout="@layout/bottom_sheet_friend" />
 
+    <include
+        android:id="@+id/directionTopPanel"
+        android:visibility="gone"
+        layout="@layout/direction_top_panel" />
+
+    <include
+        android:id="@+id/directionBottomPanel"
+        android:visibility="gone"
+        layout="@layout/direction_bottom_panel" />
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

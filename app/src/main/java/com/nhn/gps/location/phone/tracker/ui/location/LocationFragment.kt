@@ -1,11 +1,15 @@
 package com.nhn.gps.location.phone.tracker.ui.location
 
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -21,10 +25,15 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.GroundOverlay
 import com.google.android.gms.maps.model.GroundOverlayOptions
+import com.google.android.gms.maps.model.JointType
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.Polyline
+import com.google.android.gms.maps.model.PolylineOptions
+import com.google.android.gms.maps.model.RoundCap
+import com.google.maps.android.SphericalUtil
 import com.nhn.gps.location.phone.tracker.R
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
 import com.nhn.gps.location.phone.tracker.databinding.FragmentLocationBinding
@@ -59,6 +68,8 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     private val BASE_CONE_HEIGHT = 500.0 // Chiều dài cơ sở tại zoom 15
 
     private var selfMarker: Marker? = null
+    private var selectedDestinationMarker: Marker? = null
+    private var routeLine: Polyline? = null
     private var directionOverlay: GroundOverlay? = null
     private val friendMarkers = mutableMapOf<String, Marker>()
     private val friendAvatars = mutableMapOf<String, String>()
@@ -71,6 +82,9 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     private var isCompassEnabled = false
     private var hasAutoZoomed = false
     private var pendingDestination: AppDestination? = null
+    private var activeRouteName: String? = null
+    private var activeRoutePosition: LatLng? = null
+    private var activeRouteFriendId: String? = null
 
     override fun createBinding(
         inflater: LayoutInflater,
@@ -83,7 +97,11 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         mapFragment.getMapAsync(this@LocationFragment)
 
         cardBack.setOnClickListener {
-            handleToolbarBack()
+            if (activeRoutePosition != null) {
+                clearRoute()
+            } else {
+                handleToolbarBack()
+            }
         }
 
         itemLocation.root.setOnClickListener {
@@ -107,6 +125,13 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         }
 
         setupFriendBottomSheet()
+        setupDirectionPanel()
+    }
+
+    private fun setupDirectionPanel() = with(binding) {
+        directionBottomPanel.btnStartNavigation.setOnClickListener {
+            startExternalNavigation()
+        }
     }
 
     private fun setupFriendBottomSheet() = with(binding) {
@@ -220,6 +245,11 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                         DataPackage(self, friends, avatar, friendsLoaded)
                     }.collectLatest { data ->
                         updateMarkersWithAvatars(data.self, data.friends, data.avatar)
+                        activeRoutePosition?.let { destination ->
+                            data.self?.let { origin ->
+                                updateRouteLine(origin, destination, fitBounds = false)
+                            }
+                        }
                         if (!hasAutoZoomed && data.self != null && data.friendsLoaded) {
                             centerCameraOnAll()
                             hasAutoZoomed = true
@@ -355,11 +385,17 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                 )
                 if (marker != null) {
                     friendMarkers[friend.id] = marker
+                    marker.tag = friend
                     updateMarkerIcon(marker, friend.avatarUrl)
                 }
             } else {
                 existingMarker.position = position
                 existingMarker.title = friend.name
+                existingMarker.tag = friend
+                if (activeRouteFriendId == friend.id) {
+                    activeRoutePosition = position
+                    selectedDestinationMarker?.position = position
+                }
                 existingMarker.rotation = 0f
                 existingMarker.isFlat = false
                 if (friendAvatars[friend.id] != friend.avatarUrl) {
@@ -468,6 +504,22 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
 
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
+
+        map.setOnMarkerClickListener { marker ->
+            (marker.tag as? com.nhn.gps.location.phone.tracker.data.model.FriendLocation)?.let {
+                showRouteTo(
+                    it.name.ifBlank { "Friend location" },
+                    LatLng(it.latitude, it.longitude),
+                    friendId = it.id
+                )
+                true
+            } ?: false
+        }
+
+        // Long press gives the user a destination even when no friend marker is available.
+        map.setOnMapLongClickListener { location ->
+            showRouteTo("Selected location", location)
+        }
         
         map.setOnCameraIdleListener {
             if (isCompassEnabled) {
@@ -527,8 +579,128 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         bottomSheetCallback = null
         super.onDestroyView()
         selfMarker = null
+        selectedDestinationMarker?.remove()
+        selectedDestinationMarker = null
+        routeLine?.remove()
+        routeLine = null
+        activeRouteName = null
+        activeRoutePosition = null
+        activeRouteFriendId = null
         directionOverlay = null
         friendMarkers.clear()
+    }
+
+    private fun showRouteTo(name: String, destination: LatLng, friendId: String? = null) {
+        val origin = viewModel.selfLocation.value
+        if (origin == null) {
+            Toast.makeText(requireContext(), "Đang lấy vị trí hiện tại…", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val distanceMeters = SphericalUtil.computeDistanceBetween(origin, destination)
+        if (distanceMeters < 1.0) {
+            Toast.makeText(requireContext(), "Điểm đến trùng với vị trí hiện tại", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        activeRouteName = name
+        activeRoutePosition = destination
+        activeRouteFriendId = friendId
+        selectedDestinationMarker?.remove()
+        selectedDestinationMarker = googleMap?.addMarker(
+            MarkerOptions()
+                .position(destination)
+                .title(name)
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_marker_red))
+                .anchor(0.5f, 1f)
+                .zIndex(11f)
+        )
+
+        updateRouteLine(origin, destination, fitBounds = true)
+        showDirectionPanels(distanceMeters)
+        bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+    }
+
+    private fun updateRouteLine(origin: LatLng, destination: LatLng, fitBounds: Boolean) {
+        val map = googleMap ?: return
+        routeLine?.remove()
+
+        routeLine = map.addPolyline(
+            PolylineOptions()
+                .add(origin, destination)
+                .color(Color.rgb(35, 202, 184))
+                .width(9f)
+                .jointType(JointType.ROUND)
+                .startCap(RoundCap())
+                .endCap(RoundCap())
+                .geodesic(false)
+                .zIndex(4f)
+        )
+
+        if (fitBounds) {
+            val bounds = LatLngBounds.builder()
+                .include(origin)
+                .include(destination)
+                .build()
+            map.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 180))
+        }
+    }
+
+    private fun showDirectionPanels(distanceMeters: Double) = with(binding) {
+        val distanceKm = distanceMeters / 1000.0
+        val minutes = kotlin.math.max(1, kotlin.math.ceil(distanceMeters / 350.0).toInt())
+        val distanceText = if (distanceKm < 10) {
+            String.format(java.util.Locale.getDefault(), "%.1f km", distanceKm)
+        } else {
+            String.format(java.util.Locale.getDefault(), "%.0f km", distanceKm)
+        }
+        val routeText = "$minutes min ($distanceText)"
+
+        directionTopPanel.tvCurrentLocation.text = "My location"
+        directionTopPanel.tvDestination.text = activeRouteName ?: "Selected location"
+        directionBottomPanel.tvRouteTime.text = routeText
+        directionBottomPanel.tvTraffic.text = "Fastest route, light traffic"
+        directionTopPanel.root.visibility = View.VISIBLE
+        directionBottomPanel.root.visibility = View.VISIBLE
+
+        layoutTools.visibility = View.GONE
+        cardSearch.visibility = View.GONE
+        txtTitle.text = "Directions"
+    }
+
+    private fun clearRoute() = with(binding) {
+        routeLine?.remove()
+        routeLine = null
+        selectedDestinationMarker?.remove()
+        selectedDestinationMarker = null
+        activeRouteName = null
+        activeRoutePosition = null
+        activeRouteFriendId = null
+        directionTopPanel.root.visibility = View.GONE
+        directionBottomPanel.root.visibility = View.GONE
+        layoutTools.visibility = View.VISIBLE
+        cardSearch.visibility = View.VISIBLE
+        txtTitle.text = getString(R.string.realtime_tracker)
+    }
+
+    private fun startExternalNavigation() {
+        val destination = activeRoutePosition ?: return
+        val navigationUri = Uri.parse(
+            "google.navigation:q=${destination.latitude},${destination.longitude}&mode=d"
+        )
+        val googleMapsIntent = Intent(Intent.ACTION_VIEW, navigationUri).apply {
+            setPackage("com.google.android.apps.maps")
+        }
+        try {
+            startActivity(googleMapsIntent)
+        } catch (_: Exception) {
+            startActivity(
+                Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse("geo:${destination.latitude},${destination.longitude}")
+                )
+            )
+        }
     }
 
     companion object {

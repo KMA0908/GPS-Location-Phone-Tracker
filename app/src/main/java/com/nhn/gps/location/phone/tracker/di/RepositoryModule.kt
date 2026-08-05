@@ -10,6 +10,8 @@ import com.nhn.gps.location.phone.tracker.data.repository.PhoneLocatorRepository
 import com.nhn.gps.location.phone.tracker.data.repository.PhoneLocatorRepositoryImpl
 import com.nhn.gps.location.phone.tracker.data.repository.UserRepository
 import com.nhn.gps.location.phone.tracker.data.repository.UserRepositoryImpl
+import com.nhn.gps.location.phone.tracker.data.repository.ZoneRepository
+import com.nhn.gps.location.phone.tracker.data.repository.ZoneRepositoryImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -49,4 +51,10 @@ abstract class RepositoryModule {
     abstract fun bindUserRepository(
         userRepositoryImpl: UserRepositoryImpl
     ): UserRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindZoneRepository(
+        zoneRepositoryImpl: ZoneRepositoryImpl
+    ): ZoneRepository
 }

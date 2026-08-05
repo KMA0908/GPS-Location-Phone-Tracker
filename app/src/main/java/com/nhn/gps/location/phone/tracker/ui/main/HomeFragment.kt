@@ -24,6 +24,11 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, MainViewModel>() {
         navMap.setOnClickListener { updateSelectedItem(it.id) }
         navShield.setOnClickListener { updateSelectedItem(it.id) }
         navProfile.setOnClickListener { updateSelectedItem(it.id) }
+
+        btnNotifications.setOnClickListener { navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.Notifications) }
+        viewZone.root.setOnClickListener { navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.ZoneAlerts) }
+        viewMyZones.root.setOnClickListener { navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.MyZones) }
+        navShield.setOnClickListener { navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.ZoneAlerts) }
         
         navLocation.setOnClickListener {
             viewModel.openMap()

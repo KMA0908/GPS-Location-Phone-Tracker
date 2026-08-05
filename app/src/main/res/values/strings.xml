@@ -72,4 +72,21 @@
     <string name="updating">Updating...</string>
     <string name="carrier">Carrier</string>
     <string name="mobile">Mobile</string>
+
+    <string name="device_location">Device location</string>
+    <string name="allow_access_to_your_location">Allow access to your location</string>
+    <string name="camera">Camera</string>
+    <string name="allow_camera_access">Allow camera access</string>
+    <string name="notification">Notification</string>
+    <string name="allow_notification_access">Allow notification access</string>
+
+    <string name="no_zones_yet">No zones yet</string>
+    <string name="create_a_zone_to_get_alerts_when_you_or_your_loved_ones_enter_or_leave">Create a zone to get alerts when you or your loved ones enter or leave</string>
+    <string name="create_zone">Create zone</string>
+    <string name="my_zones">My Zones</string>
+    <string name="safe">Safe</string>
+    <string name="dangerous">Dangerous</string>
+    <string name="radius">Radius</string>
+    <string name="status">Status</string>
+    <string name="radius_m">%1$d m</string>
 </resources>
