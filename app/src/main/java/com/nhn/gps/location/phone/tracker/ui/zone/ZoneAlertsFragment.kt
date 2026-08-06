@@ -4,6 +4,9 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
+import android.content.Context
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -21,6 +24,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
@@ -52,6 +56,15 @@ class ZoneAlertsFragment : BaseFragment<FragmentZoneAlertsLocalBinding, MainView
         editSearch.doAfterTextChanged { 
             searchQuery = it?.toString().orEmpty()
             render()
+        }
+
+        editSearch.setOnEditorActionListener { v, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                imm.hideSoftInputFromWindow(v.windowToken, 0)
+                v.clearFocus()
+                true
+            } else false
         }
         
         setFilter(Filter.ALL)
@@ -94,9 +107,39 @@ class ZoneAlertsFragment : BaseFragment<FragmentZoneAlertsLocalBinding, MainView
             }
         }
 
-        adapter.submitList(filtered)
-        binding.emptyState.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
-        binding.recyclerAlerts.visibility = if (filtered.isEmpty()) View.GONE else View.VISIBLE
+        if (filtered.isEmpty()) {
+            binding.emptyState.visibility = View.VISIBLE
+            binding.recyclerAlerts.visibility = View.GONE
+            return
+        }
+
+        binding.emptyState.visibility = View.GONE
+        binding.recyclerAlerts.visibility = View.VISIBLE
+
+        val grouped = filtered.sortedByDescending { it.time }.groupBy { alert ->
+            val calendar = Calendar.getInstance()
+            calendar.timeInMillis = alert.time
+            val today = Calendar.getInstance()
+            val yesterday = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }
+            
+            when {
+                isSameDay(calendar, today) -> "Today"
+                isSameDay(calendar, yesterday) -> "Yesterday"
+                else -> SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(alert.time))
+            }
+        }
+
+        val listWithHeaders = mutableListOf<Any>()
+        grouped.forEach { (header, alerts) ->
+            listWithHeaders.add(header)
+            listWithHeaders.addAll(alerts)
+        }
+        adapter.submitList(listWithHeaders)
+    }
+
+    private fun isSameDay(cal1: Calendar, cal2: Calendar): Boolean {
+        return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
+               cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
     }
 
     private fun confirmClear() {
@@ -121,13 +164,8 @@ class ZoneAlertsFragment : BaseFragment<FragmentZoneAlertsLocalBinding, MainView
     }
 
     private fun showDetails(alert: ZoneAlert) {
-        val action = if (alert.isEnter) "entered" else "left"
-        val time = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault()).format(Date(alert.time))
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle("Alert detail")
-            .setMessage("${alert.userName} $action ${alert.zoneName}\n${alert.status.label} zone\n$time")
-            .setPositiveButton("OK", null)
-            .show()
+        AlertDetailState.selectedAlert = alert
+        navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.AlertDetail)
     }
 
     companion object { fun newInstance() = ZoneAlertsFragment() }
