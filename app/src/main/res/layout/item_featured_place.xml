@@ -4,15 +4,15 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="16dp"
-    android:layout_marginTop="16dp"
-    app:cardCornerRadius="24dp"
+    android:layout_marginHorizontal="@dimen/d_16"
+    android:layout_marginTop="@dimen/d_16"
+    app:cardCornerRadius="@dimen/d_24"
     app:cardElevation="0dp"
     app:strokeWidth="0dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="280dp">
+        android:layout_height="@dimen/d_280">
 
         <ImageView
             android:id="@+id/ivFeatured"
@@ -23,7 +23,7 @@
 
         <View
             android:layout_width="match_parent"
-            android:layout_height="140dp"
+            android:layout_height="@dimen/d_140"
             android:background="@drawable/bg_gradient"
             app:layout_constraintBottom_toBottomOf="parent" />
 
@@ -31,9 +31,9 @@
             android:id="@+id/btnFavorite"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:background=""
-            android:padding="8dp"
+            android:layout_margin="@dimen/d_16"
+            android:background="@android:color/transparent"
+            android:padding="@dimen/d_8"
             android:src="@drawable/ic_love_white"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -42,10 +42,10 @@
             android:id="@+id/tvFeaturedName"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginBottom="8dp"
+            android:layout_marginHorizontal="@dimen/d_16"
+            android:layout_marginBottom="@dimen/d_8"
             android:textColor="@color/white"
-            android:textSize="22sp"
+            android:textSize="@dimen/sp_22"
             android:textStyle="bold"
             app:layout_constraintBottom_toTopOf="@id/tvFeaturedLocation"
             app:layout_constraintEnd_toEndOf="parent"
@@ -56,7 +56,7 @@
             android:id="@+id/ivLoc"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
+            android:layout_marginBottom="@dimen/d_16"
             android:src="@drawable/ic_star_famous"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="@id/tvFeaturedName" />
@@ -65,9 +65,9 @@
             android:id="@+id/tvFeaturedLocation"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
+            android:layout_marginStart="@dimen/d_4"
             android:textColor="@color/white"
-            android:textSize="14sp"
+            android:textSize="@dimen/sp_14"
             app:layout_constraintBottom_toBottomOf="@id/ivLoc"
             app:layout_constraintStart_toEndOf="@id/ivLoc"
             app:layout_constraintTop_toTopOf="@id/ivLoc"
@@ -78,10 +78,10 @@
             style="@android:style/Widget.Material.RatingBar.Small"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
+            android:layout_marginStart="@dimen/d_16"
             android:isIndicator="true"
             android:numStars="1"
-            android:progressTint="#FFD700"
+            android:progressTint="@color/color_ffd700"
             android:rating="1"
             app:layout_constraintBottom_toBottomOf="@id/tvFeaturedLocation"
             app:layout_constraintStart_toEndOf="@id/tvFeaturedLocation"
@@ -91,9 +91,9 @@
             android:id="@+id/tvFeaturedRating"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
+            android:layout_marginStart="@dimen/d_4"
             android:textColor="@color/white"
-            android:textSize="14sp"
+            android:textSize="@dimen/sp_14"
             android:textStyle="bold"
             app:layout_constraintBottom_toBottomOf="@id/featuredRatingBar"
             app:layout_constraintStart_toEndOf="@id/featuredRatingBar"
@@ -103,10 +103,10 @@
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="140dp"
+            android:layout_marginStart="@dimen/d_140"
             android:gravity="center_vertical"
             android:background="@drawable/bg_distance"
-            android:padding="4dp"
+            android:padding="@dimen/d_4"
             app:layout_constraintBottom_toBottomOf="@id/tvFeaturedRating"
             app:layout_constraintStart_toEndOf="@id/tvFeaturedRating"
             app:layout_constraintTop_toTopOf="@id/tvFeaturedRating">
@@ -122,9 +122,9 @@
                 android:id="@+id/tvKm"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="120km"
+                tools:text="120km"
                 android:textColor="@color/white"
-                android:textSize="@dimen/d_14"/>
+                android:textSize="@dimen/sp_14"/>
 
         </LinearLayout>
 

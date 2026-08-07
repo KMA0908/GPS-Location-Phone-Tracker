@@ -3,8 +3,13 @@ package com.nhn.gps.location.phone.tracker.ui.explore
 import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
+import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.nhn.gps.location.phone.tracker.R
@@ -14,19 +19,39 @@ import com.nhn.gps.location.phone.tracker.databinding.FragmentFamousPlaceListBin
 import com.nhn.gps.location.phone.tracker.databinding.ItemCategoryFilterBinding
 import com.nhn.gps.location.phone.tracker.ui.main.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+
+import java.util.Locale
 
 @AndroidEntryPoint
-class FamousPlaceFragment : BaseFragment<FragmentFamousPlaceListBinding, MainViewModel>() {
+class FamousPlaceFragment : BaseFragment<FragmentFamousPlaceListBinding, FamousPlaceViewModel>() {
 
-    override val viewModel: MainViewModel by viewModels({ requireActivity() })
+    override val viewModel: FamousPlaceViewModel by viewModels()
+    private val mainViewModel: MainViewModel by viewModels({ requireActivity() })
+
     private val trendingAdapter by lazy {
         FamousPlaceAdapter(
-            onClick = { navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.PlaceDetail) },
-            onFavoriteClick = {}
+            onClick = { viewModel.onPlaceClicked(it) },
+            onFavoriteClick = {},
+            onBindPhoto = { item, imageView ->
+                if (item.photoMetadata != null) {
+                    viewLifecycleOwner.lifecycleScope.launch {
+                        val uri = viewModel.getPhotoUri(item.photoMetadata)
+                        if (uri != null) {
+                            com.bumptech.glide.Glide.with(imageView)
+                                .load(uri)
+                                .placeholder(R.drawable.ic_paris)
+                                .error(R.drawable.ic_paris)
+                                .centerCrop()
+                                .into(imageView)
+                        }
+                    }
+                }
+            }
         )
     }
     
-    private var selectedCategoryIndex = 0
     private val categories = listOf("All", "Famous", "Beach", "City", "Nature")
 
     override fun createBinding(
@@ -36,8 +61,8 @@ class FamousPlaceFragment : BaseFragment<FragmentFamousPlaceListBinding, MainVie
 
     override fun setupViews(savedInstanceState: Bundle?) = with(binding) {
         setupHeader()
+        setupSearch()
         setupCategories()
-        setupFeaturedCard()
         setupTrendingList()
         setupBottomNav()
         
@@ -48,53 +73,132 @@ class FamousPlaceFragment : BaseFragment<FragmentFamousPlaceListBinding, MainVie
 
     private fun setupHeader() = with(binding.header) {
         tvTitle.text = "Famous place"
-        imgRight.setImageResource(R.drawable.ic_famous_home)
+        imgRight.setImageResource(R.drawable.ic_love)
         btnBack.setOnClickListener { navigationManager.navigateBack() }
+    }
+
+    private fun setupSearch() = with(binding) {
+        val etSearch = root.findViewById<android.widget.EditText>(R.id.etSearch)
+        etSearch?.addTextChangedListener {
+            viewModel.onSearchQueryChanged(it.toString())
+        }
     }
 
     private fun setupCategories() = with(binding.rvCategories) {
         layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
-        val categoryAdapter = CategoryAdapter(categories) { index ->
-            selectedCategoryIndex = index
-            adapter?.notifyDataSetChanged()
+        adapter = CategoryAdapter(categories) { category ->
+            viewModel.onCategorySelected(category)
         }
-        adapter = categoryAdapter
     }
 
-    private fun setupFeaturedCard() = with(binding.featuredCard) {
-        ivFeatured.setImageResource(R.drawable.ic_paris)
-        tvFeaturedName.text = "Bali Island"
-        tvFeaturedLocation.text = "Indonesia"
-        tvFeaturedRating.text = "4.9"
+    private fun setupFeaturedCard(place: FamousPlaceModel?) = with(binding.featuredCard) {
+        if (place == null) {
+            root.visibility = android.view.View.GONE
+            return@with
+        }
+        root.visibility = android.view.View.VISIBLE
+        ivFeatured.setImageResource(place.imageRes.let { if (it == 0) R.drawable.ic_paris else it })
+        tvFeaturedName.text = place.name
+        tvFeaturedLocation.text = place.location
+        tvFeaturedRating.text = String.format(Locale.getDefault(), "%.1f", place.rating)
         
         root.setOnClickListener {
-            navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.PlaceDetail)
+            viewModel.onPlaceClicked(place)
         }
     }
 
     private fun setupTrendingList() = with(binding.rvTrending) {
         layoutManager = LinearLayoutManager(context)
         adapter = trendingAdapter
-        trendingAdapter.submitList(getMockData())
+    }
+
+    override fun observeData() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel.uiState.collectLatest { state ->
+                        handleUiState(state)
+                    }
+                }
+                launch {
+                    viewModel.effect.collectLatest { effect ->
+                        handleEffect(effect)
+                    }
+                }
+                launch {
+                    navigationManager.currentDestination.collectLatest { destination ->
+                        val selectedId = when (destination) {
+                            is com.nhn.gps.location.phone.tracker.navigation.AppDestination.Home -> R.id.navHome
+                            is com.nhn.gps.location.phone.tracker.navigation.AppDestination.FamousPlace -> R.id.navMap
+                            is com.nhn.gps.location.phone.tracker.navigation.AppDestination.ZoneAlerts -> R.id.navShield
+                            else -> null
+                        }
+                        selectedId?.let { updateSelectedItem(it) }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun updateSelectedItem(selectedId: Int) = with(binding.bottomNavigationCustom) {
+        val navItems = mapOf(
+            R.id.navHome to imgHome,
+            R.id.navMap to imgMap,
+            R.id.navShield to imgShield,
+            R.id.navProfile to imgProfile
+        )
+
+        navItems.forEach { (id, imageView) ->
+            if (id == selectedId) {
+                imageView.setBackgroundResource(R.drawable.bg_bottom_nav_selected)
+            } else {
+                imageView.background = null
+            }
+        }
+    }
+
+    private fun handleUiState(state: FamousPlaceUiState) = with(binding) {
+        setupFeaturedCard(state.featuredPlace)
+        trendingAdapter.submitList(state.trendingPlaces)
+        rvCategories.adapter?.notifyDataSetChanged()
+        
+        progressBar.visibility = if (state.isLoading) android.view.View.VISIBLE else android.view.View.GONE
+
+        state.error?.let {
+            android.widget.Toast.makeText(requireContext(), it, android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun handleEffect(effect: FamousPlaceEffect) {
+        when (effect) {
+            is FamousPlaceEffect.OpenPlaceDetail -> {
+                mainViewModel.setSelectedPlaceId(effect.placeId)
+                navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.PlaceDetail)
+            }
+        }
     }
 
     private fun setupBottomNav() = with(binding.bottomNavigationCustom) {
-        imgHome.background = null
-        imgShield.setBackgroundResource(R.drawable.bg_bottom_nav_selected)
-        
-        navHome.setOnClickListener { navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.Home) }
-        navShield.setOnClickListener { /* Current */ }
+        navHome.setOnClickListener {
+            navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.Home)
+        }
+        navMap.setOnClickListener {
+            // Already here
+        }
+        navLocation.setOnClickListener {
+            mainViewModel.openMap()
+        }
+        navShield.setOnClickListener {
+            navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.ZoneAlerts)
+        }
+        navProfile.setOnClickListener {
+            // navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.Profile)
+        }
     }
-
-    private fun getMockData() = listOf(
-        FamousPlaceModel("1", "Eiffel Tower", "Paris, France", R.drawable.ic_paris, 4.8f, 1200, 2.5, "Famous"),
-        FamousPlaceModel("2", "Colosseum", "Rome, Italy", R.drawable.ic_paris, 4.7f, 950, 5.0, "Famous"),
-        FamousPlaceModel("3", "Santorini", "Greece", R.drawable.ic_paris, 4.9f, 800, 10.2, "Beach")
-    )
 
     inner class CategoryAdapter(
         private val items: List<String>,
-        private val onItemClick: (Int) -> Unit
+        private val onItemClick: (String) -> Unit
     ) : RecyclerView.Adapter<CategoryAdapter.ViewHolder>() {
 
         inner class ViewHolder(val binding: ItemCategoryFilterBinding) : RecyclerView.ViewHolder(binding.root)
@@ -105,7 +209,7 @@ class FamousPlaceFragment : BaseFragment<FragmentFamousPlaceListBinding, MainVie
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val item = items[position]
-            val isSelected = position == selectedCategoryIndex
+            val isSelected = item == viewModel.uiState.value.selectedCategory
             
             holder.binding.tvCategoryName.text = item
             if (isSelected) {
@@ -118,7 +222,7 @@ class FamousPlaceFragment : BaseFragment<FragmentFamousPlaceListBinding, MainVie
                 holder.binding.cardCategory.strokeWidth = 1
             }
             
-            holder.binding.root.setOnClickListener { onItemClick(position) }
+            holder.binding.root.setOnClickListener { onItemClick(item) }
         }
 
         override fun getItemCount() = items.size

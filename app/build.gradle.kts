@@ -20,6 +20,9 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["appName"] = "GPS Location Phone Tracker"
+        manifestPlaceholders["MAPS_API_KEY"] = "AIzaSyAH7TC-3rHOGxrlTigvbPpOoTcCkcnkp4c"
+        resValue("string", "maps_api_key", "AIzaSyAH7TC-3rHOGxrlTigvbPpOoTcCkcnkp4c")
+        //AIzaSyAonTqpz6blR9l4zRrUNcvdTCiXygVKWcE
     }
 
     flavorDimensions += "environment"
@@ -86,6 +89,8 @@ dependencies {
 
     implementation(libs.hilt.android)
     implementation(libs.play.services.maps)
+    implementation(libs.places)
+    implementation(libs.kotlinx.coroutines.play.services)
     kapt(libs.hilt.compiler)
 
     implementation(platform(libs.firebase.bom))

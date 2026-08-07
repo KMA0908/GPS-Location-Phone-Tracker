@@ -5,14 +5,14 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingHorizontal="18dp">
+    android:paddingHorizontal="@dimen/d_18">
 
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/btnBack"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:strokeColor="#FFFFFF"
-        app:strokeWidth="1dp"
+        app:strokeColor="@color/white"
+        app:strokeWidth="@dimen/d_1"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent">
@@ -21,7 +21,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:padding="12dp"
+            android:padding="@dimen/d_12"
             android:background="@drawable/bg_card"
             android:src="@drawable/ic_back"/>
     </com.google.android.material.card.MaterialCardView>
@@ -30,9 +30,9 @@
         android:id="@+id/tvTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Famous place"
+        android:text="@string/famous_place"
         android:textStyle="bold"
-        android:textSize="20sp"
+        android:textSize="@dimen/sp_20"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -42,9 +42,9 @@
         android:id="@+id/btnRight"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:cardCornerRadius="14dp"
-        app:strokeColor="#FFFFFF"
-        app:strokeWidth="1dp"
+        app:cardCornerRadius="@dimen/d_14"
+        app:strokeColor="@color/white"
+        app:strokeWidth="@dimen/d_1"
         android:background="@drawable/bg_card"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -55,7 +55,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:padding="12dp"
+            android:padding="@dimen/d_12"
             android:background="@drawable/bg_card"
             android:src="@drawable/ic_love"/>
     </com.google.android.material.card.MaterialCardView>

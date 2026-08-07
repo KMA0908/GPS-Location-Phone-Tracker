@@ -5,11 +5,15 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import android.widget.ImageView
+import com.bumptech.glide.Glide
+import com.nhn.gps.location.phone.tracker.R
 import com.nhn.gps.location.phone.tracker.data.model.FamousPlaceModel
 import com.nhn.gps.location.phone.tracker.databinding.ItemExploreVerticalCardBinding
 
 class ExploreCardAdapter(
-    private val onClick: (FamousPlaceModel) -> Unit
+    private val onClick: (FamousPlaceModel) -> Unit,
+    private val onBindPhoto: (FamousPlaceModel, ImageView) -> Unit
 ) : ListAdapter<FamousPlaceModel, ExploreCardAdapter.ViewHolder>(DIFF_CALLBACK) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -25,13 +29,23 @@ class ExploreCardAdapter(
         holder.bind(getItem(position))
     }
 
-    inner class ViewHolder(private val binding: ItemExploreVerticalCardBinding) :
+    override fun onViewRecycled(holder: ViewHolder) {
+        super.onViewRecycled(holder)
+        Glide.with(holder.itemView.context).clear(holder.binding.ivThumbnail)
+    }
+
+    inner class ViewHolder(val binding: ItemExploreVerticalCardBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
         fun bind(item: FamousPlaceModel) = with(binding) {
             tvName.text = item.name
             tvLocation.text = item.location
-            ivThumbnail.setImageResource(item.imageRes)
+            ivThumbnail.setImageResource(R.drawable.ic_paris) // Placeholder
+            onBindPhoto(item, ivThumbnail)
+
+            tvAttribution.text = item.photoMetadata?.attributions ?: ""
+            tvAttribution.visibility = if (tvAttribution.text.isNotEmpty()) android.view.View.VISIBLE else android.view.View.GONE
+
             root.setOnClickListener { onClick(item) }
         }
     }

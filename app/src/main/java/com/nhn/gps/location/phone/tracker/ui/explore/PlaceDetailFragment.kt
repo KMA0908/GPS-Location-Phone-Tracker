@@ -1,20 +1,30 @@
 package com.nhn.gps.location.phone.tracker.ui.explore
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import com.nhn.gps.location.phone.tracker.R
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
+import com.nhn.gps.location.phone.tracker.data.model.FamousPlaceModel
 import com.nhn.gps.location.phone.tracker.databinding.FragmentPlaceDetailBinding
 import com.nhn.gps.location.phone.tracker.ui.main.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
-
-import com.nhn.gps.location.phone.tracker.R
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import java.util.Locale
 
 @AndroidEntryPoint
-class PlaceDetailFragment : BaseFragment<FragmentPlaceDetailBinding, MainViewModel>() {
+class PlaceDetailFragment : BaseFragment<FragmentPlaceDetailBinding, PlaceDetailViewModel>() {
 
-    override val viewModel: MainViewModel by viewModels({ requireActivity() })
+    override val viewModel: PlaceDetailViewModel by viewModels()
+    private val mainViewModel: MainViewModel by viewModels({ requireActivity() })
 
     override fun createBinding(
         inflater: LayoutInflater,
@@ -23,42 +33,110 @@ class PlaceDetailFragment : BaseFragment<FragmentPlaceDetailBinding, MainViewMod
 
     override fun setupViews(savedInstanceState: Bundle?) = with(binding) {
         setupHeader()
-        setupContent()
         setupActions()
         setupNearby()
         
         btnExploreNow.setOnClickListener {
-            // Action
+            navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.Explore)
+        }
+    }
+
+    override fun observeData() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    mainViewModel.selectedPlaceId.collectLatest { id ->
+                        id?.let { viewModel.loadPlaceDetail(it) }
+                    }
+                }
+                launch {
+                    viewModel.uiState.collectLatest { state ->
+                        handleUiState(state)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun handleUiState(state: PlaceDetailUiState) = with(binding) {
+        progressBar.visibility = if (state.isLoading) View.VISIBLE else View.GONE
+        
+        state.place?.let { setupContent(it) }
+        
+        state.error?.let {
+            // Show error
         }
     }
 
     private fun setupHeader() = with(binding) {
         btnBack.setOnClickListener { handleToolbarBack() }
-        tvHeaderRating.text = "4.7 (493k reviews)"
     }
 
-    private fun setupContent() = with(binding) {
-        tvPlaceName.text = "Eiffel Tower"
-        tvPlaceLocation.text = "Paris, France"
-        tvDistance.text = "120 km"
-        tvDescription.text = "The Eiffel Tower is a wrought-iron lattice tower on the Champ de Mars in Paris, France. It was named after the engineer Gustave Eiffel, whose company designed and built the tower."
+    private fun setupContent(place: FamousPlaceModel) = with(binding) {
+        tvPlaceName.text = place.name
+        tvPlaceLocation.text = place.location
+        tvDistance.text = String.format(Locale.getDefault(), "%.1f km", place.distanceKm)
+        tvHeaderRating.text = String.format(Locale.getDefault(), "%.1f (%d reviews)", place.rating, place.reviewCount)
+        
+        tvDescription.text = place.address ?: place.location
 
+        // Hero Attribution
+        tvHeroAttribution.text = place.photoMetadata?.attributions ?: ""
+        tvHeroAttribution.visibility = if (tvHeroAttribution.text.isNotEmpty()) View.VISIBLE else View.GONE
+
+        // Load Hero image
+        if (place.photoMetadata != null) {
+            viewLifecycleOwner.lifecycleScope.launch {
+                val uri = viewModel.getPhotoUri(place.photoMetadata)
+                if (uri != null) {
+                    com.bumptech.glide.Glide.with(ivHero)
+                        .load(uri)
+                        .placeholder(R.drawable.ic_paris)
+                        .error(R.drawable.ic_paris)
+                        .centerCrop()
+                        .into(ivHero)
+                }
+            }
+        }
+        
+        // Update visit info cards
         with(cardVisitTime) {
             ivInfoIcon.setImageResource(R.drawable.ic_last_seen)
-            tvInfoValue.text = "2h"
-            tvInfoLabel.text = "Visit time"
+            val status = if (place.isOpen == true) "Open" else if (place.isOpen == false) "Closed" else "Unknown"
+            tvInfoValue.text = status
+            tvInfoLabel.text = "Status"
+            tvOpenStatus.text = if (place.isOpen == true) "Open now" else status
         }
 
         with(cardHeight) {
             ivInfoIcon.setImageResource(R.drawable.ic_polygon)
-            tvInfoValue.text = "324"
-            tvInfoLabel.text = "Height"
+            tvInfoValue.text = place.category
+            tvInfoLabel.text = "Type"
         }
 
         with(cardRating) {
             ivInfoIcon.setImageResource(R.drawable.ic_famous_home)
-            tvInfoValue.text = "4.9"
+            tvInfoValue.text = String.format(Locale.getDefault(), "%.1f", place.rating)
             tvInfoLabel.text = "Rating"
+        }
+
+        // Setup Intents
+        btnDirections.root.setOnClickListener {
+            val gmmIntentUri = Uri.parse("geo:${place.latitude},${place.longitude}?q=${Uri.encode(place.name)}")
+            val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+            mapIntent.setPackage("com.google.android.apps.maps")
+            startActivity(mapIntent)
+        }
+
+        btnStreetView.root.setOnClickListener {
+            val gmmIntentUri = Uri.parse("google.streetview:cbll=${place.latitude},${place.longitude}")
+            val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+            mapIntent.setPackage("com.google.android.apps.maps")
+            startActivity(mapIntent)
+        }
+
+        btnCreateZone.root.setOnClickListener {
+            navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.CreateZone)
         }
     }
 
@@ -85,22 +163,22 @@ class PlaceDetailFragment : BaseFragment<FragmentPlaceDetailBinding, MainViewMod
         with(nearbyRestaurants) {
             ivNearbyIcon.setImageResource(R.drawable.ic_location_home)
             tvNearbyName.text = "Restaurants"
-            tvNearbyCount.text = "128 nearby"
+            tvNearbyCount.text = ""
         }
         with(nearbyHotels) {
             ivNearbyIcon.setImageResource(R.drawable.ic_home_zone)
             tvNearbyName.text = "Hotels"
-            tvNearbyCount.text = "45 nearby"
+            tvNearbyCount.text = ""
         }
         with(nearbyCafes) {
             ivNearbyIcon.setImageResource(R.drawable.ic_bag_zone)
             tvNearbyName.text = "Cafes"
-            tvNearbyCount.text = "86 nearby"
+            tvNearbyCount.text = ""
         }
         with(nearbyAtms) {
             ivNearbyIcon.setImageResource(R.drawable.ic_qr_code)
             tvNearbyName.text = "ATMs"
-            tvNearbyCount.text = "32 nearby"
+            tvNearbyCount.text = ""
         }
     }
 

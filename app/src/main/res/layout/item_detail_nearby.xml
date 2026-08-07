@@ -9,13 +9,13 @@
     android:orientation="vertical">
 
     <com.google.android.material.card.MaterialCardView
-        android:layout_width="56dp"
-        android:layout_height="56dp"
+        android:layout_width="@dimen/d_56"
+        android:layout_height="@dimen/d_56"
         app:cardBackgroundColor="@color/white"
-        app:cardCornerRadius="28dp"
-        app:cardElevation="2dp"
-        app:strokeWidth="1dp"
-        app:strokeColor="#D3F6FC">
+        app:cardCornerRadius="@dimen/d_28"
+        app:cardElevation="@dimen/d_2"
+        app:strokeWidth="@dimen/d_1"
+        app:strokeColor="@color/color_d3f6fc">
 
         <ImageView
             android:id="@+id/ivNearbyIcon"
@@ -30,9 +30,9 @@
         android:id="@+id/tvNearbyName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="@dimen/d_8"
         android:textColor="@color/black"
-        android:textSize="12sp"
+        android:textSize="@dimen/sp_12"
         android:textStyle="bold"
         tools:text="Restaurants" />
 
@@ -40,8 +40,8 @@
         android:id="@+id/tvNearbyCount"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textColor="#999999"
-        android:textSize="10sp"
+        android:textColor="@color/color_999999"
+        android:textSize="@dimen/sp_10"
         tools:text="128 nearby" />
 
 </LinearLayout>

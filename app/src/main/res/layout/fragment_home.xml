@@ -6,7 +6,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF">
+    android:background="@color/white">
 
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scrollView"
@@ -46,16 +46,16 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Nearby"
+                        android:text="@string/nearby"
                         android:textStyle="bold"
                         android:textSize="@dimen/sp_22"/>
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="GPS LOCATION"
+                        android:text="@string/gps_location"
                         android:textSize="@dimen/sp_10"
-                        android:textColor="#999"/>
+                        android:textColor="@color/color_999999"/>
                 </LinearLayout>
 
                 <ImageButton
@@ -63,16 +63,16 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_card"
-                    android:padding="8dp"
+                    android:padding="@dimen/d_8"
                     android:src="@drawable/ic_crown_home"/>
 
                 <ImageButton
                     android:id="@+id/btnNotifications"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="10dp"
+                    android:layout_marginStart="@dimen/d_10"
                     android:background="@drawable/bg_card"
-                    android:padding="8dp"
+                    android:padding="@dimen/d_8"
                     android:src="@drawable/ic_notification_home"/>
             </LinearLayout>
 
@@ -81,10 +81,10 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
+                android:layout_marginTop="@dimen/d_20"
                 app:strokeWidth="0dp"
-                android:backgroundTint="#FFFFFF"
-                app:cardCornerRadius="20dp">
+                android:backgroundTint="@color/white"
+                app:cardCornerRadius="@dimen/d_20">
 
                 <FrameLayout
                     android:layout_width="match_parent"
@@ -105,7 +105,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="@dimen/d_12"
-                android:text="Quick actions"
+                android:text="@string/quick_actions"
                 android:textStyle="bold"
                 android:textSize="@dimen/sp_16"/>
 
@@ -192,7 +192,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/d_20"
-                android:text="Explore nearby"
+                android:text="@string/explore_nearby"
                 android:layout_marginBottom="@dimen/d_12"
                 android:textStyle="bold"
                 android:textSize="@dimen/sp_16"/>
