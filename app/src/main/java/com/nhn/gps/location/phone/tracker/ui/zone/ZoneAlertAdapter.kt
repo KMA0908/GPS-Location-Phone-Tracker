@@ -6,7 +6,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.nhn.gps.location.phone.tracker.data.model.ZoneAlert
-import com.nhn.gps.location.phone.tracker.databinding.ItemNotificationBinding
+import com.nhn.gps.location.phone.tracker.databinding.ItemZoneAlertLocalBinding
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -14,13 +14,13 @@ import java.util.Locale
 class ZoneAlertAdapter(private val onClick: (ZoneAlert) -> Unit) :
     ListAdapter<ZoneAlert, ZoneAlertAdapter.Holder>(DIFF) {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = Holder(
-        ItemNotificationBinding.inflate(LayoutInflater.from(parent.context), parent, false), onClick
+        ItemZoneAlertLocalBinding.inflate(LayoutInflater.from(parent.context), parent, false), onClick
     )
 
     override fun onBindViewHolder(holder: Holder, position: Int) = holder.bind(getItem(position))
 
     class Holder(
-        private val binding: ItemNotificationBinding,
+        private val binding: ItemZoneAlertLocalBinding,
         private val onClick: (ZoneAlert) -> Unit,
     ) : RecyclerView.ViewHolder(binding.root) {
         fun bind(item: ZoneAlert) = with(binding) {

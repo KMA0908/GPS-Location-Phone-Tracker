@@ -16,4 +16,5 @@ sealed class AppDestination(val route: String) {
     data object ZoneDetail : AppDestination("zone_detail")
     data object ZoneAlerts : AppDestination("zone_alerts")
     data object Notifications : AppDestination("notifications")
+    data object SettingsLanguage : AppDestination("settings_language")
 }

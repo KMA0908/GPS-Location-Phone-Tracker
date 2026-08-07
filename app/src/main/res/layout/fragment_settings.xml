@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="30dp"
+        android:layout_marginBottom="20dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+        <ImageView
+            android:id="@+id/btnBack"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:padding="6dp"
+            android:src="@drawable/ic_back"
+            app:tint="@color/neutral01" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:fontFamily="@font/plus_jakarta_sans_semibold"
+            android:includeFontPadding="false"
+            android:text="@string/settings"
+            android:textColor="@color/neutral01"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true"
+        android:scrollbars="none">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="24dp"
+            android:paddingBottom="32dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/plus_jakarta_sans_medium"
+                android:includeFontPadding="false"
+                android:text="@string/general"
+                android:textAllCaps="true"
+                android:textColor="@color/neutral05"
+                android:textSize="14sp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:background="@drawable/bg_settings_group"
+                android:orientation="vertical">
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/rowLanguage"
+                    android:layout_width="match_parent"
+                    android:layout_height="76dp"
+                    android:foreground="?attr/selectableItemBackground">
+                    <FrameLayout
+                        android:id="@+id/iconLanguage"
+                        android:layout_width="42dp"
+                        android:layout_height="42dp"
+                        android:layout_marginStart="16dp"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent">
+                        <ImageView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:src="@drawable/ic_language_setting" />
+                    </FrameLayout>
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="18dp"
+                        android:layout_marginEnd="16dp"
+                        android:fontFamily="@font/plus_jakarta_sans_medium"
+                        android:includeFontPadding="false"
+                        android:text="@string/language"
+                        android:textColor="@color/neutral01"
+                        android:textSize="18sp"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toStartOf="@id/chevronLanguage"
+                        app:layout_constraintStart_toEndOf="@id/iconLanguage"
+                        app:layout_constraintTop_toTopOf="parent" />
+                    <ImageView
+                        android:id="@+id/chevronLanguage"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="16dp"
+                        android:src="@drawable/ic_settings_chevron"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="30dp"
+                android:fontFamily="@font/plus_jakarta_sans_medium"
+                android:includeFontPadding="false"
+                android:text="@string/other"
+                android:textAllCaps="true"
+                android:textColor="@color/neutral05"
+                android:textSize="14sp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:background="@drawable/bg_settings_group"
+                android:orientation="vertical">
+
+                <androidx.constraintlayout.widget.ConstraintLayout android:id="@+id/rowShare" android:layout_width="match_parent" android:layout_height="76dp" android:foreground="?attr/selectableItemBackground">
+                    <FrameLayout android:id="@+id/iconShare" android:layout_width="42dp" android:layout_height="42dp" android:layout_marginStart="16dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent"><ImageView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:src="@drawable/ic_share_setting" /></FrameLayout>
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="18dp" android:fontFamily="@font/plus_jakarta_sans_medium" android:includeFontPadding="false" android:text="@string/share_app" android:textColor="@color/neutral01" android:textSize="18sp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@id/chevronShare" app:layout_constraintStart_toEndOf="@id/iconShare" app:layout_constraintTop_toTopOf="parent" />
+                    <ImageView android:id="@+id/chevronShare" android:layout_width="24dp" android:layout_height="24dp" android:layout_marginEnd="16dp" android:src="@drawable/ic_settings_chevron" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toTopOf="parent" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginStart="76dp" android:background="#EDF4FB" />
+
+                <androidx.constraintlayout.widget.ConstraintLayout android:id="@+id/rowPrivacy" android:layout_width="match_parent" android:layout_height="76dp" android:foreground="?attr/selectableItemBackground">
+                    <FrameLayout android:id="@+id/iconPrivacy" android:layout_width="42dp" android:layout_height="42dp" android:layout_marginStart="16dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent"><ImageView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:src="@drawable/ic_policy_setting" /></FrameLayout>
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="18dp" android:fontFamily="@font/plus_jakarta_sans_medium" android:includeFontPadding="false" android:text="@string/privacy_policy" android:textColor="@color/neutral01" android:textSize="18sp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@id/chevronPrivacy" app:layout_constraintStart_toEndOf="@id/iconPrivacy" app:layout_constraintTop_toTopOf="parent" />
+                    <ImageView android:id="@+id/chevronPrivacy" android:layout_width="24dp" android:layout_height="24dp" android:layout_marginEnd="16dp" android:src="@drawable/ic_settings_chevron" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toTopOf="parent" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginStart="76dp" android:background="#EDF4FB" />
+
+                <androidx.constraintlayout.widget.ConstraintLayout android:id="@+id/rowTerms" android:layout_width="match_parent" android:layout_height="76dp" android:foreground="?attr/selectableItemBackground">
+                    <FrameLayout android:id="@+id/iconTerms" android:layout_width="42dp" android:layout_height="42dp" android:layout_marginStart="16dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent"><ImageView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:src="@drawable/ic_term_setting" /></FrameLayout>
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="18dp" android:fontFamily="@font/plus_jakarta_sans_medium" android:includeFontPadding="false" android:text="@string/terms_of_use" android:textColor="@color/neutral01" android:textSize="18sp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@id/chevronTerms" app:layout_constraintStart_toEndOf="@id/iconTerms" app:layout_constraintTop_toTopOf="parent" />
+                    <ImageView android:id="@+id/chevronTerms" android:layout_width="24dp" android:layout_height="24dp" android:layout_marginEnd="16dp" android:src="@drawable/ic_settings_chevron" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toTopOf="parent" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginStart="76dp" android:background="#EDF4FB" />
+
+                <androidx.constraintlayout.widget.ConstraintLayout android:id="@+id/rowRate" android:layout_width="match_parent" android:layout_height="76dp" android:foreground="?attr/selectableItemBackground">
+                    <FrameLayout android:id="@+id/iconRate" android:layout_width="42dp" android:layout_height="42dp" android:layout_marginStart="16dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent"><ImageView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:src="@drawable/ic_rate_setting" /></FrameLayout>
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="18dp" android:fontFamily="@font/plus_jakarta_sans_medium" android:includeFontPadding="false" android:text="@string/rate_us" android:textColor="@color/neutral01" android:textSize="18sp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@id/chevronRate" app:layout_constraintStart_toEndOf="@id/iconRate" app:layout_constraintTop_toTopOf="parent" />
+                    <ImageView android:id="@+id/chevronRate" android:layout_width="24dp" android:layout_height="24dp" android:layout_marginEnd="16dp" android:src="@drawable/ic_settings_chevron" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toTopOf="parent" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</LinearLayout>

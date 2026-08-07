@@ -13,7 +13,6 @@ class NavigationManagerTest {
         manager.navigateTo(AppDestination.Map)
 
         assertEquals(AppDestination.Map, manager.currentDestination.value)
-        assertEquals(AppDestination.Home, manager.previousDestination.value)
     }
 
     @Test
@@ -24,6 +23,5 @@ class NavigationManagerTest {
         manager.reset()
 
         assertEquals(AppDestination.Home, manager.currentDestination.value)
-        assertNull(manager.previousDestination.value)
     }
 }

@@ -1,7 +1,7 @@
 package com.nhn.gps.location.phone.tracker
 
-import android.app.Application
+import com.leansoft.ads.AdsApplication
 import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp
-class GpsTrackerApp : Application()
+class GpsTrackerApp : AdsApplication()

@@ -20,4 +20,34 @@
     <color name="bottom_nav_border_start">#E9F8ED</color>
     <color name="bottom_nav_border_end">#A7EDF8</color>
 
+    <color name="ads_primary">#1A97FE</color>
+    <color name="ads_primary_dark">#017EE5</color>
+    <color name="ads_text">#1F2128</color>
+    <color name="ads_text_secondary">#7C8098</color>
+    <color name="language_card_sdk">#F7FAFF</color>
+    <color name="settings_stroke">#E9EBF5</color>
+    <color name="native_ad_surface">#FAFAFA</color>
+    <color name="ad_badge_blue">#1A97FE</color>
+    <color name="neutral01">#1F2128</color>
+    <color name="neutral04">#63677E</color>
+    <color name="neutral05">#7C8098</color>
+    <color name="neutral08">#D1D3DB</color>
+    <color name="primary01">#1A97FE</color>
+    <color name="primary02">#017EE5</color>
+    <color name="home_gradient_start">#2563EB</color>
+    <color name="home_gradient_center">#4F46E5</color>
+    <color name="home_gradient_end">#7C3AED</color>
+    <color name="splash_progress_track">#D8F7E2</color>
+    <color name="splash_loading_text">#CCFFFFFF</color>
+    <color name="settings_language_selected">#2F65F5</color>
+    <color name="settings_language_selected_light">#93C5FD</color>
+    <color name="settings_language_subtitle">#4D7BFF</color>
+    <color name="settings_language_name">#36363D</color>
+    <color name="settings_language_native">#9B9DA6</color>
+    <color name="settings_language_stroke">#E9EBF5</color>
+    <color name="settings_language_divider">#EEF3FF</color>
+    <color name="settings_language_flag_surface">#FBFAFF</color>
+    <color name="settings_language_flag_stroke">#EBEAF8</color>
+    <color name="settings_language_radio_stroke">#D4D6DD</color>
+
 </resources>
