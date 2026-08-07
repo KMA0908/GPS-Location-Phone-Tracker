@@ -12,6 +12,24 @@
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
 
+    <color name="color_f7f7f7">#F7F7F7</color>
+    <color name="color_f0f0f0">#F0F0F0</color>
+    <color name="color_bdbdbd">#BDBDBD</color>
+    <color name="color_26deffea">#26DEFFEA</color>
+    <color name="color_267bc6d3">#267BC6D3</color>
+    <color name="color_0d05a740">#0D05A740</color>
+    <color name="color_0d7bc6d3">#0D7BC6D3</color>
+    <color name="color_e0e0e0">#E0E0E0</color>
+    <color name="color_d3f6fc">#D3F6FC</color>
+    <color name="color_999999">#999999</color>
+    <color name="color_80000000">#80000000</color>
+    <color name="color_ccffffff">#CCFFFFFF</color>
+    <color name="color_e8f5e9">#E8F5E9</color>
+    <color name="color_2e7d32">#2E7D32</color>
+    <color name="color_666666">#666666</color>
+    <color name="color_f8f9fa">#F8F9FA</color>
+    <color name="color_ffd700">#FFD700</color>
+
     <color name="color_Polygon">#4D35C759</color>
     <color name="bg_switch_permission">#35C759</color>
     <color name="bg_botton_add_friend">#505050</color>

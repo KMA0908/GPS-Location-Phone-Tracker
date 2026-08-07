@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/cardCategory"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="@dimen/d_8"
+    app:cardCornerRadius="@dimen/d_20"
+    app:cardElevation="0dp"
+    app:strokeWidth="@dimen/d_1"
+    app:strokeColor="@color/color_e0e0e0">
+
+    <TextView
+        android:id="@+id/tvCategoryName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="@dimen/d_20"
+        android:paddingVertical="@dimen/d_8"
+        android:textColor="@color/text_secondary"
+        android:textSize="@dimen/sp_14"
+        tools:text="Beach" />
+
+</com.google.android.material.card.MaterialCardView>

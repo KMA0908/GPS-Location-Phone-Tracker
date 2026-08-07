@@ -29,6 +29,9 @@ class MainViewModel @Inject constructor(
     private val _isSessionLocationGranted = MutableStateFlow(false)
     val isSessionLocationGranted: StateFlow<Boolean> = _isSessionLocationGranted.asStateFlow()
 
+    private val _selectedPlaceId = MutableStateFlow<String?>(null)
+    val selectedPlaceId: StateFlow<String?> = _selectedPlaceId.asStateFlow()
+
     val userAvatar: StateFlow<String> = preferences.userAvatar.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
@@ -123,6 +126,10 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch {
             preferences.setLocationEnabled(isGranted)
         }
+    }
+
+    fun setSelectedPlaceId(placeId: String?) {
+        _selectedPlaceId.value = placeId
     }
 
     fun navigateBack(): Boolean {

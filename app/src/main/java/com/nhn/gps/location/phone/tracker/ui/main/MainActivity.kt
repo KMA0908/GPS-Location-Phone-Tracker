@@ -21,6 +21,7 @@ import com.nhn.gps.location.phone.tracker.ui.location.LocationFragment
 import com.nhn.gps.location.phone.tracker.ui.permission.PermissionFragment
 import com.nhn.gps.location.phone.tracker.ui.phone_number_locator.PhoneLocatorFragment
 import com.nhn.gps.location.phone.tracker.ui.setup_profile.SetUpProfileFragment
+import com.nhn.gps.location.phone.tracker.ui.zone.AlertDetailFragment
 import com.nhn.gps.location.phone.tracker.ui.settings.SettingsFragment
 import com.nhn.gps.location.phone.tracker.ui.settings.SettingsLanguageFragment
 import com.nhn.gps.location.phone.tracker.ui.zone.CreateZoneFragment
@@ -28,6 +29,9 @@ import com.nhn.gps.location.phone.tracker.ui.zone.MyZonesFragment
 import com.nhn.gps.location.phone.tracker.ui.zone.NotificationsFragment
 import com.nhn.gps.location.phone.tracker.ui.zone.ZoneAlertsFragment
 import com.nhn.gps.location.phone.tracker.ui.zone.ZoneDetailFragment
+import com.nhn.gps.location.phone.tracker.ui.explore.FamousPlaceFragment
+import com.nhn.gps.location.phone.tracker.ui.explore.ExploreFragment
+import com.nhn.gps.location.phone.tracker.ui.explore.PlaceDetailFragment
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -94,9 +98,13 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>() {
             AppDestination.PhoneLocator.route -> PhoneLocatorFragment.newInstance()
             AppDestination.MyZones.route -> MyZonesFragment.newInstance()
             AppDestination.CreateZone.route -> CreateZoneFragment.newInstance()
+            AppDestination.AlertDetail.route -> AlertDetailFragment.newInstance()
             AppDestination.ZoneDetail.route -> ZoneDetailFragment.newInstance()
             AppDestination.ZoneAlerts.route -> ZoneAlertsFragment.newInstance()
             AppDestination.Notifications.route -> NotificationsFragment.newInstance()
+            AppDestination.FamousPlace.route -> FamousPlaceFragment.newInstance()
+            AppDestination.Explore.route -> ExploreFragment.newInstance()
+            AppDestination.PlaceDetail.route -> PlaceDetailFragment.newInstance()
             else -> HomeFragment.newInstance()
         }
         replaceFragment(fragment)

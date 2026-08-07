@@ -114,4 +114,26 @@
     <string name="radius">Radius</string>
     <string name="status">Status</string>
     <string name="radius_m">%1$d m</string>
+
+    <string name="famous_place">Famous place</string>
+    <string name="nearby">Nearby</string>
+    <string name="gps_location">GPS LOCATION</string>
+    <string name="quick_actions">Quick actions</string>
+    <string name="explore_nearby">Explore nearby</string>
+    <string name="search_place">Search place</string>
+    <string name="trending_nearby">Trending nearby</string>
+    <string name="see_all">See all</string>
+    <string name="see_map">See map</string>
+    <string name="open_now">Open now</string>
+    <string name="explore_now">Explore now</string>
+
+    <string name="view_friend_dots">View friend...</string>
+    <string name="see_shares_dots">See shares...</string>
+    <string name="phone_dots">Phone...</string>
+    <string name="find_country_dots">Find country...</string>
+    <string name="safe_and_danger_areas">Safe and danger areas</string>
+    <string name="street_dots">Street...</string>
+    <string name="explore_dots">Explore...</string>
+    <string name="zone_dots">Zone...</string>
+    <string name="entered_an_dots">Entered an...</string>
 </resources>

@@ -4,10 +4,15 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.nhn.gps.location.phone.tracker.R
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
 import com.nhn.gps.location.phone.tracker.databinding.FragmentHomeBinding
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class HomeFragment : BaseFragment<FragmentHomeBinding, MainViewModel>() {
@@ -20,9 +25,13 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, MainViewModel>() {
     ): FragmentHomeBinding = FragmentHomeBinding.inflate(inflater, container, false)
 
     override fun setupViews(savedInstanceState: Bundle?) = with(binding) {
-        navHome.setOnClickListener { updateSelectedItem(it.id) }
-        navMap.setOnClickListener { updateSelectedItem(it.id) }
-        navLocation.setOnClickListener {
+        bottomNavigationCustom.navHome.setOnClickListener {
+            navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.Home)
+        }
+        bottomNavigationCustom.navMap.setOnClickListener {
+            navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.FamousPlace)
+        }
+        bottomNavigationCustom.navLocation.setOnClickListener {
             viewModel.openMap()
         }
         navShield.setOnClickListener { updateSelectedItem(it.id) }
@@ -30,12 +39,18 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, MainViewModel>() {
             updateSelectedItem(it.id)
             viewModel.openSettings()
         }
+        bottomNavigationCustom.navShield.setOnClickListener {
+            navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.ZoneAlerts)
+        }
+        bottomNavigationCustom.navProfile.setOnClickListener {
+            // navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.Profile)
+        }
 
         btnNotifications.setOnClickListener { navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.Notifications) }
 
         viewZone.root.setOnClickListener { navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.ZoneAlerts) }
         viewMyZones.root.setOnClickListener { navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.MyZones) }
-        navShield.setOnClickListener { navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.ZoneAlerts) }
+        viewStreet.root.setOnClickListener { navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.FamousPlace) }
 
         viewFriend.root.setOnClickListener {
             viewModel.openViewFriends()
@@ -44,12 +59,25 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, MainViewModel>() {
         phone.root.setOnClickListener {
             viewModel.openPhoneLocator()
         }
-
-        // Initial selection
-        updateSelectedItem(R.id.navHome)
     }
 
-    private fun updateSelectedItem(selectedId: Int) = with(binding) {
+    override fun observeData() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                navigationManager.currentDestination.collectLatest { destination ->
+                    val selectedId = when (destination) {
+                        is com.nhn.gps.location.phone.tracker.navigation.AppDestination.Home -> R.id.navHome
+                        is com.nhn.gps.location.phone.tracker.navigation.AppDestination.FamousPlace -> R.id.navMap
+                        is com.nhn.gps.location.phone.tracker.navigation.AppDestination.ZoneAlerts -> R.id.navShield
+                        else -> null
+                    }
+                    selectedId?.let { updateSelectedItem(it) }
+                }
+            }
+        }
+    }
+
+    private fun updateSelectedItem(selectedId: Int) = with(binding.bottomNavigationCustom) {
         val navItems = mapOf(
             R.id.navHome to imgHome,
             R.id.navMap to imgMap,

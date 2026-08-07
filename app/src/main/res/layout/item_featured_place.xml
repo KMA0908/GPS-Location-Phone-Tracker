@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="@dimen/d_16"
+    android:layout_marginTop="@dimen/d_16"
+    app:cardCornerRadius="@dimen/d_24"
+    app:cardElevation="0dp"
+    app:strokeWidth="0dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/d_280">
+
+        <ImageView
+            android:id="@+id/ivFeatured"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            tools:src="@tools:sample/backgrounds/scenic" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/d_140"
+            android:background="@drawable/bg_gradient"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <ImageButton
+            android:id="@+id/btnFavorite"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/d_16"
+            android:background="@android:color/transparent"
+            android:padding="@dimen/d_8"
+            android:src="@drawable/ic_love_white"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/tvFeaturedName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="@dimen/d_16"
+            android:layout_marginBottom="@dimen/d_8"
+            android:textColor="@color/white"
+            android:textSize="@dimen/sp_22"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toTopOf="@id/tvFeaturedLocation"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            tools:text="Bali Island" />
+
+        <ImageView
+            android:id="@+id/ivLoc"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/d_16"
+            android:src="@drawable/ic_star_famous"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="@id/tvFeaturedName" />
+
+        <TextView
+            android:id="@+id/tvFeaturedLocation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/d_4"
+            android:textColor="@color/white"
+            android:textSize="@dimen/sp_14"
+            app:layout_constraintBottom_toBottomOf="@id/ivLoc"
+            app:layout_constraintStart_toEndOf="@id/ivLoc"
+            app:layout_constraintTop_toTopOf="@id/ivLoc"
+            tools:text="Indonesia" />
+
+        <RatingBar
+            android:id="@+id/featuredRatingBar"
+            style="@android:style/Widget.Material.RatingBar.Small"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/d_16"
+            android:isIndicator="true"
+            android:numStars="1"
+            android:progressTint="@color/color_ffd700"
+            android:rating="1"
+            app:layout_constraintBottom_toBottomOf="@id/tvFeaturedLocation"
+            app:layout_constraintStart_toEndOf="@id/tvFeaturedLocation"
+            app:layout_constraintTop_toTopOf="@id/tvFeaturedLocation" />
+
+        <TextView
+            android:id="@+id/tvFeaturedRating"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/d_4"
+            android:textColor="@color/white"
+            android:textSize="@dimen/sp_14"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="@id/featuredRatingBar"
+            app:layout_constraintStart_toEndOf="@id/featuredRatingBar"
+            app:layout_constraintTop_toTopOf="@id/featuredRatingBar"
+            tools:text="4.9" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/d_140"
+            android:gravity="center_vertical"
+            android:background="@drawable/bg_distance"
+            android:padding="@dimen/d_4"
+            app:layout_constraintBottom_toBottomOf="@id/tvFeaturedRating"
+            app:layout_constraintStart_toEndOf="@id/tvFeaturedRating"
+            app:layout_constraintTop_toTopOf="@id/tvFeaturedRating">
+
+            <ImageView
+                android:id="@+id/imgLocation"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_location_gray_famous"
+                app:tint="@color/white"/>
+
+            <TextView
+                android:id="@+id/tvKm"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:text="120km"
+                android:textColor="@color/white"
+                android:textSize="@dimen/sp_14"/>
+
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>

@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/bottomNavigationCustom"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="bottom">
+
+    <!-- Thanh navigation -->
+    <LinearLayout
+        android:id="@+id/bottomBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_marginHorizontal="@dimen/d_16"
+        android:layout_marginBottom="@dimen/d_8"
+        android:background="@drawable/bg_bottom_navigation"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="@dimen/d_14"
+        android:paddingHorizontal="@dimen/d_12">
+
+        <!-- Home -->
+        <LinearLayout
+            android:id="@+id/navHome"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center">
+
+            <ImageView
+                android:id="@+id/imgHome"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="@dimen/d_18"
+                android:src="@drawable/ic_home_bottom" />
+        </LinearLayout>
+
+        <!-- Map -->
+        <LinearLayout
+            android:id="@+id/navMap"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginEnd="@dimen/d_82"
+            android:gravity="center">
+
+            <ImageView
+                android:id="@+id/imgMap"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="@dimen/d_18"
+                android:src="@drawable/ic_map_home_bottom" />
+        </LinearLayout>
+
+        <!-- Shield -->
+        <LinearLayout
+            android:id="@+id/navShield"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center">
+
+            <ImageView
+                android:id="@+id/imgShield"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="@dimen/d_18"
+                android:src="@drawable/ic_zone_bottom" />
+        </LinearLayout>
+
+        <!-- User -->
+        <LinearLayout
+            android:id="@+id/navProfile"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center">
+
+            <ImageView
+                android:id="@+id/imgProfile"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="@dimen/d_18"
+                android:src="@drawable/ic_profile_home_bottom" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- FAB -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/navLocation"
+        android:layout_width="@dimen/d_92"
+        android:layout_height="@dimen/d_96"
+        android:layout_gravity="top|center_horizontal"
+        app:cardCornerRadius="@dimen/d_999"
+        app:cardElevation="@dimen/d_10"
+        app:strokeWidth="@dimen/d_1"
+        app:strokeColor="@color/color_d3f6fc"
+        android:layout_marginBottom="@dimen/d_20"
+        app:cardBackgroundColor="@color/white">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="@dimen/d_16">
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                app:cardCornerRadius="@dimen/d_100"
+                app:cardBackgroundColor="@color/bg_switch_permission"
+                app:cardElevation="0dp">
+
+                <ImageView
+                    android:id="@+id/imgLocation"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_location_home_bottom"
+                    app:tint="@android:color/white" />
+
+            </androidx.cardview.widget.CardView>
+
+        </FrameLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+</FrameLayout>
