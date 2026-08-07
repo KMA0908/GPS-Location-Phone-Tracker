@@ -35,7 +35,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, MainViewModel>() {
             viewModel.openMap()
         }
         bottomNavigationCustom.navShield.setOnClickListener {
-            navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.ZoneAlerts)
+            navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.MyZones)
         }
         bottomNavigationCustom.navProfile.setOnClickListener {
             // navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.Profile)
@@ -63,7 +63,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, MainViewModel>() {
                     val selectedId = when (destination) {
                         is com.nhn.gps.location.phone.tracker.navigation.AppDestination.Home -> R.id.navHome
                         is com.nhn.gps.location.phone.tracker.navigation.AppDestination.FamousPlace -> R.id.navMap
-                        is com.nhn.gps.location.phone.tracker.navigation.AppDestination.ZoneAlerts -> R.id.navShield
+                        is com.nhn.gps.location.phone.tracker.navigation.AppDestination.MyZones -> R.id.navShield
                         else -> null
                     }
                     selectedId?.let { updateSelectedItem(it) }

@@ -130,7 +130,7 @@ class FamousPlaceFragment : BaseFragment<FragmentFamousPlaceListBinding, FamousP
                         val selectedId = when (destination) {
                             is com.nhn.gps.location.phone.tracker.navigation.AppDestination.Home -> R.id.navHome
                             is com.nhn.gps.location.phone.tracker.navigation.AppDestination.FamousPlace -> R.id.navMap
-                            is com.nhn.gps.location.phone.tracker.navigation.AppDestination.ZoneAlerts -> R.id.navShield
+                            is com.nhn.gps.location.phone.tracker.navigation.AppDestination.MyZones -> R.id.navShield
                             else -> null
                         }
                         selectedId?.let { updateSelectedItem(it) }
@@ -189,7 +189,7 @@ class FamousPlaceFragment : BaseFragment<FragmentFamousPlaceListBinding, FamousP
             mainViewModel.openMap()
         }
         navShield.setOnClickListener {
-            navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.ZoneAlerts)
+            navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.MyZones)
         }
         navProfile.setOnClickListener {
             // navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.Profile)

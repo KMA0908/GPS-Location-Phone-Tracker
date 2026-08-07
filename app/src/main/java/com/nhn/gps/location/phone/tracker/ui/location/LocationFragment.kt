@@ -81,6 +81,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
 
     private var isCompassEnabled = false
     private var hasAutoZoomed = false
+    private var lastDataPackage: DataPackage? = null
     private var pendingDestination: AppDestination? = null
     private var activeRouteName: String? = null
     private var activeRoutePosition: LatLng? = null
@@ -244,16 +245,14 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                     ) { self, friends, avatar, friendsLoaded ->
                         DataPackage(self, friends, avatar, friendsLoaded)
                     }.collectLatest { data ->
+                        lastDataPackage = data
                         updateMarkersWithAvatars(data.self, data.friends, data.avatar)
                         activeRoutePosition?.let { destination ->
                             data.self?.let { origin ->
                                 updateRouteLine(origin, destination, fitBounds = false)
                             }
                         }
-                        if (!hasAutoZoomed && data.self != null && data.friendsLoaded) {
-                            centerCameraOnAll()
-                            hasAutoZoomed = true
-                        }
+                        tryAutoZoom()
                         if (isCompassEnabled) {
                             updateDirectionUI(compassManager.bearing.value)
                         }
@@ -440,6 +439,14 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         }
     }
 
+    private fun tryAutoZoom() {
+        val data = lastDataPackage ?: return
+        if (!hasAutoZoomed && googleMap != null && data.self != null && data.friendsLoaded) {
+            centerCameraOnAll()
+            hasAutoZoomed = true
+        }
+    }
+
     private fun cycleMapType() {
         val map = googleMap ?: return
         val nextType = when (map.mapType) {
@@ -504,6 +511,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
 
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
+        tryAutoZoom()
 
         map.setOnMarkerClickListener { marker ->
             (marker.tag as? com.nhn.gps.location.phone.tracker.data.model.FriendLocation)?.let {

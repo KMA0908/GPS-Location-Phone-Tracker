@@ -34,7 +34,9 @@ class UserRepositoryImpl @Inject constructor(
 
             if (snapshot.exists() && snapshot.childrenCount > 0) {
                 val userSnapshot = snapshot.children.first()
-                userSnapshot.child("profile").getValue(UserProfile::class.java)
+                val profile = userSnapshot.child("profile").getValue(UserProfile::class.java)
+                // Đảm bảo UID trong object profile khớp với node key trong database
+                profile?.copy(uid = userSnapshot.key ?: profile.uid)
             } else {
                 null
             }
@@ -61,7 +63,9 @@ class UserRepositoryImpl @Inject constructor(
 
     override suspend fun saveUserProfile(uid: String, profile: UserProfile): Unit = withContext(Dispatchers.IO) {
         try {
-            usersRef.child(uid).child("profile").setValue(profile).await()
+            // Đảm bảo profile.uid luôn trùng với Auth UID (uid truyền vào)
+            val profileToSave = profile.copy(uid = uid)
+            usersRef.child(uid).child("profile").setValue(profileToSave).await()
         } catch (e: Exception) {
             throw Exception("Database Write Error: ${e.localizedMessage}. Check your Firebase Rules and Internet connection.")
         }

@@ -96,7 +96,8 @@ class FriendRepositoryImpl @Inject constructor(
             if (snapshot.exists()) {
                 val profile = snapshot.getValue(UserProfile::class.java)
                 if (profile != null) {
-                    Result.success(profile)
+                    // Đảm bảo UID trong object trả về khớp với ID node được yêu cầu
+                    Result.success(profile.copy(uid = friendId))
                 } else {
                     Result.failure(Exception("Parse error"))
                 }
