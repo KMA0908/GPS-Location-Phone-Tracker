@@ -34,16 +34,12 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, MainViewModel>() {
         bottomNavigationCustom.navLocation.setOnClickListener {
             viewModel.openMap()
         }
-        navShield.setOnClickListener { updateSelectedItem(it.id) }
-        navProfile.setOnClickListener {
-            updateSelectedItem(it.id)
-            viewModel.openSettings()
-        }
         bottomNavigationCustom.navShield.setOnClickListener {
             navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.ZoneAlerts)
         }
         bottomNavigationCustom.navProfile.setOnClickListener {
-            // navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.Profile)
+            updateSelectedItem(it.id)
+            viewModel.openSettings()
         }
 
         btnNotifications.setOnClickListener { navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.Notifications) }
