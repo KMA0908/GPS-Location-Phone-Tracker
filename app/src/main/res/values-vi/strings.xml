@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="txt_select_language">Chọn ngôn ngữ</string>
+    <string name="settings_select_your_language">CHỌN NGÔN NGỮ CỦA BẠN</string>
+    <string name="text_confirm_selection">Xác nhận lựa chọn</string>
+    <string name="next">Tiếp theo</string>
+    <string name="text_loading_ads">Đang tải quảng cáo…</string>
+    <string name="text_splash_ads_notice">Đang chuẩn bị trải nghiệm…</string>
+    <string name="onboarding_title_location">Biết họ đang ở đâu</string>
+    <string name="onboarding_desc_location">Xem vị trí trực tiếp của những người quan trọng với bạn.</string>
+    <string name="onboarding_title_friends">Luôn giữ kết nối</string>
+    <string name="onboarding_desc_friends">Thêm bạn bè an toàn và theo dõi hành trình của họ theo thời gian thực.</string>
+    <string name="onboarding_title_zones">Cảnh báo khu vực thông minh</string>
+    <string name="onboarding_desc_zones">Nhận thông báo khi người thân vào hoặc rời khỏi địa điểm đã lưu.</string>
+    <string name="settings">Cài đặt</string>
+    <string name="general">CHUNG</string>
+    <string name="other">KHÁC</string>
+    <string name="language">Ngôn ngữ</string>
+    <string name="language_description">Chọn ngôn ngữ bạn muốn sử dụng</string>
+    <string name="share_app">Chia sẻ ứng dụng</string>
+    <string name="privacy_policy">Chính sách quyền riêng tư</string>
+    <string name="terms_of_use">Điều khoản sử dụng</string>
+    <string name="rate_us">Đánh giá ứng dụng</string>
+    <string name="continue_text">Tiếp tục</string>
+    <string name="welcome_back">Chào mừng bạn quay lại</string>
+</resources>

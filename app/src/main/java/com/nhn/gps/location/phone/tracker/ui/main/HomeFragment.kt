@@ -38,7 +38,8 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, MainViewModel>() {
             navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.MyZones)
         }
         bottomNavigationCustom.navProfile.setOnClickListener {
-            // navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.Profile)
+            updateSelectedItem(it.id)
+            viewModel.openSettings()
         }
 
         btnNotifications.setOnClickListener { navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.Notifications) }

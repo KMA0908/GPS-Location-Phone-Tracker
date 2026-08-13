@@ -22,6 +22,8 @@ import com.nhn.gps.location.phone.tracker.ui.permission.PermissionFragment
 import com.nhn.gps.location.phone.tracker.ui.phone_number_locator.PhoneLocatorFragment
 import com.nhn.gps.location.phone.tracker.ui.setup_profile.SetUpProfileFragment
 import com.nhn.gps.location.phone.tracker.ui.zone.AlertDetailFragment
+import com.nhn.gps.location.phone.tracker.ui.settings.SettingsFragment
+import com.nhn.gps.location.phone.tracker.ui.settings.SettingsLanguageFragment
 import com.nhn.gps.location.phone.tracker.ui.zone.CreateZoneFragment
 import com.nhn.gps.location.phone.tracker.ui.zone.MyZonesFragment
 import com.nhn.gps.location.phone.tracker.ui.zone.NotificationsFragment
@@ -91,6 +93,8 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>() {
             AppDestination.AddFriend.route -> AddFriendFragment.newInstance()
             AppDestination.MyFriend.route -> MyFriendFragment.newInstance()
             AppDestination.ShowQrFriend.route -> ShowQrFriendFragment.newInstance()
+            AppDestination.Settings.route -> SettingsFragment.newInstance()
+            AppDestination.SettingsLanguage.route -> SettingsLanguageFragment.newInstance()
             AppDestination.PhoneLocator.route -> PhoneLocatorFragment.newInstance()
             AppDestination.MyZones.route -> MyZonesFragment.newInstance()
             AppDestination.CreateZone.route -> CreateZoneFragment.newInstance()

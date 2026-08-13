@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.facebook.shimmer.ShimmerFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:shimmer_auto_start="true">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/native_ad_surface"
+        android:orientation="vertical">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginVertical="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="20dp"
+            android:paddingEnd="12dp">
+            <View android:layout_width="44dp" android:layout_height="44dp" android:background="@drawable/bg_ad_shimmer" />
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:layout_weight="1" android:orientation="vertical">
+                <View android:layout_width="match_parent" android:layout_height="11dp" android:background="@drawable/bg_ad_shimmer" />
+                <View android:layout_width="160dp" android:layout_height="9dp" android:layout_marginTop="6dp" android:background="@drawable/bg_ad_shimmer" />
+            </LinearLayout>
+        </LinearLayout>
+        <View android:layout_width="match_parent" android:layout_height="180dp" android:background="@drawable/bg_ad_shimmer" />
+        <View android:layout_width="match_parent" android:layout_height="52dp" android:layout_marginHorizontal="12dp" android:layout_marginTop="4dp" android:layout_marginBottom="8dp" android:background="@drawable/bg_welcome_continue" />
+    </LinearLayout>
+</com.facebook.shimmer.ShimmerFrameLayout>

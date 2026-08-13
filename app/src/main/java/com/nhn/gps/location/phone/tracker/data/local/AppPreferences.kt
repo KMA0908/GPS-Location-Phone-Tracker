@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.IOException
@@ -140,6 +141,18 @@ class AppPreferences @Inject constructor(
         context.appDataStore.edit { it[ZONE_STATES_JSON] = json }
     }
 
+    val selectedLanguage: Flow<String> = context.appDataStore.safeData.map { preferences ->
+        preferences[SELECTED_LANGUAGE] ?: "en"
+    }
+
+    suspend fun saveSelectedLanguage(languageCode: String) {
+        context.appDataStore.edit { preferences ->
+            preferences[SELECTED_LANGUAGE] = languageCode
+        }
+    }
+
+    suspend fun getSelectedLanguage(): String = selectedLanguage.first()
+
     private val DataStore<Preferences>.safeData: Flow<Preferences>
         get() = data.catch { throwable ->
             if (throwable is IOException) {
@@ -155,10 +168,11 @@ class AppPreferences @Inject constructor(
         val CAMERA_ENABLED = booleanPreferencesKey("camera_enabled")
         val NOTIFICATION_ENABLED = booleanPreferencesKey("notification_enabled")
         val PERMISSION_SHOWN = booleanPreferencesKey("permission_shown")
-        val USER_NAME = androidx.datastore.preferences.core.stringPreferencesKey("user_name")
-        val USER_PHONE = androidx.datastore.preferences.core.stringPreferencesKey("user_phone")
-        val USER_AVATAR = androidx.datastore.preferences.core.stringPreferencesKey("user_avatar")
-        val USER_ID = androidx.datastore.preferences.core.stringPreferencesKey("user_id")
+        val USER_NAME = stringPreferencesKey("user_name")
+        val USER_PHONE = stringPreferencesKey("user_phone")
+        val USER_AVATAR = stringPreferencesKey("user_avatar")
+        val USER_ID = stringPreferencesKey("user_id")
+        val SELECTED_LANGUAGE = stringPreferencesKey("selected_language")
         val ZONES_JSON = androidx.datastore.preferences.core.stringPreferencesKey("zones_json")
         val ZONE_ALERTS_JSON = androidx.datastore.preferences.core.stringPreferencesKey("zone_alerts_json")
         val ZONE_STATES_JSON = androidx.datastore.preferences.core.stringPreferencesKey("zone_states_json")

@@ -30,11 +30,9 @@ class ZoneAlertAdapter(private val onClick: (ZoneAlert) -> Unit) :
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        val item = getItem(position)
-        if (holder is HeaderHolder && item is String) {
-            holder.bind(item)
-        } else if (holder is ItemHolder && item is ZoneAlert) {
-            holder.bind(item)
+        when (val item = getItem(position)) {
+            is String -> (holder as HeaderHolder).bind(item)
+            is ZoneAlert -> (holder as ItemHolder).bind(item)
         }
     }
 
@@ -49,7 +47,11 @@ class ZoneAlertAdapter(private val onClick: (ZoneAlert) -> Unit) :
         private val onClick: (ZoneAlert) -> Unit,
     ) : RecyclerView.ViewHolder(binding.root) {
         fun bind(item: ZoneAlert) = with(binding) {
-            tvAlertTitle.text = if (item.isEnter) "${item.userName} entered ${item.zoneName}" else "${item.userName} left ${item.zoneName}"
+            tvAlertTitle.text = if (item.isEnter) {
+                "${item.userName} entered ${item.zoneName}"
+            } else {
+                "${item.userName} left ${item.zoneName}"
+            }
             tvAlertSubtitle.text = "${item.status.label} zone · ${FORMAT.format(Date(item.time))}"
             tvAlertType.text = if (item.isEnter) "IN" else "OUT"
             
@@ -58,6 +60,7 @@ class ZoneAlertAdapter(private val onClick: (ZoneAlert) -> Unit) :
             tvAlertType.setTextColor(color)
 
             root.setOnClickListener { onClick(item) }
+            btnMore.setOnClickListener { onClick(item) }
         }
     }
 
@@ -73,6 +76,7 @@ class ZoneAlertAdapter(private val onClick: (ZoneAlert) -> Unit) :
                 if (oldItem is ZoneAlert && newItem is ZoneAlert) return oldItem.id == newItem.id
                 return false
             }
+
             override fun areContentsTheSame(oldItem: Any, newItem: Any): Boolean {
                 return if (oldItem is String && newItem is String) oldItem == newItem
                 else if (oldItem is ZoneAlert && newItem is ZoneAlert) oldItem == newItem

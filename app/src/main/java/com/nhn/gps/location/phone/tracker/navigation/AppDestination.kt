@@ -20,4 +20,5 @@ sealed class AppDestination(val route: String) {
     data object FamousPlace : AppDestination("famous_place")
     data object Explore : AppDestination("explore")
     data object PlaceDetail : AppDestination("place_detail")
+    data object SettingsLanguage : AppDestination("settings_language")
 }

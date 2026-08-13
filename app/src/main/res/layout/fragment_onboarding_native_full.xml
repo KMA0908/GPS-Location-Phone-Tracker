@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.leansoft.ads.ui.custom.SafeAreaView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/native_ad_surface">
+    <com.leansoft.ads.view.NativeAdViewContainer
+        android:id="@+id/native_ad_view_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/native_ad_surface"
+        app:ads_layout_loaded="@layout/layout_ad_native_full"
+        app:ads_layout_loading="@layout/layout_ad_native_loading_full" />
+    <View
+        android:id="@+id/close_scrim"
+        android:layout_width="0dp"
+        android:layout_height="120dp"
+        android:background="@drawable/bg_native_full_close_scrim"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+    <ImageView
+        android:id="@+id/btn_close"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:padding="4dp"
+        android:src="@drawable/ic_close_ads"
+        android:translationZ="20dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+</com.leansoft.ads.ui.custom.SafeAreaView>

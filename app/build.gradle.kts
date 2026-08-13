@@ -23,6 +23,7 @@ android {
         manifestPlaceholders["MAPS_API_KEY"] = "AIzaSyAH7TC-3rHOGxrlTigvbPpOoTcCkcnkp4c"
         resValue("string", "maps_api_key", "AIzaSyAH7TC-3rHOGxrlTigvbPpOoTcCkcnkp4c")
         //AIzaSyAonTqpz6blR9l4zRrUNcvdTCiXygVKWcE
+        manifestPlaceholders["admobAppId"] = "ca-app-pub-5019989394447925~7297235779"
     }
 
     flavorDimensions += "environment"
@@ -98,6 +99,7 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.database)
     implementation(libs.firebase.auth)
+    implementation(libs.firebase.config)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -109,5 +111,8 @@ dependencies {
     kapt(libs.glide.compiler)
     implementation(libs.zxing.core)
     implementation(libs.zxing.android.embedded)
+    implementation(libs.androidx.recyclerview)
+    implementation(libs.facebook.shimmer)
+    implementation(libs.leansoft.ads)
     implementation(libs.ccp)
 }
