@@ -27,4 +27,6 @@ interface ExploreRepository {
     suspend fun searchPlaces(query: String): ExploreResult<List<FamousPlaceModel>>
 
     suspend fun getResolvedPhotoUri(metadata: PhotoMetadata): String?
+
+    suspend fun getAllFamousPlaces(): ExploreResult<List<FamousPlaceModel>>
 }

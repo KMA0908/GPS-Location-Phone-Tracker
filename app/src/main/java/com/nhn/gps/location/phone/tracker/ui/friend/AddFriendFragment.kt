@@ -1,5 +1,6 @@
 package com.nhn.gps.location.phone.tracker.ui.friend
 
+import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.graphics.Rect
 import android.net.Uri
@@ -39,6 +40,7 @@ import javax.inject.Inject
 class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewModel>() {
 
     override val viewModel: AddFriendViewModel by viewModels()
+    private var isFlashOn = false
 
     private val barcodeCallback = object : BarcodeCallback {
         override fun barcodeResult(result: BarcodeResult?) {
@@ -77,6 +79,7 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
             setupCustomFramingRect()
             layoutCamera.barcodeScanner.decodeContinuous(barcodeCallback)
             layoutCamera.barcodeScanner.resume()
+            checkFlashSupport()
         }
         
         layoutScanQR.btnMyQR.setOnClickListener {
@@ -92,6 +95,11 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
         layoutCamera.headerCamera.btnClose.setOnClickListener {
             cameraContainer.isVisible = false
             layoutCamera.barcodeScanner.pause()
+            turnOffFlash()
+        }
+
+        layoutCamera.headerCamera.layoutFlash.setOnClickListener {
+            toggleFlash()
         }
         
         layoutCamera.btnMyQr.setOnClickListener {
@@ -269,6 +277,34 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
     override fun onPause() {
         super.onPause()
         binding.layoutCamera.barcodeScanner.pause()
+        turnOffFlash()
+    }
+
+    private fun checkFlashSupport() {
+        val hasFlash = requireContext().packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)
+        binding.layoutCamera.headerCamera.layoutFlash.isVisible = hasFlash
+    }
+
+    private fun toggleFlash() {
+        isFlashOn = !isFlashOn
+        binding.layoutCamera.barcodeScanner.setTorch(isFlashOn)
+        updateFlashUi()
+    }
+
+    private fun turnOffFlash() {
+        isFlashOn = false
+        binding.layoutCamera.barcodeScanner.setTorch(false)
+        updateFlashUi()
+    }
+
+    private fun updateFlashUi() = with(binding.layoutCamera.headerCamera) {
+        val color = if (isFlashOn) {
+            ContextCompat.getColor(requireContext(), R.color.color_ffd700)
+        } else {
+            ContextCompat.getColor(requireContext(), android.R.color.white)
+        }
+        imgFlash.imageTintList = android.content.res.ColorStateList.valueOf(color)
+        tvFlash.setTextColor(color)
     }
 
     companion object {

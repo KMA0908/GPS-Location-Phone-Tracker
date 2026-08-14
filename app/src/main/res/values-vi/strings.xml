@@ -23,4 +23,5 @@
     <string name="rate_us">Đánh giá ứng dụng</string>
     <string name="continue_text">Tiếp tục</string>
     <string name="welcome_back">Chào mừng bạn quay lại</string>
+    <string name="invalid_phone">Số điện thoại không hợp lệ</string>
 </resources>

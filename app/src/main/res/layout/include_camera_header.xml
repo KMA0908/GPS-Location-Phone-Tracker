@@ -53,18 +53,24 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:orientation="horizontal"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:padding="8dp"
 
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@id/btnClose"
         app:layout_constraintBottom_toBottomOf="@id/btnClose">
 
         <ImageView
+            android:id="@+id/imgFlash"
             android:layout_width="16dp"
             android:layout_height="16dp"
             android:src="@drawable/ic_flash"
             app:tint="@android:color/white"/>
 
         <TextView
+            android:id="@+id/tvFlash"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Flash"

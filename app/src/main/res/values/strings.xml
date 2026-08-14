@@ -87,6 +87,7 @@
     <string name="rate_us">Rate us</string>
     <string name="continue_text">Continue</string>
     <string name="welcome_back">Welcome back</string>
+    <string name="invalid_phone">Số điện thoại không hợp lệ</string>
 
     <!-- Phone Locator -->
     <string name="err_enter_phone">Please enter phone number</string>

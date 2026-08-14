@@ -32,18 +32,16 @@ class ExploreFragment : BaseFragment<FragmentExploreBinding, ExploreViewModel>()
         ExploreCardAdapter(
             onClick = { place -> viewModel.selectPlace(place.id) },
             onBindPhoto = { item, imageView ->
-                if (item.photoMetadata != null) {
-                    viewLifecycleOwner.lifecycleScope.launch {
-                        val uri = viewModel.getPhotoUri(item.photoMetadata)
-                        if (uri != null) {
-                            com.bumptech.glide.Glide.with(imageView)
-                                .load(uri)
-                                .placeholder(R.drawable.ic_paris)
-                                .error(R.drawable.ic_paris)
-                                .centerCrop()
-                                .into(imageView)
-                        }
-                    }
+                val photoFileName = item.previewPhotos.firstOrNull()
+                if (photoFileName != null) {
+                    com.bumptech.glide.Glide.with(imageView)
+                        .load("file:///android_asset/famous_places_images/$photoFileName")
+                        .placeholder(R.drawable.ic_paris)
+                        .error(R.drawable.ic_paris)
+                        .centerCrop()
+                        .into(imageView)
+                } else {
+                    imageView.setImageResource(R.drawable.ic_paris)
                 }
             }
         )
@@ -223,6 +221,11 @@ class ExploreFragment : BaseFragment<FragmentExploreBinding, ExploreViewModel>()
             }
         }
         super.onPause()
+    }
+
+    override fun onDestroyView() {
+        markerMap.clear()
+        super.onDestroyView()
     }
 
     private fun setupRecyclerView() = with(binding.rvExploreCards) {

@@ -3,6 +3,7 @@ package com.nhn.gps.location.phone.tracker.ui.zone
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import android.widget.PopupMenu
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -41,8 +42,26 @@ class ZoneDetailFragment : BaseFragment<FragmentZoneDetailLocalBinding, MainView
             btnEdit.setOnClickListener { navigateToEdit() }
             tvViewAllZones.setOnClickListener { handleToolbarBack() }
             
+            btnMore.setOnClickListener { view ->
+                val popup = PopupMenu(requireContext(), view)
+                popup.menu.add(getString(R.string.remove))
+                popup.setOnMenuItemClickListener {
+                    deleteZone()
+                    true
+                }
+                popup.show()
+            }
+
             // Slider is read-only in detail view by default, or used for display
             sliderRadius.isEnabled = false
+        }
+    }
+
+    private fun deleteZone() {
+        val zoneId = currentZone?.id ?: return
+        viewLifecycleOwner.lifecycleScope.launch {
+            zoneRepository.delete(zoneId)
+            handleToolbarBack()
         }
     }
 

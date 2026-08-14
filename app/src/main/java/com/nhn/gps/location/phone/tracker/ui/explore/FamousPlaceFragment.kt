@@ -35,24 +35,27 @@ class FamousPlaceFragment : BaseFragment<FragmentFamousPlaceListBinding, FamousP
             onClick = { viewModel.onPlaceClicked(it) },
             onFavoriteClick = {},
             onBindPhoto = { item, imageView ->
-                if (item.photoMetadata != null) {
-                    viewLifecycleOwner.lifecycleScope.launch {
-                        val uri = viewModel.getPhotoUri(item.photoMetadata)
-                        if (uri != null) {
-                            com.bumptech.glide.Glide.with(imageView)
-                                .load(uri)
-                                .placeholder(R.drawable.ic_paris)
-                                .error(R.drawable.ic_paris)
-                                .centerCrop()
-                                .into(imageView)
-                        }
-                    }
+                val photoFileName = item.previewPhotos.firstOrNull()
+                if (photoFileName != null) {
+                    com.bumptech.glide.Glide.with(imageView)
+                        .load("file:///android_asset/famous_places_images/$photoFileName")
+                        .placeholder(R.drawable.ic_paris)
+                        .error(R.drawable.ic_paris)
+                        .centerCrop()
+                        .into(imageView)
+                } else {
+                    imageView.setImageResource(R.drawable.ic_paris)
                 }
             }
         )
     }
     
-    private val categories = listOf("All", "Famous", "Beach", "City", "Nature")
+    private val categories = listOf(
+        "All", "Romantic", "Theme Parks", "Mountains", "Nature", 
+        "Dangerous", "Mysterious", "Surf", "Ghost Towns", 
+        "Film Locations", "Extreme Weather", "Family", "Cities", 
+        "Clubs", "Nightlife"
+    )
 
     override fun createBinding(
         inflater: LayoutInflater,
@@ -97,7 +100,19 @@ class FamousPlaceFragment : BaseFragment<FragmentFamousPlaceListBinding, FamousP
             return@with
         }
         root.visibility = android.view.View.VISIBLE
-        ivFeatured.setImageResource(place.imageRes.let { if (it == 0) R.drawable.ic_paris else it })
+        
+        val photoFileName = place.previewPhotos.firstOrNull()
+        if (photoFileName != null) {
+            com.bumptech.glide.Glide.with(ivFeatured)
+                .load("file:///android_asset/famous_places_images/$photoFileName")
+                .placeholder(R.drawable.ic_paris)
+                .error(R.drawable.ic_paris)
+                .centerCrop()
+                .into(ivFeatured)
+        } else {
+            ivFeatured.setImageResource(R.drawable.ic_paris)
+        }
+
         tvFeaturedName.text = place.name
         tvFeaturedLocation.text = place.location
         tvFeaturedRating.text = String.format(Locale.getDefault(), "%.1f", place.rating)

@@ -99,6 +99,13 @@ class MyZonesFragment : BaseFragment<FragmentMyZonesLocalBinding, MainViewModel>
             editSearch.doAfterTextChanged { query -> applyFilter(query?.toString().orEmpty()) }
             editSearchSheet.doAfterTextChanged { query -> applyFilter(query?.toString().orEmpty()) }
 
+            cardFilter.setOnClickListener {
+                applyFilter(editSearch.text?.toString()?.trim().orEmpty())
+            }
+            cardFilterSheet.setOnClickListener {
+                applyFilter(editSearchSheet.text?.toString()?.trim().orEmpty())
+            }
+
             val actionHandler = { v: View, actionId: Int ->
                 if (actionId == EditorInfo.IME_ACTION_SEARCH) {
                     val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
@@ -263,6 +270,17 @@ class MyZonesFragment : BaseFragment<FragmentMyZonesLocalBinding, MainViewModel>
                 bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
             }
         }
+    }
+
+    override fun onDestroyView() {
+        map?.apply {
+            setOnMarkerClickListener(null)
+            clear()
+        }
+        map = null
+        circles.clear()
+        markers.clear()
+        super.onDestroyView()
     }
 
     companion object { fun newInstance() = MyZonesFragment() }

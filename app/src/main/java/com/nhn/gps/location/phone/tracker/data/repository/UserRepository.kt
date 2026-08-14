@@ -1,8 +1,10 @@
 package com.nhn.gps.location.phone.tracker.data.repository
 
+import android.net.Uri
 import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.storage.FirebaseStorage
 import com.nhn.gps.location.phone.tracker.data.model.UserProfile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
@@ -14,13 +16,15 @@ interface UserRepository {
     suspend fun findUserByPhone(phone: String): UserProfile?
     suspend fun signInAnonymously(): String
     suspend fun saveUserProfile(uid: String, profile: UserProfile)
+    suspend fun uploadAvatar(uid: String, imageUri: Uri): String
     fun getCurrentUserId(): String?
 }
 
 @Singleton
 class UserRepositoryImpl @Inject constructor(
     private val database: FirebaseDatabase,
-    private val auth: FirebaseAuth
+    private val auth: FirebaseAuth,
+    private val storage: FirebaseStorage
 ) : UserRepository {
 
     private val usersRef = database.getReference("users")
@@ -68,6 +72,16 @@ class UserRepositoryImpl @Inject constructor(
             usersRef.child(uid).child("profile").setValue(profileToSave).await()
         } catch (e: Exception) {
             throw Exception("Database Write Error: ${e.localizedMessage}. Check your Firebase Rules and Internet connection.")
+        }
+    }
+
+    override suspend fun uploadAvatar(uid: String, imageUri: Uri): String = withContext(Dispatchers.IO) {
+        try {
+            val storageRef = storage.reference.child("avatars/$uid/profile.jpg")
+            storageRef.putFile(imageUri).await()
+            storageRef.downloadUrl.await().toString()
+        } catch (e: Exception) {
+            throw Exception("Avatar Upload Error: ${e.localizedMessage}. Check your Firebase Storage Rules.")
         }
     }
 }

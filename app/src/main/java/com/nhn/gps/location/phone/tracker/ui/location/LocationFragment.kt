@@ -585,17 +585,29 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
             }
         }
         bottomSheetCallback = null
+        
+        // Remove map objects before clearing the map reference
+        googleMap?.apply {
+            setOnMarkerClickListener(null)
+            setOnMapLongClickListener(null)
+            setOnCameraIdleListener(null)
+            clear()
+        }
+        
         super.onDestroyView()
+        
+        googleMap = null
         selfMarker = null
-        selectedDestinationMarker?.remove()
         selectedDestinationMarker = null
-        routeLine?.remove()
         routeLine = null
+        directionOverlay = null
+        
         activeRouteName = null
         activeRoutePosition = null
         activeRouteFriendId = null
-        directionOverlay = null
+        
         friendMarkers.clear()
+        friendAvatars.clear()
     }
 
     private fun showRouteTo(name: String, destination: LatLng, friendId: String? = null) {

@@ -48,11 +48,21 @@ class FamousPlaceViewModel @Inject constructor(
     private val searchQueryFlow = MutableStateFlow("")
 
     private val categoryMap = mapOf(
-        "All" to listOf("tourist_attraction"),
-        "Famous" to listOf("tourist_attraction"),
-        "Beach" to listOf("beach"),
-        "City" to listOf("locality", "sublocality"),
-        "Nature" to listOf("park", "natural_feature")
+        "All" to 0,
+        "Romantic" to 1,
+        "Theme Parks" to 2,
+        "Mountains" to 3,
+        "Nature" to 4,
+        "Dangerous" to 5,
+        "Mysterious" to 6,
+        "Surf" to 7,
+        "Ghost Towns" to 8,
+        "Film Locations" to 9,
+        "Extreme Weather" to 10,
+        "Family" to 11,
+        "Cities" to 12,
+        "Clubs" to 13,
+        "Nightlife" to 14
     )
 
     init {
@@ -90,19 +100,20 @@ class FamousPlaceViewModel @Inject constructor(
     private fun fetchPlacesByCategory(category: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
-            val types = categoryMap[category] ?: listOf("tourist_attraction")
-            
-            // Fallback location (e.g., Paris) if we don't have current location
-            val lat = 48.8566
-            val lng = 2.3522
-            val radius = 50000.0 // 50km
+            val typeId = categoryMap[category] ?: 0
 
-            when (val result = repository.getNearbyFamousPlaces(lat, lng, radius, 10, types)) {
+            when (val result = repository.getAllFamousPlaces()) {
                 is ExploreResult.Success -> {
-                    val places = result.data
+                    val allPlaces = result.data
+                    val filtered = if (typeId == 0) {
+                        allPlaces
+                    } else {
+                        allPlaces.filter { it.idPlaceType == typeId }
+                    }
+                    
                     _uiState.update { it.copy(
-                        featuredPlace = places.firstOrNull(),
-                        trendingPlaces = if (places.size > 1) places.drop(1) else emptyList(),
+                        featuredPlace = filtered.firstOrNull(),
+                        trendingPlaces = if (filtered.size > 1) filtered.drop(1) else emptyList(),
                         isLoading = false
                     ) }
                 }
@@ -121,14 +132,18 @@ class FamousPlaceViewModel @Inject constructor(
 
     private suspend fun performSearch(query: String) {
         _uiState.update { it.copy(isLoading = true, error = null) }
-        when (val result = repository.searchPlaces(query)) {
+        when (val result = repository.getAllFamousPlaces()) {
             is ExploreResult.Success -> {
-                val places = result.data
+                val allPlaces = result.data
+                val filtered = allPlaces.filter { it.name.contains(query, ignoreCase = true) }
                 _uiState.update { it.copy(
-                    featuredPlace = places.firstOrNull(),
-                    trendingPlaces = if (places.size > 1) places.drop(1) else emptyList(),
+                    featuredPlace = filtered.firstOrNull(),
+                    trendingPlaces = if (filtered.size > 1) filtered.drop(1) else emptyList(),
                     isLoading = false
                 ) }
+            }
+            is ExploreResult.Empty -> {
+                _uiState.update { it.copy(featuredPlace = null, trendingPlaces = emptyList(), isLoading = false) }
             }
             else -> {
                 _uiState.update { it.copy(isLoading = false) }

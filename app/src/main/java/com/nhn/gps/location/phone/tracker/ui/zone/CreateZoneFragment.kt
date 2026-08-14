@@ -1,9 +1,12 @@
 package com.nhn.gps.location.phone.tracker.ui.zone
 
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -13,6 +16,7 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.Circle
 import com.google.android.gms.maps.model.CircleOptions
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.material.switchmaterial.SwitchMaterial
 import com.nhn.gps.location.phone.tracker.R
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
 import com.nhn.gps.location.phone.tracker.data.model.Zone
@@ -56,6 +60,18 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
             }
             radioSafe.setOnClickListener { drawCircle() }
             radioDangerous.setOnClickListener { drawCircle() }
+
+            switchEnter.setOnCheckedChangeListener { _, isChecked ->
+                updateSwitchUi(switchEnter, isChecked)
+            }
+            switchLeave.setOnCheckedChangeListener { _, isChecked ->
+                updateSwitchUi(switchLeave, isChecked)
+            }
+
+            // Initial UI state
+            updateSwitchUi(switchEnter, switchEnter.isChecked)
+            updateSwitchUi(switchLeave, switchLeave.isChecked)
+
             ZoneEditorState.selectedZoneId?.let { id ->
                 viewLifecycleOwner.lifecycleScope.launch {
                     editing = zoneRepository.zones.firstOrNullValue { it.id == id }
@@ -84,7 +100,23 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
 
         switchEnter.isChecked = zone.onEnter
         switchLeave.isChecked = zone.onLeave
+        updateSwitchUi(switchEnter, zone.onEnter)
+        updateSwitchUi(switchLeave, zone.onLeave)
         drawCircle()
+    }
+
+    private fun updateSwitchUi(sw: SwitchMaterial, isChecked: Boolean) {
+        if (isChecked) {
+            sw.trackTintList = ColorStateList.valueOf(
+                ContextCompat.getColor(requireContext(), R.color.bg_switch_permission)
+            )
+            sw.thumbTintList = ColorStateList.valueOf(Color.WHITE)
+        } else {
+            sw.trackTintList = ColorStateList.valueOf(
+                ContextCompat.getColor(requireContext(), R.color.color_bdbdbd)
+            )
+            sw.thumbTintList = ColorStateList.valueOf(Color.WHITE)
+        }
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
@@ -92,6 +124,9 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
         googleMap.uiSettings.isZoomControlsEnabled = false
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(center, 15f))
         
+        // Initial address fetch
+        updateAddress()
+
         // Cập nhật center khi bản đồ di chuyển xong (khớp với UI Drag to center)
         googleMap.setOnCameraIdleListener {
             center = googleMap.cameraPosition.target
@@ -145,6 +180,16 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
             Toast.makeText(requireContext(), "Zone saved", Toast.LENGTH_SHORT).show()
             navigationManager.navigateBack()
         }
+    }
+
+    override fun onDestroyView() {
+        map?.apply {
+            setOnCameraIdleListener(null)
+            clear()
+        }
+        map = null
+        circle = null
+        super.onDestroyView()
     }
 
     companion object { fun newInstance() = CreateZoneFragment() }

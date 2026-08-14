@@ -79,12 +79,16 @@
             <!-- Banner -->
 
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardMapPreview"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/d_20"
                 app:strokeWidth="0dp"
                 android:backgroundTint="@color/white"
-                app:cardCornerRadius="@dimen/d_20">
+                app:cardCornerRadius="@dimen/d_20"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
 
                 <FrameLayout
                     android:layout_width="match_parent"

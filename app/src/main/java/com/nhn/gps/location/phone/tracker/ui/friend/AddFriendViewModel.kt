@@ -35,16 +35,39 @@ class AddFriendViewModel @Inject constructor(
     private val _friendNotFound = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val friendNotFound: SharedFlow<Unit> = _friendNotFound.asSharedFlow()
 
-    fun findFriend(code: String) {
-        if (code.isBlank()) return
-        Log.d("AddFriendVM", "Finding friend with code: $code")
+    fun findFriend(input: String) {
+        if (input.isBlank()) return
+        Log.d("AddFriendVM", "Processing input: $input")
         
+        val prefix = "gps_friend:"
+        val friendUid = if (input.startsWith(prefix)) {
+            input.substring(prefix.length)
+        } else {
+            // Nếu không có prefix, có thể là nhập tay ID trực tiếp (tùy nhu cầu UI)
+            // Theo yêu cầu "Xử lý QR không hợp lệ", nếu scan QR không có prefix thì không add.
+            // Để đảm bảo tính năng nhập tay vẫn chạy, ta cho phép nếu input không chứa ":"
+            if (input.contains(":")) {
+                Log.d("AddFriendVM", "Invalid QR format")
+                _friendNotFound.tryEmit(Unit)
+                return
+            }
+            input
+        }
+
+        if (friendUid.isBlank()) return
+
         viewModelScope.launch {
+            val myUid = appPreferences.userId.first()
+            if (friendUid == myUid) {
+                Log.d("AddFriendVM", "Cannot add yourself")
+                _friendNotFound.emit(Unit) // Hoặc hiển thị thông báo riêng nếu cần
+                return@launch
+            }
+
             _isLoading.value = true
-            repository.findFriendById(code).fold(
+            repository.findFriendById(friendUid).fold(
                 onSuccess = { profile ->
                     Log.d("AddFriendVM", "Friend found: ${profile.name}")
-                    // Map UserProfile to FriendLocation for UI
                     _friendFound.value = FriendLocation(
                         id = profile.uid,
                         name = profile.name,
@@ -52,7 +75,7 @@ class AddFriendViewModel @Inject constructor(
                     )
                 },
                 onFailure = {
-                    Log.d("AddFriendVM", "Friend not found")
+                    Log.d("AddFriendVM", "Friend not found or error: ${it.message}")
                     _friendNotFound.emit(Unit)
                 }
             )

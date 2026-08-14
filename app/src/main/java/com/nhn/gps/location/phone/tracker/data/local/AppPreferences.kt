@@ -99,6 +99,12 @@ class AppPreferences @Inject constructor(
         preferences[USER_AVATAR] ?: ""
     }
 
+    suspend fun setUserAvatar(avatarUrl: String) {
+        context.appDataStore.edit { preferences ->
+            preferences[USER_AVATAR] = avatarUrl
+        }
+    }
+
     val userId: Flow<String?> = context.appDataStore.safeData.map { preferences ->
         preferences[USER_ID]
     }

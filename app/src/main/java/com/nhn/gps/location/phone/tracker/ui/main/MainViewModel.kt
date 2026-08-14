@@ -3,6 +3,9 @@ package com.nhn.gps.location.phone.tracker.ui.main
 import androidx.lifecycle.viewModelScope
 import com.nhn.gps.location.phone.tracker.base.BaseViewModel
 import com.nhn.gps.location.phone.tracker.data.local.AppPreferences
+import com.nhn.gps.location.phone.tracker.data.model.FamousPlaceModel
+import com.nhn.gps.location.phone.tracker.data.repository.ExploreRepository
+import com.nhn.gps.location.phone.tracker.data.repository.ExploreResult
 import com.nhn.gps.location.phone.tracker.navigation.AppDestination
 import com.nhn.gps.location.phone.tracker.navigation.NavigationManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -20,6 +23,7 @@ import kotlinx.coroutines.launch
 class MainViewModel @Inject constructor(
     private val preferences: AppPreferences,
     private val navigationManager: NavigationManager,
+    private val exploreRepository: ExploreRepository
 ) : BaseViewModel() {
 
     private val _isLocationPermanentlyEnabled = MutableStateFlow(false)
@@ -32,6 +36,8 @@ class MainViewModel @Inject constructor(
     private val _selectedPlaceId = MutableStateFlow<String?>(null)
     val selectedPlaceId: StateFlow<String?> = _selectedPlaceId.asStateFlow()
 
+    private val _famousPlaces = MutableStateFlow<List<FamousPlaceModel>>(emptyList())
+
     val userAvatar: StateFlow<String> = preferences.userAvatar.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
@@ -41,10 +47,12 @@ class MainViewModel @Inject constructor(
     val uiState = combine(
         preferences.appOpenCount,
         navigationManager.currentDestination,
-    ) { appOpenCount, destination ->
+        _famousPlaces
+    ) { appOpenCount, destination, famousPlaces ->
         MainUiState(
             appOpenCount = appOpenCount,
             currentRoute = destination?.route,
+            famousPlaces = famousPlaces
         )
     }.stateIn(
         scope = viewModelScope,
@@ -59,6 +67,20 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch {
             preferences.isLocationEnabled.collect {
                 _isLocationPermanentlyEnabled.value = it
+            }
+        }
+        fetchFamousPlaces()
+    }
+
+    private fun fetchFamousPlaces() {
+        viewModelScope.launch {
+            when (val result = exploreRepository.getAllFamousPlaces()) {
+                is ExploreResult.Success -> {
+                    _famousPlaces.value = result.data
+                }
+                else -> {
+                    _famousPlaces.value = emptyList()
+                }
             }
         }
     }

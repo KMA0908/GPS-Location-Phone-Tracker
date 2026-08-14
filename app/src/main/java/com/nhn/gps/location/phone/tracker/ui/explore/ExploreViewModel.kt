@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.math.*
 
 data class ExploreUiState(
     val places: List<FamousPlaceModel> = emptyList(),
@@ -87,9 +88,9 @@ class ExploreViewModel @Inject constructor(
 
     private suspend fun performSearch(query: String) {
         _uiState.update { it.copy(isLoading = true) }
-        when (val result = repository.searchPlaces(query)) {
+        when (val result = repository.getAllFamousPlaces()) {
             is ExploreResult.Success -> {
-                val place = result.data.firstOrNull()
+                val place = result.data.find { it.name.contains(query, ignoreCase = true) }
                 _uiState.update { it.copy(
                     searchedPlace = place,
                     isLoading = false
@@ -131,52 +132,45 @@ class ExploreViewModel @Inject constructor(
     }
 
     private suspend fun fetchPlacesForRegion(key: RegionKey) {
-        val cached = cache[key]
-        if (cached != null) {
-            _uiState.update { it.copy(
-                places = cached,
-                selectedPlaceId = cached.firstOrNull()?.id,
-                isLoading = false,
-                isRefreshing = false,
-                error = null
-            ) }
-            return
-        }
-
         val state = currentCameraState ?: return
         
-        val hasData = _uiState.value.places.isNotEmpty()
-        if (hasData) {
-            _uiState.update { it.copy(isRefreshing = true, error = null) }
-        } else {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+        val allPlacesResult = repository.getAllFamousPlaces()
+        if (allPlacesResult !is ExploreResult.Success) {
+            _uiState.update { it.copy(places = emptyList(), isLoading = false, isRefreshing = false) }
+            return
         }
         
-        // Map camera distance (3.5 to 15.0) to radius (5km to 50km)
-        val radius = ((state.cameraDistance - 3.5) / (15.0 - 3.5) * 45000.0 + 5000.0)
-            .coerceIn(5000.0, 50000.0)
+        val allPlaces = allPlacesResult.data
+        val centerLat = state.centerLatitude
+        val centerLng = state.centerLongitude
 
-        when (val result = repository.getNearbyFamousPlaces(state.centerLatitude, state.centerLongitude, radius, 4)) {
-            is ExploreResult.Success -> {
-                val places = result.data
-                addToCache(key, places)
-                _uiState.update { it.copy(
-                    places = places,
-                    selectedPlaceId = places.firstOrNull()?.id,
-                    isLoading = false,
-                    isRefreshing = false
-                ) }
+        // Get top 4 nearest places to the camera center
+        val nearby = allPlaces.asSequence()
+            .map { place ->
+                place to calculateAngularDistance(centerLat, centerLng, place.latitude, place.longitude)
             }
-            is ExploreResult.Empty -> {
-                _uiState.update { it.copy(places = emptyList(), isLoading = false, isRefreshing = false) }
-            }
-            is ExploreResult.ApiError -> {
-                _uiState.update { it.copy(isLoading = false, isRefreshing = false, error = result.message) }
-            }
-            else -> {
-                _uiState.update { it.copy(isLoading = false, isRefreshing = false) }
-            }
-        }
+            .sortedBy { it.second }
+            .take(4)
+            .map { it.first }
+            .toList()
+
+        _uiState.update { it.copy(
+            places = nearby,
+            selectedPlaceId = nearby.firstOrNull()?.id,
+            isLoading = false,
+            isRefreshing = false,
+            error = null
+        ) }
+    }
+
+    private fun calculateAngularDistance(lat1: Double, lng1: Double, lat2: Double, lng2: Double): Double {
+        val phi1 = Math.toRadians(lat1)
+        val phi2 = Math.toRadians(lat2)
+        val deltaLambda = Math.toRadians(lng2 - lng1)
+        
+        // Simple angular distance on sphere: cos(d) = sin(phi1)sin(phi2) + cos(phi1)cos(phi2)cos(deltaLambda)
+        val cosD = sin(phi1) * sin(phi2) + cos(phi1) * cos(phi2) * cos(deltaLambda)
+        return acos(cosD.coerceIn(-1.0, 1.0))
     }
 
     private fun addToCache(key: RegionKey, data: List<FamousPlaceModel>) {

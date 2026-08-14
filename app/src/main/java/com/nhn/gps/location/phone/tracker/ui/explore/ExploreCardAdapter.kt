@@ -9,32 +9,61 @@ import android.widget.ImageView
 import com.bumptech.glide.Glide
 import com.nhn.gps.location.phone.tracker.R
 import com.nhn.gps.location.phone.tracker.data.model.FamousPlaceModel
+import com.nhn.gps.location.phone.tracker.databinding.ItemExploreBinding
 import com.nhn.gps.location.phone.tracker.databinding.ItemExploreVerticalCardBinding
 
 class ExploreCardAdapter(
     private val onClick: (FamousPlaceModel) -> Unit,
-    private val onBindPhoto: (FamousPlaceModel, ImageView) -> Unit
-) : ListAdapter<FamousPlaceModel, ExploreCardAdapter.ViewHolder>(DIFF_CALLBACK) {
+    private val onBindPhoto: (FamousPlaceModel, ImageView) -> Unit,
+    private val layoutMode: LayoutMode = LayoutMode.VERTICAL
+) : ListAdapter<FamousPlaceModel, RecyclerView.ViewHolder>(DIFF_CALLBACK) {
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val binding = ItemExploreVerticalCardBinding.inflate(
-            LayoutInflater.from(parent.context),
-            parent,
-            false
-        )
-        return ViewHolder(binding)
+    enum class LayoutMode {
+        VERTICAL,
+        HOME_HORIZONTAL
     }
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(getItem(position))
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return if (layoutMode == LayoutMode.VERTICAL) {
+            val binding = ItemExploreVerticalCardBinding.inflate(
+                LayoutInflater.from(parent.context),
+                parent,
+                false
+            )
+            VerticalViewHolder(binding)
+        } else {
+            val binding = ItemExploreBinding.inflate(
+                LayoutInflater.from(parent.context),
+                parent,
+                false
+            )
+            HomeHorizontalViewHolder(binding)
+        }
     }
 
-    override fun onViewRecycled(holder: ViewHolder) {
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        val item = getItem(position)
+        if (holder is VerticalViewHolder) {
+            holder.bind(item)
+        } else if (holder is HomeHorizontalViewHolder) {
+            holder.bind(item)
+        }
+    }
+
+    override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
         super.onViewRecycled(holder)
-        Glide.with(holder.itemView.context).clear(holder.binding.ivThumbnail)
+        val imageView = if (holder is VerticalViewHolder) {
+            holder.binding.ivThumbnail
+        } else if (holder is HomeHorizontalViewHolder) {
+            holder.binding.ivThumbnail
+        } else null
+        
+        imageView?.let {
+            Glide.with(holder.itemView.context).clear(it)
+        }
     }
 
-    inner class ViewHolder(val binding: ItemExploreVerticalCardBinding) :
+    inner class VerticalViewHolder(val binding: ItemExploreVerticalCardBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
         fun bind(item: FamousPlaceModel) = with(binding) {
@@ -45,6 +74,18 @@ class ExploreCardAdapter(
 
             tvAttribution.text = item.photoMetadata?.attributions ?: ""
             tvAttribution.visibility = if (tvAttribution.text.isNotEmpty()) android.view.View.VISIBLE else android.view.View.GONE
+
+            root.setOnClickListener { onClick(item) }
+        }
+    }
+
+    inner class HomeHorizontalViewHolder(val binding: ItemExploreBinding) :
+        RecyclerView.ViewHolder(binding.root) {
+
+        fun bind(item: FamousPlaceModel) = with(binding) {
+            tvName.text = item.name
+            ivThumbnail.setImageResource(R.drawable.ic_paris) // Placeholder
+            onBindPhoto(item, ivThumbnail)
 
             root.setOnClickListener { onClick(item) }
         }

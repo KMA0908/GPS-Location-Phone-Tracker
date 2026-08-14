@@ -20,5 +20,8 @@ data class FamousPlaceModel(
     val openingHours: List<String>? = null,
     val types: List<String>? = null,
     val address: String? = null,
-    val photoMetadata: PhotoMetadata? = null
+    val photoMetadata: PhotoMetadata? = null,
+    val idPlaceType: Int = 0,
+    val descriptionResKey: String? = null,
+    val previewPhotos: List<String> = emptyList()
 )

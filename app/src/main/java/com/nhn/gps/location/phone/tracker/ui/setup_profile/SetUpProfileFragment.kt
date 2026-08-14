@@ -2,16 +2,19 @@ package com.nhn.gps.location.phone.tracker.ui.setup_profile
 
 import android.content.res.ColorStateList
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.bumptech.glide.Glide
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.nhn.gps.location.phone.tracker.R
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
@@ -26,6 +29,16 @@ class SetUpProfileFragment : BaseFragment<FragmentSetUpProfileBinding, SetUpProf
 
     override val viewModel: SetUpProfileViewModel by viewModels()
 
+    private var selectedImageUri: Uri? = null
+
+    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let {
+            selectedImageUri = it
+            viewModel.onAvatarChanged(it)
+            previewAvatar(it)
+        }
+    }
+
     override fun createBinding(
         inflater: LayoutInflater,
         container: ViewGroup?
@@ -34,16 +47,31 @@ class SetUpProfileFragment : BaseFragment<FragmentSetUpProfileBinding, SetUpProf
     override fun setupViews(savedInstanceState: Bundle?) = with(binding) {
         imgBack.setOnClickListener { handleToolbarBack() }
 
+        imgProfile.setOnClickListener {
+            pickImageLauncher.launch("image/*")
+        }
+
         cardName.edtValue.addTextChangedListener {
             viewModel.onNameChanged(it?.toString() ?: "")
         }
 
         cardPhone.edtValue.addTextChangedListener {
-            viewModel.onPhoneChanged(it?.toString() ?: "")
+            val phone = it?.toString()?.trim() ?: ""
+            viewModel.onPhoneChanged(phone)
+            if (phone.isNotEmpty() && !viewModel.isValidVietnamPhone(phone)) {
+                cardPhone.edtValue.error = getString(R.string.invalid_phone)
+            } else {
+                cardPhone.edtValue.error = null
+            }
         }
 
         btnSave.setOnClickListener {
-            viewModel.onSaveClicked()
+            val phone = cardPhone.edtValue.text?.toString()?.trim() ?: ""
+            if (viewModel.isValidVietnamPhone(phone)) {
+                viewModel.onSaveClicked()
+            } else {
+                cardPhone.edtValue.error = getString(R.string.invalid_phone)
+            }
         }
     }
 
@@ -69,6 +97,13 @@ class SetUpProfileFragment : BaseFragment<FragmentSetUpProfileBinding, SetUpProf
                 }
             }
         }
+    }
+
+    private fun previewAvatar(uri: Uri) {
+        Glide.with(this)
+            .load(uri)
+            .circleCrop()
+            .into(binding.imgProfile)
     }
 
     private fun render(state: SetUpProfileUiState) = withBinding {

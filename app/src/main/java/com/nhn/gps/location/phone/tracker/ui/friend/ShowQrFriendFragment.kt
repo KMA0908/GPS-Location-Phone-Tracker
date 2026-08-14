@@ -36,12 +36,15 @@ class ShowQrFriendFragment : BaseFragment<FragmentShowQrFriendBinding, FriendLis
         binding.btnBack.setOnClickListener { handleToolbarBack() }
         
         viewLifecycleOwner.lifecycleScope.launch {
-            val userId = appPreferences.userName.first() // Use userName as ID for demo
-            binding.tvCode.text = userId
+            val uid = appPreferences.userId.first() ?: ""
+            val name = appPreferences.userName.first()
+            val payload = "gps_friend:$uid"
+            
+            binding.tvCode.text = name
             
             try {
                 val encoder = BarcodeEncoder()
-                val bitmap = encoder.encodeBitmap(userId, BarcodeFormat.QR_CODE, 512, 512)
+                val bitmap = encoder.encodeBitmap(payload, BarcodeFormat.QR_CODE, 512, 512)
                 binding.imgQr.setImageBitmap(bitmap)
                 
                 binding.cardDownload.setOnClickListener {
@@ -49,12 +52,12 @@ class ShowQrFriendFragment : BaseFragment<FragmentShowQrFriendBinding, FriendLis
                 }
                 
                 binding.cardShare.setOnClickListener {
-                    shareProfile(userId)
+                    shareProfile(payload)
                 }
                 
                 binding.imgCopy.setOnClickListener {
                     val clipboard = requireContext().getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                    val clip = android.content.ClipData.newPlainText("Friend Code", userId)
+                    val clip = android.content.ClipData.newPlainText("Friend Code", payload)
                     clipboard.setPrimaryClip(clip)
                     Toast.makeText(requireContext(), "Code copied to clipboard", Toast.LENGTH_SHORT).show()
                 }

@@ -78,25 +78,31 @@ class PlaceDetailFragment : BaseFragment<FragmentPlaceDetailBinding, PlaceDetail
         tvDistance.text = String.format(Locale.getDefault(), "%.1f km", place.distanceKm)
         tvHeaderRating.text = String.format(Locale.getDefault(), "%.1f (%d reviews)", place.rating, place.reviewCount)
         
-        tvDescription.text = place.address ?: place.location
+        // Resolve description from res key or fallback to address/location
+        val resId = place.descriptionResKey?.let { 
+            resources.getIdentifier(it, "string", requireContext().packageName) 
+        } ?: 0
+        
+        tvDescription.text = if (resId != 0) {
+            getString(resId)
+        } else {
+            place.address ?: place.location
+        }
 
-        // Hero Attribution
-        tvHeroAttribution.text = place.photoMetadata?.attributions ?: ""
-        tvHeroAttribution.visibility = if (tvHeroAttribution.text.isNotEmpty()) View.VISIBLE else View.GONE
+        // Hero Attribution (not applicable for local assets)
+        tvHeroAttribution.visibility = View.GONE
 
-        // Load Hero image
-        if (place.photoMetadata != null) {
-            viewLifecycleOwner.lifecycleScope.launch {
-                val uri = viewModel.getPhotoUri(place.photoMetadata)
-                if (uri != null) {
-                    com.bumptech.glide.Glide.with(ivHero)
-                        .load(uri)
-                        .placeholder(R.drawable.ic_paris)
-                        .error(R.drawable.ic_paris)
-                        .centerCrop()
-                        .into(ivHero)
-                }
-            }
+        // Load Hero image from local assets
+        val photoFileName = place.previewPhotos.firstOrNull()
+        if (photoFileName != null) {
+            com.bumptech.glide.Glide.with(ivHero)
+                .load("file:///android_asset/famous_places_images/$photoFileName")
+                .placeholder(R.drawable.ic_paris)
+                .error(R.drawable.ic_paris)
+                .centerCrop()
+                .into(ivHero)
+        } else {
+            ivHero.setImageResource(R.drawable.ic_paris)
         }
         
         // Update visit info cards
