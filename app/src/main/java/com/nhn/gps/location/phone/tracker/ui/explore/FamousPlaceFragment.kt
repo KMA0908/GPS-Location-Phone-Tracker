@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -225,15 +226,20 @@ class FamousPlaceFragment : BaseFragment<FragmentFamousPlaceListBinding, FamousP
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val item = items[position]
             val isSelected = item == viewModel.uiState.value.selectedCategory
+            val context = holder.itemView.context
             
             holder.binding.tvCategoryName.text = item
             if (isSelected) {
-                holder.binding.cardCategory.setCardBackgroundColor(Color.parseColor("#5B5CE2"))
+                holder.binding.cardCategory.setCardBackgroundColor(
+                    ContextCompat.getColor(context, R.color.bg_switch_permission)
+                )
                 holder.binding.tvCategoryName.setTextColor(Color.WHITE)
                 holder.binding.cardCategory.strokeWidth = 0
             } else {
                 holder.binding.cardCategory.setCardBackgroundColor(Color.WHITE)
-                holder.binding.tvCategoryName.setTextColor(Color.parseColor("#62626E"))
+                holder.binding.tvCategoryName.setTextColor(
+                    ContextCompat.getColor(context, R.color.text_secondary)
+                )
                 holder.binding.cardCategory.strokeWidth = 1
             }
             
