@@ -53,7 +53,7 @@ class CountryViewModel @Inject constructor(
     private fun loadCountries() {
         launchCatching {
             val countries = withContext(Dispatchers.IO) {
-                repository.getCountries()
+                repository.getCountries().sortedBy { it.name.trim().lowercase(Locale.getDefault()) }
             }
             _originalCountries.value = countries
         }

@@ -101,9 +101,9 @@ class GlobeGLSurfaceView @JvmOverloads constructor(
                 if (dx != 0f || dy != 0f) {
                     renderer?.let { r ->
                         // Rotate around Y axis (horizontal drag rotates globe left/right)
-                        r.angleY += dx * 0.5f
+                        r.angleY += dx * 0.2f
                         // Rotate around X axis (vertical drag rotates globe up/down)
-                        r.angleX += dy * 0.5f
+                        r.angleX += dy * 0.2f
 
                         // Limit pitch to avoid flipping
                         r.angleX = r.angleX.coerceIn(-90f, 90f)

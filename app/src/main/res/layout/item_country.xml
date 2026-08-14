@@ -20,16 +20,18 @@
 
     <TextView
         android:id="@+id/tvName"
-        android:layout_width="0dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:layout_marginEnd="8dp"
         android:ellipsize="end"
         android:maxLines="1"
         android:textColor="#212121"
         android:textSize="16sp"
+        app:layout_constrainedWidth="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@id/tvDialCode"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintHorizontal_chainStyle="packed"
         app:layout_constraintStart_toEndOf="@id/tvEmoji"
         app:layout_constraintTop_toTopOf="parent"
         tools:text="Vietnam" />
@@ -38,11 +40,13 @@
         android:id="@+id/tvDialCode"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
+        android:layout_marginStart="4dp"
         android:textColor="#727272"
         android:textSize="14sp"
+        app:layout_constrainedWidth="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@id/ivCheck"
+        app:layout_constraintStart_toEndOf="@id/tvName"
         app:layout_constraintTop_toTopOf="parent"
         tools:text="(+84)" />
 

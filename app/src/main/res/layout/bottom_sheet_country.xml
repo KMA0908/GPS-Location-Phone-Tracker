@@ -53,14 +53,27 @@
     <!-- Country List -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvCountries"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="400dp"
         android:layout_marginTop="8dp"
         android:paddingBottom="20dp"
         android:clipToPadding="false"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/layoutIndex"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/layoutSearch"
         tools:listitem="@layout/item_country" />
+
+    <LinearLayout
+        android:id="@+id/layoutIndex"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingHorizontal="4dp"
+        app:layout_constraintBottom_toBottomOf="@id/rvCountries"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/rvCountries" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

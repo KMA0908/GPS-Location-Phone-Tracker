@@ -1,9 +1,12 @@
 package com.nhn.gps.location.phone.tracker.ui.phone_number_locator
 
+import android.graphics.Color
 import android.os.Bundle
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import androidx.core.os.bundleOf
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.setFragmentResult
@@ -11,6 +14,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.nhn.gps.location.phone.tracker.data.model.Country
 import com.nhn.gps.location.phone.tracker.databinding.BottomSheetCountryBinding
@@ -52,6 +56,7 @@ class CountrySelectorBottomSheet : BottomSheetDialogFragment() {
         super.onViewCreated(view, savedInstanceState)
         setupRecyclerView()
         setupSearch()
+        setupAlphabetIndex()
         observeViewModel()
     }
 
@@ -65,6 +70,32 @@ class CountrySelectorBottomSheet : BottomSheetDialogFragment() {
     private fun setupSearch() {
         binding.edtSearch.doAfterTextChanged { text ->
             viewModel.onSearchQueryChanged(text?.toString().orEmpty())
+        }
+    }
+
+    private fun setupAlphabetIndex() {
+        val alphabet = ('A'..'Z').toList()
+        binding.layoutIndex.removeAllViews()
+        alphabet.forEach { letter ->
+            val textView = TextView(context).apply {
+                text = letter.toString()
+                textSize = 10f
+                setTextColor(Color.parseColor("#727272"))
+                gravity = Gravity.CENTER
+                setPadding(0, 2, 0, 2)
+                setOnClickListener {
+                    scrollToLetter(letter)
+                }
+            }
+            binding.layoutIndex.addView(textView)
+        }
+    }
+
+    private fun scrollToLetter(letter: Char) {
+        val countries = countryAdapter.currentList
+        val index = countries.indexOfFirst { it.name.trim().startsWith(letter, ignoreCase = true) }
+        if (index != -1) {
+            (binding.rvCountries.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(index, 0)
         }
     }
 
