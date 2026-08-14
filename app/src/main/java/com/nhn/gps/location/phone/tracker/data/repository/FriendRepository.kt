@@ -9,10 +9,13 @@ import com.nhn.gps.location.phone.tracker.data.model.FriendLocation
 import com.nhn.gps.location.phone.tracker.data.model.UserLocation
 import com.nhn.gps.location.phone.tracker.data.model.UserProfile
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -23,6 +26,7 @@ interface FriendRepository {
     suspend fun findFriendById(friendId: String): Result<UserProfile>
     suspend fun addFriend(currentUserId: String, friendId: String): Result<Unit>
     suspend fun removeFriend(currentUserId: String, friendId: String): Result<Unit>
+    suspend fun isFriend(userId: String, friendId: String): Boolean
 }
 
 @Singleton
@@ -50,41 +54,61 @@ class FriendRepositoryImpl @Inject constructor(
         awaitClose { ref.removeEventListener(listener) }
     }
 
-    private fun getAllUsersRaw(): Flow<DataSnapshot> = callbackFlow {
-        Log.d("FriendRepo", "Listening to all users for data sync")
-        val listener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                trySend(snapshot)
+    private fun observeFriend(friendId: String): Flow<FriendLocation?> {
+        val profileFlow = callbackFlow {
+            val ref = usersRef.child(friendId).child("profile")
+            val listener = object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    trySend(snapshot.getValue(UserProfile::class.java))
+                }
+                override fun onCancelled(error: DatabaseError) {
+                    close(error.toException())
+                }
             }
-            override fun onCancelled(error: DatabaseError) { 
-                Log.e("FriendRepo", "All users listener error", error.toException())
-                close(error.toException()) 
+            ref.addValueEventListener(listener)
+            awaitClose { ref.removeEventListener(listener) }
+        }
+
+        val locationFlow = callbackFlow {
+            val ref = usersRef.child(friendId).child("location")
+            val listener = object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    trySend(snapshot.getValue(UserLocation::class.java))
+                }
+                override fun onCancelled(error: DatabaseError) {
+                    close(error.toException())
+                }
+            }
+            ref.addValueEventListener(listener)
+            awaitClose { ref.removeEventListener(listener) }
+        }
+
+        return combine(profileFlow, locationFlow) { profile, loc ->
+            if (profile != null) {
+                FriendLocation(
+                    id = friendId,
+                    name = profile.name,
+                    avatarUrl = profile.avatarUrl,
+                    latitude = loc?.latitude ?: 0.0,
+                    longitude = loc?.longitude ?: 0.0,
+                    updatedAt = loc?.updatedAt ?: 0L
+                )
+            } else {
+                null
             }
         }
-        usersRef.addValueEventListener(listener)
-        awaitClose { usersRef.removeEventListener(listener) }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun getFriends(userId: String): Flow<List<FriendLocation>> = 
-        getFriendUids(userId).combine(getAllUsersRaw()) { uids, usersSnapshot ->
-            Log.d("FriendRepo", "Combining UIDs with user data. UIDs size: ${uids.size}")
-            uids.mapNotNull { uid ->
-                val userNode = usersSnapshot.child(uid)
-                val profile = userNode.child("profile").getValue(UserProfile::class.java)
-                val loc = userNode.child("location").getValue(UserLocation::class.java)
-                
-                if (profile != null) {
-                    FriendLocation(
-                        id = uid,
-                        name = profile.name,
-                        avatarUrl = profile.avatarUrl,
-                        latitude = loc?.latitude ?: 0.0,
-                        longitude = loc?.longitude ?: 0.0,
-                        updatedAt = loc?.updatedAt ?: 0L
-                    )
-                } else {
-                    Log.w("FriendRepo", "Profile not found for friend UID: $uid")
-                    null
+        getFriendUids(userId).flatMapLatest { uids ->
+            Log.d("FriendRepo", "Processing UIDs for surgical observe: ${uids.size}")
+            if (uids.isEmpty()) {
+                flowOf(emptyList())
+            } else {
+                val flows = uids.map { observeFriend(it) }
+                combine(flows) { array ->
+                    array.filterNotNull().toList()
                 }
             }
         }
@@ -116,15 +140,18 @@ class FriendRepositoryImpl @Inject constructor(
         friendId: String
     ): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            Log.d("FriendRepo", "Adding friend: myUid=$currentUserId, friendId=$friendId")
-            // users/{myUid}/friends/{friendUid} = true
-            usersRef.child(currentUserId).child("friends").child(friendId).setValue(true).await()
-            // users/{friendUid}/friends/{myUid} = true
-            usersRef.child(friendId).child("friends").child(currentUserId).setValue(true).await()
+            Log.d("FriendRepo", "Adding friend atomic: myUid=$currentUserId, friendId=$friendId")
+            
+            val updates = mapOf<String, Any>(
+                "$currentUserId/friends/$friendId" to true,
+                "$friendId/friends/$currentUserId" to true
+            )
+            
+            usersRef.updateChildren(updates).await()
 
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e("FriendRepo", "Error adding friend", e)
+            Log.e("FriendRepo", "Error adding friend atomic", e)
             if (e is kotlinx.coroutines.CancellationException) throw e
             Result.failure(e)
         }
@@ -140,6 +167,15 @@ class FriendRepositoryImpl @Inject constructor(
             Log.e("FriendRepo", "Error removing friend", e)
             if (e is kotlinx.coroutines.CancellationException) throw e
             Result.failure(e)
+        }
+    }
+
+    override suspend fun isFriend(userId: String, friendId: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val snapshot = usersRef.child(userId).child("friends").child(friendId).get().await()
+            snapshot.exists() && snapshot.value == true
+        } catch (e: Exception) {
+            false
         }
     }
 }

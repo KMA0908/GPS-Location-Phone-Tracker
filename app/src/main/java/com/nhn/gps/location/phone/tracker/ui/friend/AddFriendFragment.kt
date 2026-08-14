@@ -218,6 +218,15 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
                 }
 
                 launch {
+                    viewModel.alreadyFriend.collect {
+                        showAlreadyFriendDialog()
+                        if (binding.cameraContainer.isVisible) {
+                            binding.layoutCamera.barcodeScanner.resume()
+                        }
+                    }
+                }
+
+                launch {
                     viewModel.addSuccess.collect {
                         showFriendAdded()
                     }
@@ -253,6 +262,14 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
         AlertDialog.Builder(requireContext())
             .setTitle("Friend Not Found")
             .setMessage("We couldn't find any user with that code.")
+            .setPositiveButton("OK", null)
+            .show()
+    }
+
+    private fun showAlreadyFriendDialog() {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Already Friend")
+            .setMessage("This user is already in your friend list.")
             .setPositiveButton("OK", null)
             .show()
     }

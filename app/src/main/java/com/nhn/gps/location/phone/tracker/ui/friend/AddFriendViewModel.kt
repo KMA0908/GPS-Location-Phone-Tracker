@@ -35,6 +35,9 @@ class AddFriendViewModel @Inject constructor(
     private val _friendNotFound = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val friendNotFound: SharedFlow<Unit> = _friendNotFound.asSharedFlow()
 
+    private val _alreadyFriend = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val alreadyFriend: SharedFlow<Unit> = _alreadyFriend.asSharedFlow()
+
     fun findFriend(input: String) {
         if (input.isBlank()) return
         Log.d("AddFriendVM", "Processing input: $input")
@@ -61,6 +64,12 @@ class AddFriendViewModel @Inject constructor(
             if (friendUid == myUid) {
                 Log.d("AddFriendVM", "Cannot add yourself")
                 _friendNotFound.emit(Unit) // Hoặc hiển thị thông báo riêng nếu cần
+                return@launch
+            }
+
+            if (myUid != null && repository.isFriend(myUid, friendUid)) {
+                Log.d("AddFriendVM", "Already friends")
+                _alreadyFriend.emit(Unit)
                 return@launch
             }
 
