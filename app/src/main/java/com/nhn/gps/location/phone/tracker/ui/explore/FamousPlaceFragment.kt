@@ -199,7 +199,7 @@ class FamousPlaceFragment : BaseFragment<FragmentFamousPlaceListBinding, FamousP
             navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.Home)
         }
         navMap.setOnClickListener {
-            // Already here
+            navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.Map)
         }
         navLocation.setOnClickListener {
             mainViewModel.openMap()

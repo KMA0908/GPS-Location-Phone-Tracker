@@ -34,7 +34,7 @@
         <View
             android:layout_width="0dp"
             android:layout_height="10dp"
-            android:background="@drawable/bg_splash_progress_track"
+            android:background="#CCCCCC"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -42,7 +42,7 @@
         <View
             android:layout_width="0dp"
             android:layout_height="10dp"
-            android:background="@drawable/bg_splash_progress_fill"
+            android:background="#35C759"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@id/splashProgressGuide"
             app:layout_constraintStart_toStartOf="parent"
@@ -50,7 +50,7 @@
         <View
             android:layout_width="20dp"
             android:layout_height="20dp"
-            android:background="@drawable/bg_splash_progress_thumb"
+            android:background="#FFFFFF"
             android:translationX="-10dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toEndOf="@id/splashProgressGuide"
@@ -70,13 +70,10 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <com.leansoft.ads.view.BannerAdViewContainer
+    <FrameLayout
         android:id="@+id/bannerSplashAd"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/white"
-        app:banner_ads_collapsible="false"
-        app:banner_ads_layout_loading="@layout/layout_splash_banner_ad_loading"
-        app:banner_ads_placement="banner_splash"
         app:layout_constraintBottom_toBottomOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>

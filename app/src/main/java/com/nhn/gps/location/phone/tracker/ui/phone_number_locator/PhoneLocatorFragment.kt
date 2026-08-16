@@ -1,6 +1,7 @@
 package com.nhn.gps.location.phone.tracker.ui.phone_number_locator
 
 import android.os.Bundle
+import androidx.core.os.BundleCompat
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -255,7 +256,7 @@ class PhoneLocatorFragment : BaseFragment<FragmentPhoneLocatorBinding, PhoneLoca
             CountrySelectorBottomSheet.REQUEST_KEY,
             viewLifecycleOwner
         ) { _, bundle ->
-            val country = bundle.getParcelable<Country>(CountrySelectorBottomSheet.EXTRA_COUNTRY)
+            val country = BundleCompat.getParcelable(bundle, CountrySelectorBottomSheet.EXTRA_COUNTRY, Country::class.java)
             country?.let {
                 updateSelectedCountry(it)
             }

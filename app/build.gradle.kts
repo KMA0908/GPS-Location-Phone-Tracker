@@ -113,6 +113,7 @@ dependencies {
     implementation(libs.zxing.android.embedded)
     implementation(libs.androidx.recyclerview)
     implementation(libs.facebook.shimmer)
-    implementation(libs.leansoft.ads)
+    // TEMP DISABLED: ls-leansoft-publishing-sdk unavailable
+    // implementation(libs.leansoft.ads)
     implementation(libs.ccp)
 }

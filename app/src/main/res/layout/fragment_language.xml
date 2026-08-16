@@ -51,11 +51,9 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tvTitle" />
 
-    <com.leansoft.ads.view.NativeAdViewContainer
+    <FrameLayout
         android:id="@+id/nativeAdViewContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:ads_layout_loaded="@layout/layout_ad_native_media_big"
-        app:ads_layout_loading="@layout/layout_ad_native_loading_media_big"
         app:layout_constraintBottom_toBottomOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>

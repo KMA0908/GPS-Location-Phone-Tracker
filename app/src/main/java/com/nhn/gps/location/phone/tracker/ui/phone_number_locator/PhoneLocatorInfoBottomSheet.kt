@@ -1,6 +1,7 @@
 package com.nhn.gps.location.phone.tracker.ui.phone_number_locator
 
 import android.os.Bundle
+import androidx.core.os.BundleCompat
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -30,7 +31,9 @@ class PhoneLocatorInfoBottomSheet : BottomSheetDialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
-        val profile = arguments?.getParcelable<UserProfile>(ARG_PROFILE)
+        val profile = arguments?.let { bundle ->
+            BundleCompat.getParcelable(bundle, ARG_PROFILE, UserProfile::class.java)
+        }
         val address = arguments?.getString(ARG_ADDRESS)
 
         if (profile != null) {
