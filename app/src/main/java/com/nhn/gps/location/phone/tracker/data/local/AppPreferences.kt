@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.nhn.gps.location.phone.tracker.data.model.FavoritePlaceRef
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.IOException
 import javax.inject.Inject
@@ -17,6 +18,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import org.json.JSONArray
+import org.json.JSONObject
 
 private val Context.appDataStore: DataStore<Preferences> by preferencesDataStore(
     name = "app_preferences",
@@ -26,6 +29,61 @@ private val Context.appDataStore: DataStore<Preferences> by preferencesDataStore
 class AppPreferences @Inject constructor(
     @param:ApplicationContext private val context: Context,
 ) {
+
+    val favoritePlacesFlow: Flow<List<FavoritePlaceRef>> = context.appDataStore.safeData.map { preferences ->
+        val json = preferences[FAVORITE_PLACES_JSON] ?: "[]"
+        try {
+            val array = JSONArray(json)
+            val list = mutableListOf<FavoritePlaceRef>()
+            for (i in 0 until array.length()) {
+                val obj = array.getJSONObject(i)
+                val id = obj.optString("id")
+                if (id.isNotBlank()) {
+                    list.add(FavoritePlaceRef(id, obj.optLong("savedAt")))
+                }
+            }
+            list
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    suspend fun toggleFavoritePlace(placeId: String) {
+        if (placeId.isBlank()) return
+        context.appDataStore.edit { preferences ->
+            val json = preferences[FAVORITE_PLACES_JSON] ?: "[]"
+            val list = try {
+                val array = JSONArray(json)
+                val temp = mutableListOf<FavoritePlaceRef>()
+                for (i in 0 until array.length()) {
+                    val obj = array.getJSONObject(i)
+                    val id = obj.optString("id")
+                    if (id.isNotBlank()) {
+                        temp.add(FavoritePlaceRef(id, obj.optLong("savedAt")))
+                    }
+                }
+                temp
+            } catch (e: Exception) {
+                mutableListOf()
+            }
+
+            val existingIndex = list.indexOfFirst { it.id == placeId }
+            if (existingIndex != -1) {
+                list.removeAt(existingIndex)
+            } else {
+                list.add(0, FavoritePlaceRef(placeId, System.currentTimeMillis()))
+            }
+
+            val newArray = JSONArray()
+            list.forEach { ref ->
+                val obj = JSONObject()
+                obj.put("id", ref.id)
+                obj.put("savedAt", ref.savedAt)
+                newArray.put(obj)
+            }
+            preferences[FAVORITE_PLACES_JSON] = newArray.toString()
+        }
+    }
 
     val appOpenCount: Flow<Int> = context.appDataStore.safeData.map { preferences ->
         preferences[APP_OPEN_COUNT] ?: 0
@@ -99,9 +157,19 @@ class AppPreferences @Inject constructor(
         preferences[USER_AVATAR] ?: ""
     }
 
+    val userAvatarKey: Flow<String> = context.appDataStore.safeData.map { preferences ->
+        preferences[USER_AVATAR_KEY] ?: ""
+    }
+
     suspend fun setUserAvatar(avatarUrl: String) {
         context.appDataStore.edit { preferences ->
             preferences[USER_AVATAR] = avatarUrl
+        }
+    }
+
+    suspend fun setUserAvatarKey(avatarKey: String) {
+        context.appDataStore.edit { preferences ->
+            preferences[USER_AVATAR_KEY] = avatarKey
         }
     }
 
@@ -177,10 +245,12 @@ class AppPreferences @Inject constructor(
         val USER_NAME = stringPreferencesKey("user_name")
         val USER_PHONE = stringPreferencesKey("user_phone")
         val USER_AVATAR = stringPreferencesKey("user_avatar")
+        val USER_AVATAR_KEY = stringPreferencesKey("user_avatar_key")
         val USER_ID = stringPreferencesKey("user_id")
         val SELECTED_LANGUAGE = stringPreferencesKey("selected_language")
         val ZONES_JSON = androidx.datastore.preferences.core.stringPreferencesKey("zones_json")
         val ZONE_ALERTS_JSON = androidx.datastore.preferences.core.stringPreferencesKey("zone_alerts_json")
         val ZONE_STATES_JSON = androidx.datastore.preferences.core.stringPreferencesKey("zone_states_json")
+        val FAVORITE_PLACES_JSON = stringPreferencesKey("favorite_places_json")
     }
 }

@@ -3,15 +3,19 @@ package com.nhn.gps.location.phone.tracker.data.repository
 import android.content.Context
 import com.google.android.libraries.places.api.model.PhotoMetadata
 import com.nhn.gps.location.phone.tracker.data.model.FamousPlaceModel
+import com.nhn.gps.location.phone.tracker.data.local.AppPreferences
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import javax.inject.Inject
 import kotlin.math.*
 
 class ExploreRepositoryImpl @Inject constructor(
-    @param:ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context,
+    private val appPreferences: AppPreferences
 ) : ExploreRepository {
 
     private var cachedFamousPlaces: List<FamousPlaceModel>? = null
@@ -116,6 +120,16 @@ class ExploreRepositoryImpl @Inject constructor(
     override suspend fun getAllFamousPlaces(): ExploreResult<List<FamousPlaceModel>> {
         val allPlaces = loadFamousPlacesFromJson()
         return if (allPlaces.isEmpty()) ExploreResult.Empty else ExploreResult.Success(allPlaces)
+    }
+
+    override fun observeFavoritePlaceIds(): Flow<Set<String>> {
+        return appPreferences.favoritePlacesFlow.map { list ->
+            list.map { it.id }.toSet()
+        }
+    }
+
+    override suspend fun toggleFavorite(placeId: String) {
+        appPreferences.toggleFavoritePlace(placeId)
     }
 
     private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {

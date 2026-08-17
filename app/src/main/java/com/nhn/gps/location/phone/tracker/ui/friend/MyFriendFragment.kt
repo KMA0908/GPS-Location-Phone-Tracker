@@ -13,11 +13,11 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.bumptech.glide.Glide
 import com.nhn.gps.location.phone.tracker.R
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
 import com.nhn.gps.location.phone.tracker.databinding.FragmentMyFriendBinding
 import com.nhn.gps.location.phone.tracker.navigation.AppDestination
+import com.nhn.gps.location.phone.tracker.util.loadAvatar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -106,18 +106,7 @@ class MyFriendFragment : BaseFragment<FragmentMyFriendBinding, FriendListViewMod
     private fun showRemoveDialog(friend: com.nhn.gps.location.phone.tracker.data.model.FriendLocation) = with(binding) {
         viewRemoveDialog.tvTitle.text = getString(R.string.remove_friend_title, friend.name)
         
-        // Glide avatar for dialog
-        val avatarUrl = friend.avatarUrl
-        if (avatarUrl.isEmpty() || avatarUrl == "null") {
-            viewRemoveDialog.imgDelete.setImageResource(R.drawable.ic_avt_location)
-        } else {
-            Glide.with(this@MyFriendFragment)
-                .load(avatarUrl)
-                .circleCrop()
-                .placeholder(R.drawable.ic_avt_location)
-                .error(R.drawable.ic_avt_location)
-                .into(viewRemoveDialog.imgDelete)
-        }
+        viewRemoveDialog.imgDelete.loadAvatar(friend.avatarKey, friend.avatarUrl, fallbackRes = R.drawable.ic_avt_location)
 
         viewDim.visibility = View.VISIBLE
         viewRemoveDialog.dialogRemoveFriendContainer.visibility = View.VISIBLE
@@ -141,17 +130,10 @@ class MyFriendFragment : BaseFragment<FragmentMyFriendBinding, FriendListViewMod
         layoutFriendProfile.tvUserId.text = "ID: ${friend.id}"
         layoutFriendProfile.tvPhoneNumber.text = "+84 000 0000"
 
-        // Load Avatar
-        val avatarUrl = friend.avatarUrl
-        if (avatarUrl.isEmpty() || avatarUrl == "null") {
-            layoutFriendProfile.imgAvatar.setImageResource(R.drawable.ic_avt_location)
-        } else {
-            Glide.with(this@MyFriendFragment)
-                .load(avatarUrl)
-                .circleCrop()
-                .placeholder(R.drawable.ic_avt_location)
-                .error(R.drawable.ic_avt_location)
-                .into(layoutFriendProfile.imgAvatar)
+        layoutFriendProfile.imgAvatar.loadAvatar(friend.avatarKey, friend.avatarUrl, fallbackRes = R.drawable.ic_avt_location )
+
+        layoutFriendProfile.ivMore.setOnClickListener {
+            viewModel.onMoreClicked(friend)
         }
 
         viewDim.visibility = View.VISIBLE

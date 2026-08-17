@@ -24,4 +24,13 @@
     <string name="continue_text">Tiếp tục</string>
     <string name="welcome_back">Chào mừng bạn quay lại</string>
     <string name="invalid_phone">Số điện thoại không hợp lệ</string>
+
+    <string name="search_location_hint">Tìm kiếm vị trí…</string>
+    <string name="search_address_empty">Vui lòng nhập địa chỉ</string>
+    <string name="search_location_not_found">Không tìm thấy địa chỉ</string>
+    <string name="search_location_error">Không thể tìm kiếm địa chỉ. Vui lòng thử lại.</string>
+    <string name="search_location_unavailable">Thiết bị không hỗ trợ tìm kiếm địa chỉ</string>
+    <string name="place_location_unavailable">Không có dữ liệu vị trí cho địa điểm này</string>
+    <string name="add_to_favorites">Thêm vào yêu thích</string>
+    <string name="remove_from_favorites">Xóa khỏi yêu thích</string>
 </resources>

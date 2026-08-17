@@ -9,6 +9,7 @@ import com.bumptech.glide.Glide
 import com.nhn.gps.location.phone.tracker.R
 import com.nhn.gps.location.phone.tracker.data.model.FriendLocation
 import com.nhn.gps.location.phone.tracker.databinding.ItemFriendBinding
+import com.nhn.gps.location.phone.tracker.util.loadAvatar
 
 class FriendAdapter(
     private val showMoreButton: Boolean = true,
@@ -30,17 +31,7 @@ class FriendAdapter(
             tvName.text = friend.name
             tvAddress.text = "ID: ${friend.id}"
             
-            // Load Avatar
-            if (friend.avatarUrl.isEmpty() || friend.avatarUrl == "null") {
-                imgAvatar.setImageResource(R.drawable.ic_avt)
-            } else {
-                Glide.with(root.context)
-                    .load(friend.avatarUrl)
-                    .circleCrop()
-                    .placeholder(R.drawable.ic_avt)
-                    .error(R.drawable.ic_avt)
-                    .into(imgAvatar)
-            }
+            imgAvatar.loadAvatar(friend.avatarKey, friend.avatarUrl)
             
             if (showMoreButton) {
                 btnMore.visibility = android.view.View.VISIBLE

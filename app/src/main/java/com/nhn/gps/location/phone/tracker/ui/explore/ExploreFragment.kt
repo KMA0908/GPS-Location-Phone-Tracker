@@ -119,7 +119,8 @@ class ExploreFragment : BaseFragment<FragmentExploreBinding, ExploreViewModel>()
                     id = place.id,
                     latitude = place.latitude,
                     longitude = place.longitude,
-                    isSelected = place.id == state.selectedPlaceId
+                    isSelected = place.id == state.selectedPlaceId,
+                    thumbnailPath = place.previewPhotos.firstOrNull()
                 )
             }
             
@@ -134,7 +135,8 @@ class ExploreFragment : BaseFragment<FragmentExploreBinding, ExploreViewModel>()
                         id = place.id,
                         latitude = place.latitude,
                         longitude = place.longitude,
-                        isSelected = place.id == state.selectedPlaceId
+                        isSelected = place.id == state.selectedPlaceId,
+                        thumbnailPath = place.previewPhotos.firstOrNull()
                     )
                 }
             }

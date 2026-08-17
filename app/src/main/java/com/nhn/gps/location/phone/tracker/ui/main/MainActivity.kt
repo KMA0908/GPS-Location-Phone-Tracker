@@ -84,28 +84,33 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>() {
     }
 
     private fun render(state: MainUiState) {
-        val route = state.currentRoute ?: return
-        val fragment = when (route) {
-            AppDestination.Permission.route -> PermissionFragment.newInstance()
-            AppDestination.SetUpProfile.route -> SetUpProfileFragment.newInstance()
-            AppDestination.Home.route -> HomeFragment.newInstance()
-            AppDestination.Map.route -> LocationFragment.newInstance()
-            AppDestination.AddFriend.route -> AddFriendFragment.newInstance()
-            AppDestination.MyFriend.route -> MyFriendFragment.newInstance()
-            AppDestination.ShowQrFriend.route -> ShowQrFriendFragment.newInstance()
-            AppDestination.Settings.route -> SettingsFragment.newInstance()
-            AppDestination.SettingsLanguage.route -> SettingsLanguageFragment.newInstance()
-            AppDestination.PhoneLocator.route -> PhoneLocatorFragment.newInstance()
-            AppDestination.MyZones.route -> MyZonesFragment.newInstance()
-            AppDestination.CreateZone.route -> CreateZoneFragment.newInstance()
-            AppDestination.AlertDetail.route -> AlertDetailFragment.newInstance()
-            AppDestination.ZoneDetail.route -> ZoneDetailFragment.newInstance()
-            AppDestination.ZoneAlerts.route -> ZoneAlertsFragment.newInstance()
-            AppDestination.Notifications.route -> NotificationsFragment.newInstance()
-            AppDestination.FamousPlace.route -> FamousPlaceFragment.newInstance()
-            AppDestination.Explore.route -> ExploreFragment.newInstance()
-            AppDestination.PlaceDetail.route -> PlaceDetailFragment.newInstance()
-            else -> HomeFragment.newInstance()
+        val destination = state.currentDestination ?: return
+        val fragment = when (destination) {
+            is AppDestination.Permission -> PermissionFragment.newInstance()
+            is AppDestination.SetUpProfile -> SetUpProfileFragment.newInstance()
+            is AppDestination.Home -> HomeFragment.newInstance()
+            is AppDestination.Map -> LocationFragment.newInstance()
+            is AppDestination.AddFriend -> AddFriendFragment.newInstance()
+            is AppDestination.MyFriend -> MyFriendFragment.newInstance()
+            is AppDestination.ShowQrFriend -> ShowQrFriendFragment.newInstance()
+            is AppDestination.Settings -> SettingsFragment.newInstance()
+            is AppDestination.SettingsLanguage -> SettingsLanguageFragment.newInstance()
+            is AppDestination.PhoneLocator -> PhoneLocatorFragment.newInstance()
+            is AppDestination.MyZones -> MyZonesFragment.newInstance()
+            is AppDestination.CreateZone -> CreateZoneFragment.newInstance(
+                initialLatitude = destination.initialLatitude,
+                initialLongitude = destination.initialLongitude,
+                initialAddress = destination.initialAddress,
+                initialPlaceName = destination.initialPlaceName
+            )
+            is AppDestination.Tracking -> HomeFragment.newInstance() // Fallback if Tracking fragment is missing
+            is AppDestination.AlertDetail -> AlertDetailFragment.newInstance()
+            is AppDestination.ZoneDetail -> ZoneDetailFragment.newInstance()
+            is AppDestination.ZoneAlerts -> ZoneAlertsFragment.newInstance()
+            is AppDestination.Notifications -> NotificationsFragment.newInstance()
+            is AppDestination.FamousPlace -> FamousPlaceFragment.newInstance()
+            is AppDestination.Explore -> ExploreFragment.newInstance()
+            is AppDestination.PlaceDetail -> PlaceDetailFragment.newInstance()
         }
         replaceFragment(fragment)
     }

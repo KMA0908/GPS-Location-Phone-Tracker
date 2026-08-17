@@ -30,6 +30,7 @@ class GlobeGLSurfaceView @JvmOverloads constructor(
     
     private val minDistance = 3.5f
     private val maxDistance = 15.0f
+    private val rotationSensitivity = 0.05f
 
     var onCameraChanged: ((GlobeCameraState) -> Unit)? = null
     var onMarkerClicked: ((String) -> Unit)? = null
@@ -101,9 +102,9 @@ class GlobeGLSurfaceView @JvmOverloads constructor(
                 if (dx != 0f || dy != 0f) {
                     renderer?.let { r ->
                         // Rotate around Y axis (horizontal drag rotates globe left/right)
-                        r.angleY += dx * 0.2f
+                        r.angleY += dx * rotationSensitivity
                         // Rotate around X axis (vertical drag rotates globe up/down)
-                        r.angleX += dy * 0.2f
+                        r.angleX += dy * rotationSensitivity
 
                         // Limit pitch to avoid flipping
                         r.angleX = r.angleX.coerceIn(-90f, 90f)

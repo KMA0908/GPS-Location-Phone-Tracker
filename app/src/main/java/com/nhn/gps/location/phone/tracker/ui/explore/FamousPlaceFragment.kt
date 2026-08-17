@@ -19,6 +19,7 @@ import com.nhn.gps.location.phone.tracker.data.model.FamousPlaceModel
 import com.nhn.gps.location.phone.tracker.databinding.FragmentFamousPlaceListBinding
 import com.nhn.gps.location.phone.tracker.databinding.ItemCategoryFilterBinding
 import com.nhn.gps.location.phone.tracker.ui.main.MainViewModel
+import com.nhn.gps.location.phone.tracker.util.animateFavoriteChange
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -34,7 +35,7 @@ class FamousPlaceFragment : BaseFragment<FragmentFamousPlaceListBinding, FamousP
     private val trendingAdapter by lazy {
         FamousPlaceAdapter(
             onClick = { viewModel.onPlaceClicked(it) },
-            onFavoriteClick = {},
+            onFavoriteClick = { placeId -> viewModel.toggleFavorite(placeId) },
             onBindPhoto = { item, imageView ->
                 val photoFileName = item.previewPhotos.firstOrNull()
                 if (photoFileName != null) {
@@ -69,9 +70,25 @@ class FamousPlaceFragment : BaseFragment<FragmentFamousPlaceListBinding, FamousP
         setupCategories()
         setupTrendingList()
         setupBottomNav()
+        setupScrollListener()
         
         btnSeeMap.setOnClickListener {
             navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.Explore)
+        }
+    }
+
+    private fun setupScrollListener() = with(binding) {
+        scrollView.setOnScrollChangeListener { v: androidx.core.widget.NestedScrollView, _, scrollY, _, _ ->
+            val child = v.getChildAt(0)
+            if (child != null) {
+                val childHeight = child.measuredHeight
+                val scrollHeight = v.measuredHeight
+                
+                // If scrolled near bottom (within 200 pixels)
+                if (childHeight > 0 && scrollY + scrollHeight >= childHeight - 200) {
+                    viewModel.loadMore()
+                }
+            }
         }
     }
 
@@ -118,6 +135,18 @@ class FamousPlaceFragment : BaseFragment<FragmentFamousPlaceListBinding, FamousP
         tvFeaturedLocation.text = place.location
         tvFeaturedRating.text = String.format(Locale.getDefault(), "%.1f", place.rating)
         
+        // Update favorite icon for featured card
+        val favIcon = if (place.isFavorite) R.drawable.ic_love_fill else R.drawable.ic_love_white
+        val oldTag = btnFavorite.tag
+        if (oldTag != favIcon) {
+            btnFavorite.animateFavoriteChange(favIcon, oldTag != null)
+            btnFavorite.tag = favIcon
+        }
+        
+        btnFavorite.setOnClickListener {
+            viewModel.toggleFavorite(place.id)
+        }
+
         root.setOnClickListener {
             viewModel.onPlaceClicked(place)
         }
@@ -199,7 +228,7 @@ class FamousPlaceFragment : BaseFragment<FragmentFamousPlaceListBinding, FamousP
             navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.Home)
         }
         navMap.setOnClickListener {
-            navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.Map)
+            // Already here (FamousPlace tab)
         }
         navLocation.setOnClickListener {
             mainViewModel.openMap()
@@ -208,7 +237,7 @@ class FamousPlaceFragment : BaseFragment<FragmentFamousPlaceListBinding, FamousP
             navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.MyZones)
         }
         navProfile.setOnClickListener {
-            // navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.Profile)
+            mainViewModel.openSettings()
         }
     }
 

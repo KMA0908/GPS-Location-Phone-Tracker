@@ -8,6 +8,7 @@ import com.nhn.gps.location.phone.tracker.data.model.UserProfile
 import com.nhn.gps.location.phone.tracker.data.repository.UserRepository
 import com.nhn.gps.location.phone.tracker.navigation.AppDestination
 import com.nhn.gps.location.phone.tracker.navigation.NavigationManager
+import com.nhn.gps.location.phone.tracker.util.AvatarHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -38,8 +39,8 @@ class SetUpProfileViewModel @Inject constructor(
     private val _phone = MutableStateFlow("")
     val phone: StateFlow<String> = _phone.asStateFlow()
 
-    private val _avatarUri = MutableStateFlow<Uri?>(null)
-    val avatarUri: StateFlow<Uri?> = _avatarUri.asStateFlow()
+    private val _avatarKey = MutableStateFlow<String>(AvatarHelper.DEFAULT_AVATAR_KEY)
+    val avatarKey: StateFlow<String> = _avatarKey.asStateFlow()
 
     private val _uiState = MutableStateFlow<SetUpProfileUiState>(SetUpProfileUiState.Idle)
     val uiState: StateFlow<SetUpProfileUiState> = _uiState.asStateFlow()
@@ -60,8 +61,8 @@ class SetUpProfileViewModel @Inject constructor(
         _phone.value = phone
     }
 
-    fun onAvatarChanged(uri: Uri?) {
-        _avatarUri.value = uri
+    fun onAvatarChanged(avatarKey: String) {
+        _avatarKey.value = avatarKey
     }
 
     fun onSaveClicked() {
@@ -82,6 +83,7 @@ class SetUpProfileViewModel @Inject constructor(
                 appPreferences.setUserName(existingUser.name)
                 appPreferences.setUserPhone(existingUser.phone)
                 appPreferences.setUserAvatar(existingUser.avatarUrl)
+                appPreferences.setUserAvatarKey(existingUser.avatarKey)
                 
                 _uiState.value = SetUpProfileUiState.Success
                 navigationManager.navigateTo(AppDestination.Home, clearStack = true)
@@ -91,17 +93,12 @@ class SetUpProfileViewModel @Inject constructor(
             // 2. Nếu chưa tồn tại: Thực hiện tạo user mới (Sử dụng anonymous auth)
             val uid = userRepository.signInAnonymously()
 
-            // 3. Upload avatar nếu có
-            var avatarUrl = ""
-            _avatarUri.value?.let { uri ->
-                avatarUrl = userRepository.uploadAvatar(uid, uri)
-            }
-
             val profile = UserProfile(
                 uid = uid,
                 name = name,
                 phone = phone,
-                avatarUrl = avatarUrl
+                avatarUrl = "", // We no longer upload avatar from this screen
+                avatarKey = _avatarKey.value
             )
 
             // 4. Lưu profile lên Firebase
@@ -111,7 +108,8 @@ class SetUpProfileViewModel @Inject constructor(
             appPreferences.setUserId(uid)
             appPreferences.setUserName(name)
             appPreferences.setUserPhone(phone)
-            appPreferences.setUserAvatar(avatarUrl)
+            appPreferences.setUserAvatar("")
+            appPreferences.setUserAvatarKey(_avatarKey.value)
 
             // 6. Thành công và Điều hướng
             _uiState.value = SetUpProfileUiState.Success

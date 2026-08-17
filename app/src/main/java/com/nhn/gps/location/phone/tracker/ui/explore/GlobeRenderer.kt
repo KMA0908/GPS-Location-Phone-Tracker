@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
+import android.graphics.Color
 import android.opengl.GLES30
 import android.opengl.GLSurfaceView
 import android.opengl.GLUtils
@@ -27,6 +28,7 @@ data class GlobeMarker(
     val latitude: Double,
     val longitude: Double,
     val isSelected: Boolean = false,
+    val thumbnailPath: String? = null,
     // Unit vector on sphere surface for faster rendering and hit testing
     internal val ux: Float = 0f,
     internal val uy: Float = 0f,
@@ -36,7 +38,8 @@ data class GlobeMarker(
 class GlobeRenderer(private val context: Context) : GLSurfaceView.Renderer {
 
     companion object {
-        private const val MARKER_TEXTURE_SIZE = 128
+        private const val SPHERE_RADIUS = 1.5f
+        private const val MARKER_RADIUS = 1.55f
     }
 
     private val modelMatrix = FloatArray(16)
@@ -79,7 +82,18 @@ class GlobeRenderer(private val context: Context) : GLSurfaceView.Renderer {
     private var uMarkerMVPMatrixLocation = 0
     private var uMarkerTextureLocation = 0
     private var uMarkerPointSizeLocation = 0
-    private var markerTextureId = 0
+    private var uMarkerOffsetLocation = 0
+    private var uMarkerViewportSizeLocation = 0
+    
+    private var dotTextureId = 0
+    private val thumbnailTextures = mutableMapOf<String, Int>()
+    
+    // Resource sizes
+    private var dotSize = 0f
+    private var imageSize = 0f
+    private var markerGap = 0f
+    private var viewportWidth = 0
+    private var viewportHeight = 0
 
     fun updateMarkers(newMarkers: List<GlobeMarker>) {
         // Pre-calculate unit vectors for all markers to avoid trig in render loop
@@ -94,11 +108,103 @@ class GlobeRenderer(private val context: Context) : GLSurfaceView.Renderer {
         }
     }
 
+    private fun loadThumbnailTexture(marker: GlobeMarker): Int {
+        if (thumbnailTextures.containsKey(marker.id)) return thumbnailTextures[marker.id]!!
+
+        val path = marker.thumbnailPath
+        val bitmap = if (!path.isNullOrEmpty()) {
+            val assetPath = "famous_places_images/$path"
+            try {
+                context.assets.open(assetPath).use { stream ->
+                    BitmapFactory.decodeStream(stream)
+                }
+            } catch (e: Exception) {
+                null
+            }
+        } else {
+            null
+        }
+
+        // Fallback to local drawable if asset not found or path is null
+        val finalBitmap = bitmap ?: drawableToBitmap(R.drawable.ic_paris)
+
+        if (finalBitmap != null) {
+            val roundedBitmap = getRoundedCornerBitmap(finalBitmap)
+            val textureId = createTextureFromBitmap(roundedBitmap)
+            
+            roundedBitmap.recycle()
+            if (finalBitmap != bitmap) { // Only recycle if we created a new one from drawable
+                 finalBitmap.recycle()
+            }
+            bitmap?.recycle()
+            
+            thumbnailTextures[marker.id] = textureId
+            return textureId
+        }
+        
+        return 0
+    }
+
+    private fun drawableToBitmap(drawableId: Int): Bitmap? {
+        val drawable = androidx.core.content.ContextCompat.getDrawable(context, drawableId) ?: return null
+        val bitmap = Bitmap.createBitmap(
+            drawable.intrinsicWidth.coerceAtLeast(1),
+            drawable.intrinsicHeight.coerceAtLeast(1),
+            Bitmap.Config.ARGB_8888
+        )
+        val canvas = Canvas(bitmap)
+        drawable.setBounds(0, 0, canvas.width, canvas.height)
+        drawable.draw(canvas)
+        return bitmap
+    }
+
+    private fun getRoundedCornerBitmap(bitmap: Bitmap): Bitmap {
+        val size = context.resources.getDimensionPixelSize(R.dimen.famous_marker_image_size)
+        val radius = context.resources.getDimension(R.dimen.famous_marker_corner_radius)
+        
+        val output = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(output)
+        
+        val paint = android.graphics.Paint()
+        val rect = android.graphics.Rect(0, 0, size, size)
+        val rectF = android.graphics.RectF(rect)
+        
+        paint.isAntiAlias = true
+        canvas.drawARGB(0, 0, 0, 0)
+        paint.color = -0x1000000
+        canvas.drawRoundRect(rectF, radius, radius, paint)
+        
+        paint.xfermode = android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.SRC_IN)
+        
+        // Scale bitmap to fit target size while maintaining aspect ratio (center crop)
+        val scale = size.toFloat() / min(bitmap.width, bitmap.height)
+        val width = (bitmap.width * scale).toInt()
+        val height = (bitmap.height * scale).toInt()
+        val left = (size - width) / 2
+        val top = (size - height) / 2
+        val destRect = android.graphics.Rect(left, top, left + width, top + height)
+        
+        canvas.drawBitmap(bitmap, null, destRect, paint)
+        
+        return output
+    }
+
+    private fun createTextureFromBitmap(bitmap: Bitmap): Int {
+        val textures = IntArray(1)
+        GLES30.glGenTextures(1, textures, 0)
+        val id = textures[0]
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, id)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR)
+        GLUtils.texImage2D(GLES30.GL_TEXTURE_2D, 0, bitmap, 0)
+        return id
+    }
+
     fun hitTest(tapX: Float, tapY: Float, width: Int, height: Int): String? {
         val currentMarkers = markers
         if (currentMarkers.isEmpty()) return null
 
-        val hitRadiusSq = 80f * 80f // hit radius in pixels squared
+        val hitRadiusSq = 100f * 100f // larger hit radius for icons
 
         // Capture a thread-safe snapshot of the current camera state
         val curAngleX = angleX
@@ -122,11 +228,9 @@ class GlobeRenderer(private val context: Context) : GLSurfaceView.Renderer {
         val camZ = (cos(radX) * cos(radY)).toFloat()
 
         for (marker in currentMarkers) {
-            val radius = 2.05f
-
-            markerPos[0] = marker.ux * radius
-            markerPos[1] = marker.uy * radius
-            markerPos[2] = marker.uz * radius
+            markerPos[0] = marker.ux * MARKER_RADIUS
+            markerPos[1] = marker.uy * MARKER_RADIUS
+            markerPos[2] = marker.uz * MARKER_RADIUS
             markerPos[3] = 1f
 
             // Dot product with camera direction to check hemisphere (visibility)
@@ -172,6 +276,7 @@ class GlobeRenderer(private val context: Context) : GLSurfaceView.Renderer {
         GLES30.glEnable(GLES30.GL_CULL_FACE)
         GLES30.glCullFace(GLES30.GL_BACK)
 
+        thumbnailTextures.clear()
         initShaders()
         initMesh()
         loadTexture()
@@ -180,8 +285,14 @@ class GlobeRenderer(private val context: Context) : GLSurfaceView.Renderer {
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
         GLES30.glViewport(0, 0, width, height)
+        viewportWidth = width
+        viewportHeight = height
         val ratio = width.toFloat() / height
         Matrix.perspectiveM(projectionMatrix, 0, 45f, ratio, 0.1f, 100f)
+        
+        dotSize = context.resources.getDimension(R.dimen.famous_marker_dot_size)
+        imageSize = context.resources.getDimension(R.dimen.famous_marker_image_size)
+        markerGap = context.resources.getDimension(R.dimen.famous_marker_gap)
     }
 
     override fun onDrawFrame(gl: GL10?) {
@@ -229,27 +340,43 @@ class GlobeRenderer(private val context: Context) : GLSurfaceView.Renderer {
         GLES30.glBlendFunc(GLES30.GL_SRC_ALPHA, GLES30.GL_ONE_MINUS_SRC_ALPHA)
         
         // Depth test is on, so markers behind globe will be occluded.
-        val radius = 2.05f 
+        // Dot product check for visibility (front hemisphere) is done in shader discard or logic
+        // But the previous analysis suggested depth test is enough.
 
         GLES30.glUniformMatrix4fv(uMarkerMVPMatrixLocation, 1, false, mvpMatrix, 0)
+        GLES30.glUniform2f(uMarkerViewportSizeLocation, viewportWidth.toFloat(), viewportHeight.toFloat())
         GLES30.glActiveTexture(GLES30.GL_TEXTURE0)
-        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, markerTextureId)
         GLES30.glUniform1i(uMarkerTextureLocation, 0)
 
         for (marker in currentMarkers) {
-            val mx = marker.ux * radius
-            val my = marker.uy * radius
-            val mz = marker.uz * radius
-
-            val pointSize = if (marker.isSelected) 100f else 60f
-            GLES30.glUniform1f(uMarkerPointSizeLocation, pointSize)
-
+            val mx = marker.ux * MARKER_RADIUS
+            val my = marker.uy * MARKER_RADIUS
+            val mz = marker.uz * MARKER_RADIUS
+            
             markerPositionBuffer.clear()
             markerPositionBuffer.put(mx).put(my).put(mz).position(0)
-            
             GLES30.glEnableVertexAttribArray(0)
             GLES30.glVertexAttribPointer(0, 3, GLES30.GL_FLOAT, false, 0, markerPositionBuffer)
+
+            // 1. Draw Dot
+            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, dotTextureId)
+            GLES30.glUniform1f(uMarkerPointSizeLocation, dotSize)
+            GLES30.glUniform2f(uMarkerOffsetLocation, 0f, 0f)
             GLES30.glDrawArrays(GLES30.GL_POINTS, 0, 1)
+
+            // 2. Draw Thumbnail
+            val thumbTexture = loadThumbnailTexture(marker)
+            if (thumbTexture != 0) {
+                GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, thumbTexture)
+                val scale = if (marker.isSelected) 1.25f else 1.0f
+                GLES30.glUniform1f(uMarkerPointSizeLocation, imageSize * scale)
+                
+                // Offset vertically in screen pixels
+                val pixelOffset = (dotSize / 2f + (imageSize * scale) / 2f + markerGap)
+                GLES30.glUniform2f(uMarkerOffsetLocation, 0f, pixelOffset)
+                
+                GLES30.glDrawArrays(GLES30.GL_POINTS, 0, 1)
+            }
         }
         
         GLES30.glDisable(GLES30.GL_BLEND)
@@ -287,8 +414,13 @@ class GlobeRenderer(private val context: Context) : GLSurfaceView.Renderer {
             layout(location = 0) in vec4 aPosition;
             uniform mat4 uMVPMatrix;
             uniform float uPointSize;
+            uniform vec2 uOffset;
+            uniform vec2 uViewportSize;
             void main() {
-                gl_Position = uMVPMatrix * aPosition;
+                vec4 pos = uMVPMatrix * aPosition;
+                // Add pixel offset in screen space
+                pos.xy += (uOffset / uViewportSize) * 2.0 * pos.w;
+                gl_Position = pos;
                 gl_PointSize = uPointSize;
             }
         """.trimIndent()
@@ -307,6 +439,8 @@ class GlobeRenderer(private val context: Context) : GLSurfaceView.Renderer {
         uMarkerMVPMatrixLocation = GLES30.glGetUniformLocation(markerProgram, "uMVPMatrix")
         uMarkerTextureLocation = GLES30.glGetUniformLocation(markerProgram, "uTexture")
         uMarkerPointSizeLocation = GLES30.glGetUniformLocation(markerProgram, "uPointSize")
+        uMarkerOffsetLocation = GLES30.glGetUniformLocation(markerProgram, "uOffset")
+        uMarkerViewportSizeLocation = GLES30.glGetUniformLocation(markerProgram, "uViewportSize")
     }
 
     private fun createProgram(vSource: String, fSource: String): Int {
@@ -329,7 +463,6 @@ class GlobeRenderer(private val context: Context) : GLSurfaceView.Renderer {
     private fun initMesh() {
         val latitudeSegments = 64
         val longitudeSegments = 128
-        val radius = 1.5f
 
         val vertices = mutableListOf<Float>()
         for (lat in 0..latitudeSegments) {
@@ -342,25 +475,16 @@ class GlobeRenderer(private val context: Context) : GLSurfaceView.Renderer {
                 val sinPhi = sin(phi)
                 val cosPhi = cos(phi)
 
-                // Correct spherical to Cartesian mapping for standard texture orientation
-                // In OpenGL: Y is up, X is right, Z is towards viewer.
-                // For a globe: 
-                // x = R * sin(theta) * sin(phi)
-                // y = R * cos(theta) (North pole at theta=0, y=R; South pole at theta=PI, y=-R)
-                // z = R * sin(theta) * cos(phi)
                 val x = sinTheta * sinPhi
                 val y = cosTheta 
                 val z = sinTheta * cosPhi
 
-                // Standard UV mapping:
-                // U: [0, 1] maps to longitude [0, 360]
-                // V: [0, 1] maps to latitude [North, South]
                 val u = lon.toFloat() / longitudeSegments
                 val v = lat.toFloat() / latitudeSegments
 
-                vertices.add(x * radius)
-                vertices.add(y * radius)
-                vertices.add(z * radius)
+                vertices.add(x * SPHERE_RADIUS)
+                vertices.add(y * SPHERE_RADIUS)
+                vertices.add(z * SPHERE_RADIUS)
                 vertices.add(u)
                 vertices.add(v)
             }
@@ -433,35 +557,24 @@ class GlobeRenderer(private val context: Context) : GLSurfaceView.Renderer {
     }
 
     private fun loadMarkerTexture() {
+        // Dot texture
         val textures = IntArray(1)
         GLES30.glGenTextures(1, textures, 0)
-        markerTextureId = textures[0]
+        dotTextureId = textures[0]
 
-        val bitmap = drawableToBitmap(R.drawable.ic_marker_pin, MARKER_TEXTURE_SIZE, MARKER_TEXTURE_SIZE)
-
-        if (bitmap != null) {
-            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, markerTextureId)
-            GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR)
-            GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR)
-
-            GLUtils.texImage2D(GLES30.GL_TEXTURE_2D, 0, bitmap, 0)
-            bitmap.recycle()
-        } else {
-            android.util.Log.e("GlobeRenderer", "Failed to load marker texture: Bitmap is null")
+        val size = 64
+        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val paint = android.graphics.Paint().apply {
+            isAntiAlias = true
+            color = Color.WHITE
         }
-    }
+        canvas.drawCircle(size / 2f, size / 2f, size / 2f - 2f, paint)
 
-    private fun drawableToBitmap(drawableId: Int, width: Int, height: Int): Bitmap? {
-        return try {
-            val drawable = androidx.core.content.ContextCompat.getDrawable(context, drawableId) ?: return null
-            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-            val canvas = Canvas(bitmap)
-            drawable.setBounds(0, 0, canvas.width, canvas.height)
-            drawable.draw(canvas)
-            bitmap
-        } catch (e: Exception) {
-            android.util.Log.e("GlobeRenderer", "Error converting drawable to bitmap", e)
-            null
-        }
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, dotTextureId)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR)
+        GLUtils.texImage2D(GLES30.GL_TEXTURE_2D, 0, bitmap, 0)
+        bitmap.recycle()
     }
 }

@@ -1,34 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="wrap_content"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:gravity="center_horizontal"
+    android:orientation="vertical">
 
-    <!-- Glow background, hidden by default (GONE) -->
-    <ImageView
-        android:id="@+id/imgGlow"
-        android:layout_width="120dp"
-        android:layout_height="120dp"
-        android:layout_gravity="center"
-        android:src="@drawable/ic_current_location_glow"
+    <FrameLayout
+        android:id="@+id/markerIconContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <!-- Glow background, hidden by default (GONE) -->
+        <ImageView
+            android:id="@+id/imgGlow"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_current_location_glow"
+            android:visibility="gone" />
+
+        <ImageView
+            android:id="@+id/imgPin"
+            android:layout_width="45dp"
+            android:layout_height="54dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_marker_pin" />
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/imgAvatar"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_gravity="center_horizontal"
+            android:padding="1dp"
+            android:scaleType="centerCrop"
+            android:translationY="4.5dp"
+            app:shapeAppearanceOverlay="@style/CircleImage"
+            android:src="@drawable/ic_avt_location" />
+
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/tvMarkerName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:background="@drawable/bg_marker_label"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:includeFontPadding="false"
+        android:maxWidth="100dp"
+        android:maxLines="1"
+        android:textColor="@color/black"
+        android:textSize="@dimen/sp_11"
+        android:textStyle="bold"
         android:visibility="gone" />
 
-    <ImageView
-        android:id="@+id/imgPin"
-        android:layout_width="45dp"
-        android:layout_height="54dp"
-        android:layout_gravity="center"
-        android:src="@drawable/ic_marker_pin" />
-
-    <com.google.android.material.imageview.ShapeableImageView
-        android:id="@+id/imgAvatar"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
-        android:layout_gravity="center_horizontal"
-        android:translationY="4.5dp"
-        android:padding="1dp"
-        android:scaleType="centerCrop"
-        app:shapeAppearanceOverlay="@style/CircleImage"
-        android:src="@drawable/ic_avt_location" />
-
-</FrameLayout>
+</LinearLayout>

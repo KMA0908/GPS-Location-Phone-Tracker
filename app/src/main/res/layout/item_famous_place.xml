@@ -123,7 +123,7 @@
             android:layout_width="@dimen/d_32"
             android:layout_height="@dimen/d_32"
             android:padding="@dimen/d_4"
-            android:src="@drawable/ic_love_fill"
+            android:src="@drawable/ic_love"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 

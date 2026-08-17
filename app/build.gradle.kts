@@ -97,7 +97,7 @@ dependencies {
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.database)
-    implementation(libs.firebase.storage)
+    // implementation(libs.firebase.storage) // TEMP DISABLED
     implementation(libs.firebase.auth)
     implementation(libs.firebase.config)
 

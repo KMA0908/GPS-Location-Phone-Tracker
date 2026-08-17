@@ -201,7 +201,7 @@ class MyZonesFragment : BaseFragment<FragmentMyZonesLocalBinding, MainViewModel>
 
     private fun openEditor(zone: Zone?) {
         ZoneEditorState.selectedZoneId = zone?.id
-        navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.CreateZone)
+        navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.CreateZone())
     }
 
     private fun selectZone(zone: Zone) {

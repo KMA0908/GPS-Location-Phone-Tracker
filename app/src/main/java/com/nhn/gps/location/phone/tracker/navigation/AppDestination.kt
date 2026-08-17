@@ -12,7 +12,12 @@ sealed class AppDestination(val route: String) {
     data object Settings : AppDestination("settings")
     data object PhoneLocator : AppDestination("phone_locator")
     data object MyZones : AppDestination("my_zones")
-    data object CreateZone : AppDestination("create_zone")
+    data class CreateZone(
+        val initialLatitude: Double? = null,
+        val initialLongitude: Double? = null,
+        val initialAddress: String? = null,
+        val initialPlaceName: String? = null
+    ) : AppDestination("create_zone")
     data object AlertDetail : AppDestination("alert_detail")
     data object ZoneDetail : AppDestination("zone_detail")
     data object ZoneAlerts : AppDestination("zone_alerts")

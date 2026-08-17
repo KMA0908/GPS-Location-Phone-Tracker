@@ -2,12 +2,10 @@ package com.nhn.gps.location.phone.tracker.ui.setup_profile
 
 import android.content.res.ColorStateList
 import android.graphics.Color
-import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.viewModels
@@ -20,6 +18,8 @@ import com.nhn.gps.location.phone.tracker.R
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
 import com.nhn.gps.location.phone.tracker.base.UiMessage
 import com.nhn.gps.location.phone.tracker.databinding.FragmentSetUpProfileBinding
+import com.nhn.gps.location.phone.tracker.util.AvatarHelper
+import com.nhn.gps.location.phone.tracker.util.loadAvatar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -28,16 +28,6 @@ import kotlinx.coroutines.launch
 class SetUpProfileFragment : BaseFragment<FragmentSetUpProfileBinding, SetUpProfileViewModel>() {
 
     override val viewModel: SetUpProfileViewModel by viewModels()
-
-    private var selectedImageUri: Uri? = null
-
-    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        uri?.let {
-            selectedImageUri = it
-            viewModel.onAvatarChanged(it)
-            previewAvatar(it)
-        }
-    }
 
     override fun createBinding(
         inflater: LayoutInflater,
@@ -48,7 +38,18 @@ class SetUpProfileFragment : BaseFragment<FragmentSetUpProfileBinding, SetUpProf
         imgBack.setOnClickListener { handleToolbarBack() }
 
         imgProfile.setOnClickListener {
-            pickImageLauncher.launch("image/*")
+            AvatarSelectorBottomSheet.newInstance(viewModel.avatarKey.value)
+                .show(parentFragmentManager, AvatarSelectorBottomSheet.TAG)
+        }
+
+        parentFragmentManager.setFragmentResultListener(
+            AvatarSelectorBottomSheet.REQUEST_KEY,
+            viewLifecycleOwner
+        ) { _, bundle ->
+            val avatarKey = bundle.getString(AvatarSelectorBottomSheet.RESULT_AVATAR_KEY)
+            if (avatarKey != null) {
+                viewModel.onAvatarChanged(avatarKey)
+            }
         }
 
         cardName.edtValue.addTextChangedListener {
@@ -84,6 +85,11 @@ class SetUpProfileFragment : BaseFragment<FragmentSetUpProfileBinding, SetUpProf
                     }
                 }
                 launch {
+                    viewModel.avatarKey.collect { avatarKey ->
+                        binding.imgProfile.loadAvatar(avatarKey, null)
+                    }
+                }
+                launch {
                     viewModel.uiState.collectLatest { state ->
                         render(state)
                     }
@@ -97,13 +103,6 @@ class SetUpProfileFragment : BaseFragment<FragmentSetUpProfileBinding, SetUpProf
                 }
             }
         }
-    }
-
-    private fun previewAvatar(uri: Uri) {
-        Glide.with(this)
-            .load(uri)
-            .circleCrop()
-            .into(binding.imgProfile)
     }
 
     private fun render(state: SetUpProfileUiState) = withBinding {

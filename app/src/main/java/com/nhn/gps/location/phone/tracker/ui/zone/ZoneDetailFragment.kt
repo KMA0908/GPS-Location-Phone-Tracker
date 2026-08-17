@@ -121,7 +121,7 @@ class ZoneDetailFragment : BaseFragment<FragmentZoneDetailLocalBinding, MainView
 
     private fun navigateToEdit() {
         // Since ZoneEditorState.selectedZoneId is already set, we just navigate to CreateZone
-        navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.CreateZone)
+        navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.CreateZone())
     }
 
     companion object {
