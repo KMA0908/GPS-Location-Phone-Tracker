@@ -30,7 +30,7 @@ object GpsAdScenario {
             GpsAdViewBinder.NativeFormat.BIG,
         )
         AppDestination.PhoneLocator.route -> ScreenAd.Banner(GpsAdPlacement.BANNER_PHONE_NUMBER)
-        AppDestination.CreateZone.route -> ScreenAd.Banner(GpsAdPlacement.BANNER_CREATE_ZONE)
+        AppDestination.CreateZone().route -> ScreenAd.Banner(GpsAdPlacement.BANNER_CREATE_ZONE)
         AppDestination.AlertDetail.route -> ScreenAd.Banner(GpsAdPlacement.BANNER_ALERT_DETAIL)
         AppDestination.ZoneDetail.route -> ScreenAd.Native(
             GpsAdPlacement.NATIVE_ZONE_DETAILS,
@@ -60,7 +60,7 @@ object GpsAdScenario {
         AppDestination.ShowQrFriend.route -> GpsAdPlacement.INTER_FRIEND_DETAIL
         AppDestination.PhoneLocator.route -> GpsAdPlacement.INTER_PHONE_NUMBER
         AppDestination.MyZones.route -> GpsAdPlacement.INTER_ZONE
-        AppDestination.CreateZone.route -> GpsAdPlacement.INTER_CREATE_ZONE
+        AppDestination.CreateZone().route -> GpsAdPlacement.INTER_CREATE_ZONE
         AppDestination.ZoneDetail.route -> GpsAdPlacement.INTER_ZONE_DETAILS
         AppDestination.FamousPlace.route -> GpsAdPlacement.INTER_PLACE
         AppDestination.Explore.route -> GpsAdPlacement.INTER_EARTH

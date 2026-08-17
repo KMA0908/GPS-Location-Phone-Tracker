@@ -83,7 +83,7 @@ class ExploreFragment : BaseFragment<FragmentExploreBinding, ExploreViewModel>()
         btnDirections.setOnClickListener { openSelectedPlaceRoute() }
         btnStreetView.setOnClickListener { openSelectedPlaceInMaps(streetView = true) }
         btnCreateZone.setOnClickListener {
-            navigationManager.navigateTo(AppDestination.CreateZone)
+            navigationManager.navigateTo(AppDestination.CreateZone())
         }
 
         bottomSheet.visibility = View.VISIBLE

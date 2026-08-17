@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -15,6 +16,7 @@ import com.nhn.gps.location.phone.tracker.base.BaseFragment
 import com.nhn.gps.location.phone.tracker.data.model.FamousPlaceModel
 import com.nhn.gps.location.phone.tracker.databinding.FragmentPlaceDetailBinding
 import com.nhn.gps.location.phone.tracker.ui.main.MainViewModel
+import com.nhn.gps.location.phone.tracker.util.animateFavoriteChange
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -25,6 +27,7 @@ class PlaceDetailFragment : BaseFragment<FragmentPlaceDetailBinding, PlaceDetail
 
     override val viewModel: PlaceDetailViewModel by viewModels()
     private val mainViewModel: MainViewModel by viewModels({ requireActivity() })
+    private var lastRenderedFavorite: Boolean? = null
 
     override fun createBinding(
         inflater: LayoutInflater,
@@ -34,8 +37,8 @@ class PlaceDetailFragment : BaseFragment<FragmentPlaceDetailBinding, PlaceDetail
     override fun setupViews(savedInstanceState: Bundle?) = with(binding) {
         setupHeader()
         setupActions()
-        setupNearby()
-        
+        setupNearbyListeners()
+
         btnExploreNow.setOnClickListener {
             navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.Explore)
         }
@@ -60,16 +63,42 @@ class PlaceDetailFragment : BaseFragment<FragmentPlaceDetailBinding, PlaceDetail
 
     private fun handleUiState(state: PlaceDetailUiState) = with(binding) {
         progressBar.visibility = if (state.isLoading) View.VISIBLE else View.GONE
-        
+
         state.place?.let { setupContent(it) }
-        
+
+        renderFavorite(state.isFavorite)
+
         state.error?.let {
             // Show error
         }
     }
 
+    private fun renderFavorite(isFavorite: Boolean) = with(binding) {
+        val headerIcon = if (isFavorite) R.drawable.ic_love_fill else R.drawable.ic_love
+        val saveIcon = if (isFavorite) R.drawable.ic_love_red_famous else R.drawable.ic_love
+        val saveText = if (isFavorite) R.string.saved_place else R.string.save_place
+
+        val shouldAnimate = lastRenderedFavorite != null && lastRenderedFavorite != isFavorite
+
+        btnFavorite.animateFavoriteChange(headerIcon, shouldAnimate)
+        btnSave.ivActionIcon.animateFavoriteChange(saveIcon, shouldAnimate)
+        btnSave.tvActionLabel.setText(saveText)
+
+        val contentDesc = getString(if (isFavorite) R.string.remove_from_favorites else R.string.add_to_favorites)
+        btnFavorite.contentDescription = contentDesc
+        btnSave.root.contentDescription = contentDesc
+
+        lastRenderedFavorite = isFavorite
+    }
+
     private fun setupHeader() = with(binding) {
         btnBack.setOnClickListener { handleToolbarBack() }
+        btnFavorite.setOnClickListener { onFavoriteClicked() }
+        btnSave.root.setOnClickListener { onFavoriteClicked() }
+    }
+
+    private fun onFavoriteClicked() {
+        viewModel.toggleFavorite()
     }
 
     private fun setupContent(place: FamousPlaceModel) = with(binding) {
@@ -77,12 +106,12 @@ class PlaceDetailFragment : BaseFragment<FragmentPlaceDetailBinding, PlaceDetail
         tvPlaceLocation.text = place.location
         tvDistance.text = String.format(Locale.getDefault(), "%.1f km", place.distanceKm)
         tvHeaderRating.text = String.format(Locale.getDefault(), "%.1f (%d reviews)", place.rating, place.reviewCount)
-        
+
         // Resolve description from res key or fallback to address/location
-        val resId = place.descriptionResKey?.let { 
-            resources.getIdentifier(it, "string", requireContext().packageName) 
+        val resId = place.descriptionResKey?.let {
+            resources.getIdentifier(it, "string", requireContext().packageName)
         } ?: 0
-        
+
         tvDescription.text = if (resId != 0) {
             getString(resId)
         } else {
@@ -93,10 +122,9 @@ class PlaceDetailFragment : BaseFragment<FragmentPlaceDetailBinding, PlaceDetail
         tvHeroAttribution.visibility = View.GONE
 
         ivHero.loadFamousPlaceImage(place)
-        
+
         // Update visit info cards
         with(cardVisitTime) {
-            ivInfoIcon.setImageResource(R.drawable.ic_last_seen)
             val status = if (place.isOpen == true) "Open" else if (place.isOpen == false) "Closed" else "Unknown"
             tvInfoValue.text = status
             tvInfoLabel.text = "Status"
@@ -104,13 +132,11 @@ class PlaceDetailFragment : BaseFragment<FragmentPlaceDetailBinding, PlaceDetail
         }
 
         with(cardHeight) {
-            ivInfoIcon.setImageResource(R.drawable.ic_polygon)
             tvInfoValue.text = place.category
             tvInfoLabel.text = "Type"
         }
 
         with(cardRating) {
-            ivInfoIcon.setImageResource(R.drawable.ic_famous_home)
             tvInfoValue.text = String.format(Locale.getDefault(), "%.1f", place.rating)
             tvInfoLabel.text = "Rating"
         }
@@ -132,49 +158,91 @@ class PlaceDetailFragment : BaseFragment<FragmentPlaceDetailBinding, PlaceDetail
         }
 
         btnCreateZone.root.setOnClickListener {
-            navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.CreateZone)
+            if (isValidCoordinate(place.latitude, place.longitude)) {
+                navigationManager.navigateTo(
+                    com.nhn.gps.location.phone.tracker.navigation.AppDestination.CreateZone(
+                        initialLatitude = place.latitude,
+                        initialLongitude = place.longitude,
+                        initialAddress = place.address ?: place.location,
+                        initialPlaceName = place.name
+                    )
+                )
+            } else {
+                Toast.makeText(requireContext(), R.string.place_location_unavailable, Toast.LENGTH_SHORT).show()
+            }
         }
+    }
+
+    private fun isValidCoordinate(lat: Double, lng: Double): Boolean {
+        return lat in -90.0..90.0 && lng in -180.0..180.0 && lat != 0.0 && lng != 0.0
+    }
+
+    override fun onDestroyView() {
+        lastRenderedFavorite = null
+        super.onDestroyView()
     }
 
     private fun setupActions() = with(binding) {
-        with(btnDirections) {
-            ivActionIcon.setImageResource(R.drawable.ic_location_direction)
-            tvActionLabel.text = "Directions"
-        }
-        with(btnStreetView) {
-            ivActionIcon.setImageResource(R.drawable.ic_street_home)
-            tvActionLabel.text = "Street view"
-        }
-        with(btnSave) {
-            ivActionIcon.setImageResource(R.drawable.ic_famous_home)
-            tvActionLabel.text = "Save"
-        }
-        with(btnCreateZone) {
-            ivActionIcon.setImageResource(R.drawable.ic_create_zone)
-            tvActionLabel.text = "Create zone"
-        }
+        btnDirections.tvActionLabel.text = "Directions"
+        btnStreetView.tvActionLabel.text = "Street view"
+        btnSave.tvActionLabel.text = "Save"
+        btnCreateZone.tvActionLabel.text = "Create zone"
     }
 
-    private fun setupNearby() = with(binding) {
-        with(nearbyRestaurants) {
-            ivNearbyIcon.setImageResource(R.drawable.ic_location_home)
-            tvNearbyName.text = "Restaurants"
-            tvNearbyCount.text = ""
+    private fun setupNearbyListeners() = with(binding) {
+        nearbyRestaurants.tvNearbyName.text = "Restaurants"
+        nearbyRestaurants.tvNearbyCount.text = ""
+        nearbyRestaurants.root.setOnClickListener { openNearbyInGoogleMaps("restaurants") }
+
+        nearbyHotels.tvNearbyName.text = "Hotels"
+        nearbyHotels.tvNearbyCount.text = ""
+        nearbyHotels.root.setOnClickListener { openNearbyInGoogleMaps("hotels") }
+
+        nearbyCafes.tvNearbyName.text = "Cafes"
+        nearbyCafes.tvNearbyCount.text = ""
+        nearbyCafes.root.setOnClickListener { openNearbyInGoogleMaps("cafes") }
+
+        nearbyAtms.tvNearbyName.text = "ATMs"
+        nearbyAtms.tvNearbyCount.text = ""
+        nearbyAtms.root.setOnClickListener { openNearbyInGoogleMaps("ATMs") }
+    }
+
+    private fun openNearbyInGoogleMaps(category: String) {
+        val place = viewModel.uiState.value.place ?: return
+        val lat = place.latitude
+        val lng = place.longitude
+        val name = place.name
+
+        if (!isValidCoordinate(lat, lng)) {
+            Toast.makeText(requireContext(), R.string.place_location_unavailable, Toast.LENGTH_SHORT).show()
+            return
         }
-        with(nearbyHotels) {
-            ivNearbyIcon.setImageResource(R.drawable.ic_home_zone)
-            tvNearbyName.text = "Hotels"
-            tvNearbyCount.text = ""
+
+        val query = "$category near $name"
+        val encodedQuery = Uri.encode(query)
+
+        // Use Locale.US to ensure dot decimal separator
+        val geoUri = Uri.parse(String.format(Locale.US, "geo:%f,%f?q=%s", lat, lng, encodedQuery))
+        val intent = Intent(Intent.ACTION_VIEW, geoUri).apply {
+            setPackage("com.google.android.apps.maps")
         }
-        with(nearbyCafes) {
-            ivNearbyIcon.setImageResource(R.drawable.ic_bag_zone)
-            tvNearbyName.text = "Cafes"
-            tvNearbyCount.text = ""
-        }
-        with(nearbyAtms) {
-            ivNearbyIcon.setImageResource(R.drawable.ic_qr_code)
-            tvNearbyName.text = "ATMs"
-            tvNearbyCount.text = ""
+
+        try {
+            startActivity(intent)
+        } catch (e: Exception) {
+            // Fallback 1: Try without setPackage (for other map apps)
+            try {
+                val genericIntent = Intent(Intent.ACTION_VIEW, geoUri)
+                startActivity(genericIntent)
+            } catch (e2: Exception) {
+                // Fallback 2: Google Maps Web
+                try {
+                    val webUri = Uri.parse(String.format(Locale.US, "https://www.google.com/maps/search/?api=1&query=%s", encodedQuery))
+                    startActivity(Intent(Intent.ACTION_VIEW, webUri))
+                } catch (e3: Exception) {
+                    Toast.makeText(requireContext(), R.string.unable_to_open_maps, Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 

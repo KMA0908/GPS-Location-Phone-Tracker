@@ -27,7 +27,9 @@ data class FamousPlaceUiState(
     val trendingPlaces: List<FamousPlaceModel> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
-    val selectedCategory: String = "All"
+    val selectedCategory: String = "All",
+    val hasMore: Boolean = false,
+    val favoriteIds: Set<String> = emptySet()
 )
 
 sealed interface FamousPlaceEffect {
@@ -46,6 +48,10 @@ class FamousPlaceViewModel @Inject constructor(
     val effect: SharedFlow<FamousPlaceEffect> = _effect.asSharedFlow()
 
     private val searchQueryFlow = MutableStateFlow("")
+
+    private var fullFilteredList: List<FamousPlaceModel> = emptyList()
+    private var visibleCount = 5
+    private val pageSize = 5
 
     private val categoryMap = mapOf(
         "All" to 0,
@@ -67,7 +73,22 @@ class FamousPlaceViewModel @Inject constructor(
 
     init {
         observeSearch()
+        observeFavorites()
         fetchInitialPlaces()
+    }
+
+    private fun observeFavorites() {
+        viewModelScope.launch {
+            repository.observeFavoritePlaceIds().collectLatest { ids ->
+                _uiState.update { state ->
+                    state.copy(
+                        favoriteIds = ids,
+                        featuredPlace = state.featuredPlace?.copy(isFavorite = ids.contains(state.featuredPlace.id)),
+                        trendingPlaces = state.trendingPlaces.map { it.copy(isFavorite = ids.contains(it.id)) }
+                    )
+                }
+            }
+        }
     }
 
     @OptIn(FlowPreview::class)
@@ -105,20 +126,17 @@ class FamousPlaceViewModel @Inject constructor(
             when (val result = repository.getAllFamousPlaces()) {
                 is ExploreResult.Success -> {
                     val allPlaces = result.data
-                    val filtered = if (typeId == 0) {
+                    fullFilteredList = if (typeId == 0) {
                         allPlaces
                     } else {
                         allPlaces.filter { it.idPlaceType == typeId }
                     }
-                    
-                    _uiState.update { it.copy(
-                        featuredPlace = filtered.firstOrNull(),
-                        trendingPlaces = if (filtered.size > 1) filtered.drop(1) else emptyList(),
-                        isLoading = false
-                    ) }
+
+                    resetPagination()
                 }
                 is ExploreResult.Empty -> {
-                    _uiState.update { it.copy(featuredPlace = null, trendingPlaces = emptyList(), isLoading = false) }
+                    fullFilteredList = emptyList()
+                    _uiState.update { it.copy(featuredPlace = null, trendingPlaces = emptyList(), isLoading = false, hasMore = false) }
                 }
                 is ExploreResult.ApiError -> {
                     _uiState.update { it.copy(isLoading = false, error = result.message) }
@@ -135,20 +153,50 @@ class FamousPlaceViewModel @Inject constructor(
         when (val result = repository.getAllFamousPlaces()) {
             is ExploreResult.Success -> {
                 val allPlaces = result.data
-                val filtered = allPlaces.filter { it.name.contains(query, ignoreCase = true) }
-                _uiState.update { it.copy(
-                    featuredPlace = filtered.firstOrNull(),
-                    trendingPlaces = if (filtered.size > 1) filtered.drop(1) else emptyList(),
-                    isLoading = false
-                ) }
+                fullFilteredList = allPlaces.filter { it.name.contains(query, ignoreCase = true) }
+                resetPagination()
             }
             is ExploreResult.Empty -> {
-                _uiState.update { it.copy(featuredPlace = null, trendingPlaces = emptyList(), isLoading = false) }
+                fullFilteredList = emptyList()
+                _uiState.update { it.copy(featuredPlace = null, trendingPlaces = emptyList(), isLoading = false, hasMore = false) }
             }
             else -> {
                 _uiState.update { it.copy(isLoading = false) }
             }
         }
+    }
+
+    private fun resetPagination() {
+        visibleCount = pageSize
+        updatePaginatedList()
+    }
+
+    fun loadMore() {
+        if (_uiState.value.isLoading || !_uiState.value.hasMore) return
+
+        visibleCount += pageSize
+        updatePaginatedList()
+    }
+
+    private fun updatePaginatedList() {
+        val visibleList = fullFilteredList.take(visibleCount)
+        val hasMore = fullFilteredList.size > visibleCount
+        val favoriteIds = _uiState.value.favoriteIds
+
+        val featured = visibleList.firstOrNull()?.let {
+            it.copy(isFavorite = favoriteIds.contains(it.id))
+        }
+
+        val trending = if (visibleList.size > 1) {
+            visibleList.drop(1).map { it.copy(isFavorite = favoriteIds.contains(it.id)) }
+        } else emptyList()
+
+        _uiState.update { it.copy(
+            featuredPlace = featured,
+            trendingPlaces = trending,
+            isLoading = false,
+            hasMore = hasMore
+        ) }
     }
 
     fun onSearchQueryChanged(query: String) {
@@ -158,6 +206,12 @@ class FamousPlaceViewModel @Inject constructor(
     fun onPlaceClicked(place: FamousPlaceModel) {
         viewModelScope.launch {
             _effect.emit(FamousPlaceEffect.OpenPlaceDetail(place.id))
+        }
+    }
+
+    fun toggleFavorite(placeId: String) {
+        viewModelScope.launch {
+            repository.toggleFavorite(placeId)
         }
     }
 

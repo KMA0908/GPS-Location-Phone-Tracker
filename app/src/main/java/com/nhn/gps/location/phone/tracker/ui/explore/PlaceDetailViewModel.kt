@@ -10,6 +10,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -17,7 +21,8 @@ import javax.inject.Inject
 data class PlaceDetailUiState(
     val place: FamousPlaceModel? = null,
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val isFavorite: Boolean = false
 )
 
 @HiltViewModel
@@ -27,6 +32,23 @@ class PlaceDetailViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(PlaceDetailUiState())
     val uiState: StateFlow<PlaceDetailUiState> = _uiState.asStateFlow()
+
+    init {
+        observeFavorites()
+    }
+
+    private fun observeFavorites() {
+        viewModelScope.launch {
+            combine(
+                _uiState.map { it.place?.id }.distinctUntilChanged(),
+                repository.observeFavoritePlaceIds()
+            ) { placeId, favoriteIds ->
+                placeId != null && favoriteIds.contains(placeId)
+            }.collectLatest { isFav ->
+                _uiState.update { it.copy(isFavorite = isFav) }
+            }
+        }
+    }
 
     fun loadPlaceDetail(placeId: String) {
         viewModelScope.launch {
@@ -45,6 +67,13 @@ class PlaceDetailViewModel @Inject constructor(
                     _uiState.update { it.copy(isLoading = false, error = "Unknown Error") }
                 }
             }
+        }
+    }
+
+    fun toggleFavorite() {
+        val placeId = _uiState.value.place?.id ?: return
+        viewModelScope.launch {
+            repository.toggleFavorite(placeId)
         }
     }
 

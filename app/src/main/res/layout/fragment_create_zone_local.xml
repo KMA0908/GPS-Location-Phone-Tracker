@@ -6,37 +6,21 @@
     android:layout_height="match_parent"
     android:background="@color/app_background">
 
-    <!-- Map Background -->
-    <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/zoneMap"
-        android:name="com.google.android.gms.maps.SupportMapFragment"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-
-    <!-- Center Marker Overlay -->
-    <ImageView
-        android:id="@+id/ivCenterMarker"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_gravity="center"
-        android:layout_marginBottom="24dp"
-        android:src="@drawable/ic_location_permission" />
-
     <!-- Header Toolbar -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/layoutHeader"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:layout_marginTop="8dp"
+        android:elevation="20dp"
         android:paddingHorizontal="16dp">
 
         <ImageButton
             android:id="@+id/btnBack"
             android:layout_width="44dp"
             android:layout_height="44dp"
-            android:background="@drawable/bg_button_circle_border"
+            android:background="@drawable/bg_card"
             android:contentDescription="Back"
-            android:elevation="4dp"
             android:padding="12dp"
             android:src="@drawable/ic_back"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -60,15 +44,98 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
+    <!-- Map Section -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/mapContainer"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/zone_map_height"
+        android:layout_marginHorizontal="@dimen/zone_map_horizontal_margin"
+        android:layout_marginTop="72dp"
+        app:cardCornerRadius="@dimen/zone_map_corner_radius"
+        app:cardElevation="2dp"
+        app:strokeWidth="0dp">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <androidx.fragment.app.FragmentContainerView
+                android:id="@+id/zoneMap"
+                android:name="com.google.android.gms.maps.SupportMapFragment"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <!-- Center Marker Overlay -->
+            <ImageView
+                android:id="@+id/ivCenterMarker"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="center"
+                android:layout_marginBottom="24dp"
+                android:src="@drawable/ic_location_permission" />
+
+            <!-- Search Box Overlay -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cardSearchLocation"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_margin="@dimen/zone_search_margin"
+                app:cardBackgroundColor="@color/white"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="16dp">
+
+                    <EditText
+                        android:id="@+id/edtSearchLocation"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@null"
+                        android:hint="@string/search_location_hint"
+                        android:imeOptions="actionSearch"
+                        android:inputType="textPostalAddress"
+                        android:singleLine="true"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp" />
+
+                    <FrameLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content">
+
+                        <ImageButton
+                            android:id="@+id/btnSearchLocation"
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:src="@drawable/ic_search"
+                            app:tint="@color/bg_switch_permission" />
+
+                        <ProgressBar
+                            android:id="@+id/progressSearchLocation"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_gravity="center"
+                            android:visibility="gone" />
+                    </FrameLayout>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+        </FrameLayout>
+    </com.google.android.material.card.MaterialCardView>
+
     <!-- Bottom Sheet -->
     <androidx.core.widget.NestedScrollView
         android:id="@+id/bottomSheet"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@drawable/bg_bottom_sheet_zones"
+        android:layout_height="match_parent"        android:background="@drawable/bg_bottom_sheet_zones"
         android:elevation="16dp"
         app:behavior_hideable="false"
-        app:behavior_peekHeight="240dp"
+        app:behavior_peekHeight="300dp"
         app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
 
         <LinearLayout

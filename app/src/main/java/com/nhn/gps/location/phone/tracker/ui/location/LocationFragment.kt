@@ -88,7 +88,9 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     private var directionOverlay: GroundOverlay? = null
     private val friendMarkers = mutableMapOf<String, Marker>()
     private val friendAvatars = mutableMapOf<String, String>()
+    private val friendNames = mutableMapOf<String, String>()
     private var selfAvatarUrl: String? = null
+    private var selfName: String? = null
 
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<MaterialCardView>
     private var bottomSheetCallback: BottomSheetBehavior.BottomSheetCallback? = null
@@ -261,12 +263,13 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                         viewModel.selfLocation,
                         viewModel.friendsLocations,
                         mainViewModel.userAvatar,
+                        mainViewModel.userName,
                         viewModel.isFriendsDataLoaded
-                    ) { self, friends, avatar, friendsLoaded ->
-                        DataPackage(self, friends, avatar, friendsLoaded)
+                    ) { self, friends, avatar, name, friendsLoaded ->
+                        DataPackage(self, friends, avatar, name, friendsLoaded)
                     }.collectLatest { data ->
                         lastDataPackage = data
-                        updateMarkersWithAvatars(data.self, data.friends, data.avatar)
+                        updateMarkersWithAvatars(data.self, data.friends, data.avatar, data.name)
                         tryStartPendingMapRoute()
                         activeRoutePosition?.let { destination ->
                             data.self?.let { origin ->
@@ -347,19 +350,21 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     private fun updateMarkersWithAvatars(
         self: LatLng?,
         friends: List<com.nhn.gps.location.phone.tracker.data.model.FriendLocation>,
-        selfAvatar: String
+        selfAvatar: String,
+        selfName: String
     ) {
         if (googleMap == null) return
 
         self?.let { latLng ->
-            showSelfMarker(latLng, selfAvatar) 
+            showSelfMarker(latLng, selfAvatar, selfName)
         }
 
         showFriendMarkers(friends)
     }
 
-    private fun showSelfMarker(location: LatLng, avatarUrl: String) {
+    private fun showSelfMarker(location: LatLng, avatarUrl: String, name: String) {
         val map = googleMap ?: return
+        val displayName = name.ifBlank { "You" }
         if (selfMarker == null) {
             selfMarker = map.addMarker(
                 MarkerOptions()
@@ -368,14 +373,15 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                     .flat(false)
                     .zIndex(10f)
             )
-            updateMarkerIcon(selfMarker!!, avatarUrl)
+            updateMarkerIcon(selfMarker!!, mainViewModel.userAvatarKey.value, avatarUrl, displayName)
         } else {
             selfMarker?.position = location
-            if (selfAvatarUrl != avatarUrl) {
-                updateMarkerIcon(selfMarker!!, avatarUrl)
+            if (selfAvatarUrl != avatarUrl || selfName != displayName) {
+                updateMarkerIcon(selfMarker!!, mainViewModel.userAvatarKey.value, avatarUrl, displayName)
             }
         }
         selfAvatarUrl = avatarUrl
+        selfName = displayName
 
         if (directionOverlay == null) {
             createDirectionCone(map, location)
@@ -415,7 +421,9 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                 if (marker != null) {
                     friendMarkers[friend.id] = marker
                     marker.tag = friend
-                    updateMarkerIcon(marker, friend.avatarUrl)
+                    val displayName = friend.name.ifBlank { "Friend" }
+                    updateMarkerIcon(marker, friend.avatarKey, friend.avatarUrl, displayName)
+                    friendNames[friend.id] = displayName
                 }
             } else {
                 existingMarker.position = position
@@ -427,16 +435,18 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                 }
                 existingMarker.rotation = 0f
                 existingMarker.isFlat = false
-                if (friendAvatars[friend.id] != friend.avatarUrl) {
-                    updateMarkerIcon(existingMarker, friend.avatarUrl)
+                val displayName = friend.name.ifBlank { "Friend" }
+                if (friendAvatars[friend.id] != friend.avatarUrl || friendNames[friend.id] != displayName) {
+                    updateMarkerIcon(existingMarker, friend.avatarKey, friend.avatarUrl, displayName)
                 }
+                friendNames[friend.id] = displayName
             }
             friendAvatars[friend.id] = friend.avatarUrl
         }
     }
 
-    private fun updateMarkerIcon(marker: Marker, avatarUrl: String) {
-        MapMarkerHelper.updateMarkerIcon(requireContext(), marker, avatarUrl, style = MapMarkerHelper.MarkerStyle.DEFAULT)
+    private fun updateMarkerIcon(marker: Marker, avatarKey: String?, avatarUrl: String?, label: String? = null) {
+        MapMarkerHelper.updateMarkerIcon(requireContext(), marker, avatarKey, avatarUrl, style = MapMarkerHelper.MarkerStyle.DEFAULT, label = label)
     }
 
     private fun centerCameraOnSelf() {
@@ -542,7 +552,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
         lastDataPackage?.let { data ->
-            updateMarkersWithAvatars(data.self, data.friends, data.avatar)
+            updateMarkersWithAvatars(data.self, data.friends, data.avatar, data.name)
         }
         tryAutoZoom()
 
@@ -647,9 +657,11 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         lastRouteOrigin = null
         lastRouteDestination = null
         lastRouteRequestAt = 0L
+        selfName = null
         
         friendMarkers.clear()
         friendAvatars.clear()
+        friendNames.clear()
     }
 
     private fun tryStartPendingMapRoute() {
@@ -944,6 +956,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
             val self: LatLng?,
             val friends: List<com.nhn.gps.location.phone.tracker.data.model.FriendLocation>,
             val avatar: String,
+            val name: String,
             val friendsLoaded: Boolean
         )
     }

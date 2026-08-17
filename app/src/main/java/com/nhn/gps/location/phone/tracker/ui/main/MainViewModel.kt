@@ -6,11 +6,14 @@ import com.nhn.gps.location.phone.tracker.data.local.AppPreferences
 import com.nhn.gps.location.phone.tracker.data.model.FamousPlaceModel
 import com.nhn.gps.location.phone.tracker.data.repository.ExploreRepository
 import com.nhn.gps.location.phone.tracker.data.repository.ExploreResult
+import com.nhn.gps.location.phone.tracker.data.repository.GeocodedLocation
+import com.nhn.gps.location.phone.tracker.data.repository.PhoneLocatorRepository
 import com.nhn.gps.location.phone.tracker.navigation.AppDestination
 import com.nhn.gps.location.phone.tracker.navigation.NavigationManager
 import com.nhn.gps.location.phone.tracker.ui.location.MapRouteRequest
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -20,12 +23,53 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+sealed interface ZoneAddressSearchState {
+    data object Idle : ZoneAddressSearchState
+    data object Loading : ZoneAddressSearchState
+    data class Success(val location: GeocodedLocation) : ZoneAddressSearchState
+    data object NotFound : ZoneAddressSearchState
+    data class Error(val messageRes: Int) : ZoneAddressSearchState
+}
+
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val preferences: AppPreferences,
     private val navigationManager: NavigationManager,
-    private val exploreRepository: ExploreRepository
+    private val exploreRepository: ExploreRepository,
+    private val phoneLocatorRepository: PhoneLocatorRepository
 ) : BaseViewModel() {
+
+    private val _zoneAddressSearchState = MutableStateFlow<ZoneAddressSearchState>(ZoneAddressSearchState.Idle)
+    val zoneAddressSearchState = _zoneAddressSearchState.asStateFlow()
+    private var zoneAddressSearchJob: Job? = null
+
+    fun searchZoneAddress(query: String) {
+        val trimmed = query.trim()
+        if (trimmed.isEmpty()) {
+            _zoneAddressSearchState.value = ZoneAddressSearchState.Error(com.nhn.gps.location.phone.tracker.R.string.search_address_empty)
+            return
+        }
+
+        zoneAddressSearchJob?.cancel()
+        _zoneAddressSearchState.value = ZoneAddressSearchState.Loading
+
+        zoneAddressSearchJob = viewModelScope.launch {
+            val result = phoneLocatorRepository.getLocationFromAddress(trimmed)
+            result.onSuccess { loc ->
+                if (loc != null) {
+                    _zoneAddressSearchState.value = ZoneAddressSearchState.Success(loc)
+                } else {
+                    _zoneAddressSearchState.value = ZoneAddressSearchState.NotFound
+                }
+            }.onFailure {
+                _zoneAddressSearchState.value = ZoneAddressSearchState.Error(com.nhn.gps.location.phone.tracker.R.string.search_location_error)
+            }
+        }
+    }
+
+    fun consumeZoneAddressSearchResult() {
+        _zoneAddressSearchState.value = ZoneAddressSearchState.Idle
+    }
 
     private val _isLocationPermanentlyEnabled = MutableStateFlow(false)
     val isLocationPermanentlyEnabled: StateFlow<Boolean> =
@@ -51,6 +95,18 @@ class MainViewModel @Inject constructor(
         initialValue = ""
     )
 
+    val userAvatarKey: StateFlow<String> = preferences.userAvatarKey.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = ""
+    )
+
+    val userName: StateFlow<String> = preferences.userName.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = ""
+    )
+
     val uiState = combine(
         preferences.appOpenCount,
         navigationManager.currentDestination,
@@ -58,6 +114,7 @@ class MainViewModel @Inject constructor(
     ) { appOpenCount, destination, famousPlaces ->
         MainUiState(
             appOpenCount = appOpenCount,
+            currentDestination = destination,
             currentRoute = destination?.route,
             famousPlaces = famousPlaces
         )

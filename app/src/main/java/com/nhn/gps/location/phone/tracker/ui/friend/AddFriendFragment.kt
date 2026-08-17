@@ -1,5 +1,6 @@
 package com.nhn.gps.location.phone.tracker.ui.friend
 
+import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.graphics.Rect
@@ -17,7 +18,6 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import com.bumptech.glide.Glide
 import com.google.zxing.BinaryBitmap
 import com.google.zxing.MultiFormatReader
 import com.google.zxing.RGBLuminanceSource
@@ -34,6 +34,7 @@ import com.nhn.gps.location.phone.tracker.base.BaseFragment
 import com.nhn.gps.location.phone.tracker.databinding.FragmentAddFriendBinding
 import com.nhn.gps.location.phone.tracker.navigation.AppDestination
 import com.nhn.gps.location.phone.tracker.ui.main.MainActivity
+import com.nhn.gps.location.phone.tracker.util.loadAvatar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -267,22 +268,12 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
         }
     }
 
+    @SuppressLint("SetTextI18n")
     private fun showFriendFound(friend: com.nhn.gps.location.phone.tracker.data.model.FriendLocation) = with(binding) {
         layoutFriendFound.tvName.text = friend.name
-        layoutFriendFound.tvId.text = friend.id
+        layoutFriendFound.tvId.text = "id: " + friend.id
         
-        // Load Avatar
-        val avatarUrl = friend.avatarUrl
-        if (avatarUrl.isEmpty() || avatarUrl == "null") {
-            layoutFriendFound.imgAvatar.setImageResource(R.drawable.ic_avt_find_friend)
-        } else {
-            Glide.with(this@AddFriendFragment)
-                .load(avatarUrl)
-                .circleCrop()
-                .placeholder(R.drawable.ic_avt_find_friend)
-                .error(R.drawable.ic_avt_find_friend)
-                .into(layoutFriendFound.imgAvatar)
-        }
+        layoutFriendFound.imgAvatar.loadAvatar(friend.avatarKey, friend.avatarUrl, fallbackRes = R.drawable.ic_avt_find_friend)
         
         viewDim.isVisible = true
         popupContainer.isVisible = true

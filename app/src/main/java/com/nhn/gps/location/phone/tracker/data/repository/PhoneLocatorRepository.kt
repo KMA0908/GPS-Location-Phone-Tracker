@@ -13,7 +13,14 @@ import kotlin.coroutines.resume
 interface PhoneLocatorRepository {
     suspend fun findUserByPhone(phone: String): Result<Pair<UserProfile, UserLocation?>>
     suspend fun getAddressFromLocation(lat: Double, lng: Double): String?
+    suspend fun getLocationFromAddress(query: String): Result<GeocodedLocation?>
 }
+
+data class GeocodedLocation(
+    val latitude: Double,
+    val longitude: Double,
+    val formattedAddress: String
+)
 
 @Singleton
 class PhoneLocatorRepositoryImpl @Inject constructor(
@@ -35,14 +42,14 @@ class PhoneLocatorRepositoryImpl @Inject constructor(
 
             if (snapshot.exists() && snapshot.childrenCount > 0) {
                 val userSnapshot = snapshot.children.first()
-                
+
                 // 2. Validate UserProfile exists
                 val profile = userSnapshot.child("profile").getValue(UserProfile::class.java)
                     ?: return@withContext Result.failure(Exception("User found, but profile information is missing."))
-                
+
                 // 3. Get UserLocation and validate coordinates
                 val location = userSnapshot.child("location").getValue(UserLocation::class.java)
-                
+
                 if (location != null) {
                     if (!isValidCoordinate(location.latitude, location.longitude)) {
                         return@withContext Result.failure(Exception("Found user, but their location coordinates are invalid."))
@@ -63,7 +70,7 @@ class PhoneLocatorRepositoryImpl @Inject constructor(
 
     override suspend fun getAddressFromLocation(lat: Double, lng: Double): String? = withContext(Dispatchers.IO) {
         if (!isValidCoordinate(lat, lng)) return@withContext null
-        
+
         try {
             val geocoder = android.location.Geocoder(context, java.util.Locale.getDefault())
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
@@ -80,6 +87,43 @@ class PhoneLocatorRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             null
+        }
+    }
+
+    override suspend fun getLocationFromAddress(query: String): Result<GeocodedLocation?> = withContext(Dispatchers.IO) {
+        val trimmedQuery = query.trim()
+        if (trimmedQuery.isEmpty()) return@withContext Result.failure(Exception("Empty query"))
+
+        if (!android.location.Geocoder.isPresent()) {
+            return@withContext Result.failure(Exception("Geocoder not available"))
+        }
+
+        try {
+            val geocoder = android.location.Geocoder(context, java.util.Locale.getDefault())
+            val addresses = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                kotlinx.coroutines.suspendCancellableCoroutine<List<android.location.Address>?> { continuation ->
+                    geocoder.getFromLocationName(trimmedQuery, 1) { addresses ->
+                        if (continuation.isActive) continuation.resume(addresses)
+                    }
+                }
+            } else {
+                @Suppress("DEPRECATION")
+                geocoder.getFromLocationName(trimmedQuery, 1)
+            }
+
+            val address = addresses?.firstOrNull()
+            if (address != null) {
+                val loc = GeocodedLocation(
+                    latitude = address.latitude,
+                    longitude = address.longitude,
+                    formattedAddress = address.getAddressLine(0) ?: trimmedQuery
+                )
+                Result.success(loc)
+            } else {
+                Result.success(null)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 

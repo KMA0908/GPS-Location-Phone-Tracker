@@ -29,4 +29,8 @@ interface ExploreRepository {
     suspend fun getResolvedPhotoUri(metadata: PhotoMetadata): String?
 
     suspend fun getAllFamousPlaces(): ExploreResult<List<FamousPlaceModel>>
+
+    fun observeFavoritePlaceIds(): Flow<Set<String>>
+
+    suspend fun toggleFavorite(placeId: String)
 }

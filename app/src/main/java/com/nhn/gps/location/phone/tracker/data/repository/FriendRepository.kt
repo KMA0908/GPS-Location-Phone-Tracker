@@ -89,6 +89,7 @@ class FriendRepositoryImpl @Inject constructor(
                     id = friendId,
                     name = profile.name,
                     avatarUrl = profile.avatarUrl,
+                    avatarKey = profile.avatarKey,
                     latitude = loc?.latitude ?: 0.0,
                     longitude = loc?.longitude ?: 0.0,
                     updatedAt = loc?.updatedAt ?: 0L

@@ -247,13 +247,13 @@ class PhoneLocatorFragment : BaseFragment<FragmentPhoneLocatorBinding, PhoneLoca
             
             // Update marker icon with profile avatar
             currentUserMarker?.let { marker ->
-                MapMarkerHelper.updateMarkerIcon(requireContext(), marker, profile.avatarUrl, style = MapMarkerHelper.MarkerStyle.GLOW)
+                MapMarkerHelper.updateMarkerIcon(requireContext(), marker, profile.avatarKey, profile.avatarUrl, style = MapMarkerHelper.MarkerStyle.GLOW)
             }
         }
     }
 
-    private fun updateMarkerIcon(marker: Marker, avatarUrl: String) {
-        MapMarkerHelper.updateMarkerIcon(requireContext(), marker, avatarUrl, style = MapMarkerHelper.MarkerStyle.GLOW)
+    private fun updateMarkerIcon(marker: Marker, avatarKey: String?, avatarUrl: String?) {
+        MapMarkerHelper.updateMarkerIcon(requireContext(), marker, avatarKey, avatarUrl, style = MapMarkerHelper.MarkerStyle.GLOW)
     }
 
     private fun setupFragmentResultListeners() {

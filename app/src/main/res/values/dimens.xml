@@ -46,4 +46,14 @@
     <dimen name="settings_language_selected_stroke">2dp</dimen>
     <dimen name="sp_9">9sp</dimen>
     <dimen name="sp_8">8sp</dimen>
+
+    <dimen name="famous_marker_image_size">40dp</dimen>
+    <dimen name="famous_marker_corner_radius">10dp</dimen>
+    <dimen name="famous_marker_dot_size">8dp</dimen>
+    <dimen name="famous_marker_gap">4dp</dimen>
+
+    <dimen name="zone_map_height">320dp</dimen>
+    <dimen name="zone_map_horizontal_margin">16dp</dimen>
+    <dimen name="zone_map_corner_radius">24dp</dimen>
+    <dimen name="zone_search_margin">12dp</dimen>
 </resources>

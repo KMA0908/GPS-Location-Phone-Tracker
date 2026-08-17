@@ -83,7 +83,6 @@
                 android:layout_marginStart="12dp"
                 app:cardBackgroundColor="@color/white"
                 app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
                 app:strokeColor="#E9F8ED"
                 app:strokeWidth="1dp">
 
@@ -195,7 +194,6 @@
             android:layout_height="wrap_content"
             android:background="@drawable/bg_card"
             android:contentDescription="Back"
-            android:elevation="4dp"
             android:padding="12dp"
             android:src="@drawable/ic_back"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -223,7 +221,6 @@
             android:layout_height="44dp"
             android:background="@drawable/bg_card"
             android:contentDescription="Add"
-            android:elevation="4dp"
             android:padding="12dp"
             android:src="@drawable/ic_add"
             app:layout_constraintBottom_toBottomOf="parent"
