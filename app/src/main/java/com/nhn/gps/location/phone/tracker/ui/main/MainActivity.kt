@@ -13,6 +13,7 @@ import com.nhn.gps.location.phone.tracker.base.UiMessage
 import androidx.fragment.app.Fragment
 import com.leansoft.ads.AdManager
 import com.nhn.gps.location.phone.tracker.R
+import com.nhn.gps.location.phone.tracker.ads.GpsAdConfig
 import com.nhn.gps.location.phone.tracker.ads.GpsAdPlacement
 import com.nhn.gps.location.phone.tracker.ads.GpsAdScenario
 import com.nhn.gps.location.phone.tracker.ads.GpsAdViewBinder
@@ -58,7 +59,9 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>() {
         val target = intent.getStringExtra("TARGET_DESTINATION")
         viewModel.handleIntent(target)
         setupBackPress()
-        runCatching { AdManager.instance.preloadAppOpenAd(GpsAdPlacement.AOA_RESUME) }
+        if (GpsAdConfig.ADS_ENABLED) {
+            runCatching { AdManager.instance.preloadAppOpenAd(GpsAdPlacement.AOA_RESUME) }
+        }
     }
 
     private fun setupBackPress() {

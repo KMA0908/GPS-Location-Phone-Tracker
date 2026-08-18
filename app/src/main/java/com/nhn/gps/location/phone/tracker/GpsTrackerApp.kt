@@ -10,6 +10,7 @@ import com.google.android.libraries.places.api.Places
 import com.leansoft.ads.AdManager
 import com.leansoft.ads.AdsApplication
 import com.nhn.gps.location.phone.tracker.analytics.GpsAnalyticsTracker
+import com.nhn.gps.location.phone.tracker.ads.GpsAdConfig
 import com.nhn.gps.location.phone.tracker.ads.GpsAdPlacement
 import com.nhn.gps.location.phone.tracker.ads.GpsAds
 import com.nhn.gps.location.phone.tracker.ads.ResumeAdGuard
@@ -29,7 +30,9 @@ class GpsTrackerApp : AdsApplication() {
             Places.initializeWithNewPlacesApiEnabled(this, getString(R.string.maps_api_key))
         }
         registerActivityLifecycleCallbacks(activityCallbacks)
-        ProcessLifecycleOwner.get().lifecycle.addObserver(ResumeAdObserver())
+        if (GpsAdConfig.ADS_ENABLED) {
+            ProcessLifecycleOwner.get().lifecycle.addObserver(ResumeAdObserver())
+        }
     }
 
     private val activityCallbacks = object : Application.ActivityLifecycleCallbacks {
