@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
@@ -86,7 +87,7 @@ class SetUpProfileViewModel @Inject constructor(
                 appPreferences.setUserAvatarKey(existingUser.avatarKey)
                 
                 _uiState.value = SetUpProfileUiState.Success
-                navigationManager.navigateTo(AppDestination.Home, clearStack = true)
+                navigateAfterProfileCreated()
                 return@launchCatching
             }
 
@@ -113,8 +114,17 @@ class SetUpProfileViewModel @Inject constructor(
 
             // 6. Thành công và Điều hướng
             _uiState.value = SetUpProfileUiState.Success
-            navigationManager.navigateTo(AppDestination.Home, clearStack = true)
+            navigateAfterProfileCreated()
         }
+    }
+
+    private suspend fun navigateAfterProfileCreated() {
+        val destination = if (appPreferences.isPermissionShown.first()) {
+            AppDestination.Home
+        } else {
+            AppDestination.Permission
+        }
+        navigationManager.navigateTo(destination, clearStack = true)
     }
     
     fun resetState() {

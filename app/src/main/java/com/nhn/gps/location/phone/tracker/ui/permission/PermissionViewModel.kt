@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -67,15 +68,24 @@ class PermissionViewModel @Inject constructor(
     fun onContinueClicked() {
         viewModelScope.launch {
             appPreferences.setPermissionShown(true)
-            navigationManager.navigateTo(AppDestination.SetUpProfile, clearStack = true)
+            navigateAfterPermission()
         }
     }
 
     fun onLaterClicked() {
         viewModelScope.launch {
             appPreferences.setPermissionShown(true)
-            navigationManager.navigateTo(AppDestination.SetUpProfile, clearStack = true)
+            navigateAfterPermission()
         }
+    }
+
+    private suspend fun navigateAfterPermission() {
+        val destination = if (appPreferences.userId.first().isNullOrBlank()) {
+            AppDestination.SetUpProfile
+        } else {
+            AppDestination.Home
+        }
+        navigationManager.navigateTo(destination, clearStack = true)
     }
 }
 

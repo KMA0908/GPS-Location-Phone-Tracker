@@ -22,6 +22,7 @@ import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.MapsInitializer
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
@@ -115,9 +116,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     ): FragmentLocationBinding = FragmentLocationBinding.inflate(inflater, container, false)
 
     override fun setupViews(savedInstanceState: Bundle?) = with(binding) {
-        val mapFragment =
-            childFragmentManager.findFragmentById(R.id.mapFragment) as SupportMapFragment
-        mapFragment.getMapAsync(this@LocationFragment)
+        initializeGoogleMap()
 
         cardBack.setOnClickListener {
             if (activeRoutePosition != null) {
@@ -149,6 +148,29 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
 
         setupFriendBottomSheet()
         setupDirectionPanel()
+    }
+
+    private fun initializeGoogleMap() {
+        val mapFragment = childFragmentManager.findFragmentById(R.id.mapFragment)
+            as? SupportMapFragment ?: run {
+            Log.e(TAG, "SupportMapFragment was not found in fragment_location")
+            return
+        }
+
+        try {
+            MapsInitializer.initialize(
+                requireContext(),
+                MapsInitializer.Renderer.LATEST,
+            ) {
+                if (isAdded && !isRemoving) {
+                    mapFragment.getMapAsync(this@LocationFragment)
+                }
+            }
+        } catch (error: Exception) {
+            // Fall back to the default renderer on devices with older Play services.
+            Log.e(TAG, "Unable to initialize Google Maps renderer", error)
+            mapFragment.getMapAsync(this@LocationFragment)
+        }
     }
 
     private fun setupDirectionPanel() = with(binding) {
@@ -393,8 +415,9 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
 
     private fun showFriendMarkers(friends: List<com.nhn.gps.location.phone.tracker.data.model.FriendLocation>) {
         val map = googleMap ?: return
+        val validFriends = friends.filter { isValidRoutePoint(LatLng(it.latitude, it.longitude)) }
 
-        val friendIds = friends.map { it.id }.toSet()
+        val friendIds = validFriends.map { it.id }.toSet()
         val iterator = friendMarkers.entries.iterator()
         while (iterator.hasNext()) {
             val entry = iterator.next()
@@ -405,7 +428,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
             }
         }
 
-        friends.forEach { friend ->
+        validFriends.forEach { friend ->
             val existingMarker = friendMarkers[friend.id]
             val position = LatLng(friend.latitude, friend.longitude)
             if (existingMarker == null) {
@@ -684,12 +707,22 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         friendId: String? = null,
     ): Boolean {
         val origin = viewModel.selfLocation.value
-        if (origin == null) {
+        if (origin == null || !isValidRoutePoint(origin)) {
             Toast.makeText(
                 requireContext(),
                 getString(R.string.route_waiting_for_location),
                 Toast.LENGTH_SHORT,
             ).show()
+            return false
+        }
+
+        if (!isValidRoutePoint(destination)) {
+            Toast.makeText(
+                requireContext(),
+                getString(R.string.route_destination_unavailable),
+                Toast.LENGTH_LONG,
+            ).show()
+            Log.w(TAG, "Ignoring route request with invalid destination: $destination")
             return false
         }
 
@@ -768,11 +801,56 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                     SphericalUtil.computeDistanceBetween(currentDestination, destination) <=
                     ROUTE_RESPONSE_STALE_DISTANCE_METERS
                 ) {
-                    showRouteError()
+                    // Routes API can be unavailable while a project is being configured or
+                    // when the device is offline. Keep the friend direction usable by drawing
+                    // a direct fallback line and opening Google Maps for turn-by-turn navigation.
+                    // This is deliberately labelled as an estimate so it is never mistaken for
+                    // a road-following route.
+                    val fallbackDistance = SphericalUtil
+                        .computeDistanceBetween(origin, destination)
+                        .toInt()
+                        .coerceAtLeast(1)
+                    val fallbackDuration = (fallbackDistance / ESTIMATED_DRIVING_METERS_PER_SECOND)
+                        .toLong()
+                        .coerceAtLeast(60L)
+                    drawFallbackRoute(origin, destination, fitBounds)
+                    showApproximateDirectionPanels(fallbackDistance, fallbackDuration)
                 }
             }
         }
     }
+
+    private fun drawFallbackRoute(origin: LatLng, destination: LatLng, fitBounds: Boolean) {
+        drawRouteLine(
+            DrivingRoute(
+                points = listOf(origin, destination),
+                distanceMeters = SphericalUtil.computeDistanceBetween(origin, destination)
+                    .toInt()
+                    .coerceAtLeast(1),
+                durationSeconds = 0L,
+            ),
+            fitBounds,
+        )
+    }
+
+    private fun showApproximateDirectionPanels(distanceMeters: Int, durationSeconds: Long) =
+        with(binding) {
+            val distanceText = formatDistance(distanceMeters)
+            val durationText = formatDuration(durationSeconds)
+            directionBottomPanel.tvRouteTime.text =
+                getString(R.string.route_duration_and_distance, durationText, distanceText)
+            directionBottomPanel.tvTraffic.text = getString(R.string.route_approximate_description)
+            directionBottomPanel.btnStartNavigation.isEnabled = true
+            directionBottomPanel.btnStartNavigation.alpha = 1f
+            updateRouteOptionLabels(durationText, distanceText)
+        }
+
+    private fun isValidRoutePoint(point: LatLng): Boolean =
+        point.latitude.isFinite() &&
+            point.longitude.isFinite() &&
+            point.latitude in -90.0..90.0 &&
+            point.longitude in -180.0..180.0 &&
+            !(point.latitude == 0.0 && point.longitude == 0.0)
 
     private fun drawRouteLine(route: DrivingRoute, fitBounds: Boolean) {
         val map = googleMap ?: return
@@ -947,6 +1025,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         private const val ROUTE_REFRESH_INTERVAL_MS = 8_000L
         private const val ROUTE_REFRESH_DISTANCE_METERS = 40.0
         private const val ROUTE_RESPONSE_STALE_DISTANCE_METERS = 50.0
+        private const val ESTIMATED_DRIVING_METERS_PER_SECOND = 8.33
         private val ROUTE_START_COLOR = Color.rgb(62, 218, 105)
         private val ROUTE_END_COLOR = Color.rgb(65, 218, 221)
 

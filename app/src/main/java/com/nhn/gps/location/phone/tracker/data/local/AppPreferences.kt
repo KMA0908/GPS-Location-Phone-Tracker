@@ -137,6 +137,16 @@ class AppPreferences @Inject constructor(
         }
     }
 
+    val isOnboardingCompleted: Flow<Boolean> = context.appDataStore.safeData.map { preferences ->
+        preferences[ONBOARDING_COMPLETED] ?: false
+    }
+
+    suspend fun setOnboardingCompleted(completed: Boolean = true) {
+        context.appDataStore.edit { preferences ->
+            preferences[ONBOARDING_COMPLETED] = completed
+        }
+    }
+
     val userName: Flow<String> = context.appDataStore.safeData.map { preferences ->
         preferences[USER_NAME] ?: ""
     }
@@ -242,6 +252,7 @@ class AppPreferences @Inject constructor(
         val CAMERA_ENABLED = booleanPreferencesKey("camera_enabled")
         val NOTIFICATION_ENABLED = booleanPreferencesKey("notification_enabled")
         val PERMISSION_SHOWN = booleanPreferencesKey("permission_shown")
+        val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         val USER_NAME = stringPreferencesKey("user_name")
         val USER_PHONE = stringPreferencesKey("user_phone")
         val USER_AVATAR = stringPreferencesKey("user_avatar")

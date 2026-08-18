@@ -33,6 +33,7 @@ class SplashActivity : LeansoftSplashActivity() {
             isAppearanceLightStatusBars = false
             isAppearanceLightNavigationBars = false
         }
+        synchronizeInitialFlowState()
     }
 
     override fun loadedRemoteConfig(isSuccess: Boolean) = Unit
@@ -41,11 +42,8 @@ class SplashActivity : LeansoftSplashActivity() {
         if (navigated) return
         navigated = true
         lifecycleScope.launch {
-            val target = if (preferences.userId.first().isNullOrBlank() && !preferences.isPermissionShown.first()) {
-                "permission"
-            } else {
-                "home"
-            }
+            preferences.setOnboardingCompleted()
+            val target = if (preferences.userId.first().isNullOrBlank()) "setup_profile" else "home"
             startActivity(Intent(this@SplashActivity, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 putExtra("TARGET_DESTINATION", target)
@@ -61,7 +59,34 @@ class SplashActivity : LeansoftSplashActivity() {
 
     override fun getRemoteConfigDefault(): Int = R.xml.remote_config_defaults
 
+    private fun synchronizeInitialFlowState() {
+        runBlocking {
+            val hasProfile = !preferences.userId.first().isNullOrBlank()
+            if (hasProfile) {
+                // Migrate users created before the app-owned onboarding flag existed.
+                if (!preferences.isOnboardingCompleted.first()) {
+                    preferences.setOnboardingCompleted()
+                }
+            } else if (!preferences.isOnboardingCompleted.first()) {
+                // The SDK stores these flags in SharedPreferences. Reset them for an
+                // unfinished first run so Language and Onboarding cannot be skipped by
+                // stale/restored SDK preferences.
+                getSharedPreferences(LEANSOFT_PREFERENCES, Context.MODE_PRIVATE)
+                    .edit()
+                    .putBoolean(KEY_LANGUAGE_ONBOARD, false)
+                    .putBoolean(KEY_INTRO_SHOWN, false)
+                    .apply()
+            }
+        }
+    }
+
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LanguageHelper.wrapContext(newBase))
+    }
+
+    private companion object {
+        const val LEANSOFT_PREFERENCES = "leansoft_pref_app"
+        const val KEY_LANGUAGE_ONBOARD = "languageOnboard"
+        const val KEY_INTRO_SHOWN = "isIntroShow"
     }
 }

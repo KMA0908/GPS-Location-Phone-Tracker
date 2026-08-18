@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -7,9 +9,20 @@ plugins {
     id("kotlin-parcelize")
 }
 
-val bundledMapsApiKey = "AIzaSyAH7TC-3rHOGxrlTigvbPpOoTcCkcnkp4c"
+// Build-time properties take precedence, followed by local.properties. The
+// bundled value keeps a checkout buildable until a dedicated Maps key is set.
+val localProperties = Properties().apply {
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.isFile) {
+        localPropertiesFile.inputStream().use { load(it) }
+    }
+}
+val bundledMapsApiKey = localProperties.getProperty("MAPS_API_KEY")
+    ?: "AIzaSyB943YDZBr0Bofd7aOQVaiAAmfQ7QCro4U"
 val mapsApiKey = providers.gradleProperty("MAPS_API_KEY").orElse(bundledMapsApiKey).get()
-val routesApiKey = providers.gradleProperty("ROUTES_API_KEY").orElse(mapsApiKey).get()
+val routesApiKey = providers.gradleProperty("ROUTES_API_KEY")
+    .orElse(localProperties.getProperty("ROUTES_API_KEY") ?: mapsApiKey)
+    .get()
 
 android {
     namespace = "com.nhn.gps.location.phone.tracker"

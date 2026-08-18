@@ -18,13 +18,17 @@
 
     <application
         android:name=".GpsTrackerApp"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:icon="@drawable/ic_launcher"
         android:label="${appName}"
         android:roundIcon="@drawable/ic_launcher"
         android:supportsRtl="true"
         android:theme="@style/Theme.GpsTracker"
-        tools:replace="android:label">
+        tools:replace="android:allowBackup,android:label">
+        <uses-library
+            android:name="org.apache.http.legacy"
+            android:required="false" />
+
         <activity
             android:name=".ui.splash.SplashActivity"
             android:exported="true"
