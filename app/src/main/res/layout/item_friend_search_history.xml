@@ -5,5 +5,5 @@
         <TextView android:id="@+id/tvName" android:layout_width="match_parent" android:layout_height="wrap_content" android:textStyle="bold" />
         <TextView android:id="@+id/tvAddress" android:layout_width="match_parent" android:layout_height="wrap_content" />
     </LinearLayout>
-    <ImageButton android:id="@+id/btnRemove" android:layout_width="48dp" android:layout_height="48dp" android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="@string/remove" android:src="@drawable/ic_close" />
+    <ImageButton android:id="@+id/btnRemoveHistory" android:layout_width="48dp" android:layout_height="48dp" android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="@string/remove" android:src="@drawable/ic_close" />
 </LinearLayout>

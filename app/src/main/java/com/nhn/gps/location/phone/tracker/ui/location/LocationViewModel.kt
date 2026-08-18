@@ -26,6 +26,12 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+enum class DirectionTravelMode(val googleMapsValue: String) {
+    CAR("driving"),
+    MOTORCYCLE("two-wheeler"),
+    WALKING("walking"),
+}
+
 @HiltViewModel
 class LocationViewModel @Inject constructor(
     private val repository: LocationRepository,
@@ -43,6 +49,13 @@ class LocationViewModel @Inject constructor(
 
     private val _isFriendsDataLoaded = MutableStateFlow(false)
     val isFriendsDataLoaded: StateFlow<Boolean> = _isFriendsDataLoaded.asStateFlow()
+
+    private val _selectedTravelMode = MutableStateFlow(DirectionTravelMode.CAR)
+    val selectedTravelMode: StateFlow<DirectionTravelMode> = _selectedTravelMode.asStateFlow()
+
+    fun selectTravelMode(mode: DirectionTravelMode) {
+        _selectedTravelMode.value = mode
+    }
 
     private val _isFriendSearchActive = MutableStateFlow(false)
     val isFriendSearchActive: StateFlow<Boolean> = _isFriendSearchActive.asStateFlow()

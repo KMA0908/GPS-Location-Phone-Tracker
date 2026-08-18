@@ -119,12 +119,7 @@ class SetUpProfileViewModel @Inject constructor(
     }
 
     private suspend fun navigateAfterProfileCreated() {
-        val destination = if (appPreferences.isPermissionShown.first()) {
-            AppDestination.Home
-        } else {
-            AppDestination.Permission
-        }
-        navigationManager.navigateTo(destination, clearStack = true)
+        navigationManager.navigateTo(AppDestination.Home, clearStack = true)
     }
     
     fun resetState() {

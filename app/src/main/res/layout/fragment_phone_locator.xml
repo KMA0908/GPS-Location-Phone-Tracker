@@ -200,8 +200,7 @@
                         app:boxCornerRadiusBottomStart="16dp"
                         app:boxCornerRadiusTopEnd="16dp"
                         app:boxCornerRadiusTopStart="16dp"
-                        app:boxStrokeColor="#D3F6FC"
-                        app:startIconDrawable="@drawable/ic_vn">
+                        app:boxStrokeColor="#D3F6FC">
 
                         <AutoCompleteTextView
                             android:layout_width="match_parent"

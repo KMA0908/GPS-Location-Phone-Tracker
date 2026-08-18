@@ -22,7 +22,7 @@ class FriendSearchHistoryAdapter(
             tvAddress.text = "ID: ${friend.id}"
             imgAvatar.loadAvatar(friend.avatarKey, friend.avatarUrl)
             root.setOnClickListener { onFriendClick(friend) }
-            btnRemove.setOnClickListener { onRemoveClick(friend) }
+            btnRemoveHistory.setOnClickListener { onRemoveClick(friend) }
         }
     }
     private object Diff : DiffUtil.ItemCallback<FriendLocation>() {

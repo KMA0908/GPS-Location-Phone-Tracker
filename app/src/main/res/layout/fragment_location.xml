@@ -124,7 +124,7 @@
                     android:id="@+id/search"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                        app:cardCornerRadius="30dp"
+                    app:cardCornerRadius="@dimen/d_20"
                         app:strokeWidth="0dp">
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -145,6 +145,7 @@
                             tools:ignore="RtlSymmetry" />
 
                         <TextView
+                            android:id="@+id/searchLabel"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textSize="16sp"

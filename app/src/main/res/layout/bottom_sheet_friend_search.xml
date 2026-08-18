@@ -1,16 +1,112 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:id="@+id/friendSearchBottomSheet" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_gravity="bottom" app:cardCornerRadius="20dp" app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:padding="18dp">
-        <View android:layout_width="42dp" android:layout_height="4dp" android:layout_gravity="center" android:background="@drawable/bg_handle" />
-        <com.google.android.material.textfield.TextInputLayout android:id="@+id/searchInputLayout" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" app:endIconMode="clear_text" app:startIconDrawable="@drawable/ic_search">
-            <com.google.android.material.textfield.TextInputEditText android:id="@+id/edtFriendSearch" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/search" android:imeOptions="actionSearch" android:inputType="text" android:singleLine="true" />
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/friendSearchBottomSheet"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_gravity="bottom"
+    app:cardCornerRadius="20dp"
+    app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="18dp">
+
+        <View
+            android:layout_width="42dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center"
+            android:background="@drawable/bg_handle" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/searchInputLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            app:endIconMode="clear_text"
+            app:startIconDrawable="@drawable/ic_search">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edtFriendSearch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/search"
+                android:imeOptions="actionSearch"
+                android:inputType="text"
+                android:singleLine="true" />
         </com.google.android.material.textfield.TextInputLayout>
-        <LinearLayout android:id="@+id/recentHeader" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:layout_marginTop="12dp">
-            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Recent History" android:textStyle="bold" />
-            <ImageButton android:id="@+id/btnClearHistory" android:layout_width="48dp" android:layout_height="48dp" android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="@string/clear_search" android:src="@drawable/ic_close" />
+
+        <LinearLayout
+            android:id="@+id/recentHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text=" History"
+                android:textStyle="bold"
+                android:textSize="@dimen/d_12"
+                app:drawableStartCompat="@drawable/ic_view_history"
+                app:drawableTint="#000000" />
+
+            <ImageButton
+                android:id="@+id/btnClearAllHistory"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/clear_search"
+                android:src="@drawable/ic_close"
+                app:tint="@color/text_primary" />
         </LinearLayout>
-        <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvFriendSearchHistory" android:layout_width="match_parent" android:layout_height="wrap_content" android:nestedScrollingEnabled="false" />
-        <TextView android:id="@+id/tvNoFriends" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:padding="24dp" android:text="No friends match your search" android:visibility="gone" />
-        <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvFriendSearch" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:clipToPadding="false" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvFriendSearchHistory"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:nestedScrollingEnabled="false" />
+
+        <TextView
+            android:id="@+id/tvNoFriends"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:padding="24dp"
+            android:text="No friends match your search"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="6dp"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/d_10"
+                android:src="@drawable/ic_friend_mini"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textSize="@dimen/d_12"
+                android:text="People you may know"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvFriendSearch"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipToPadding="false" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

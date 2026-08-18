@@ -173,6 +173,7 @@
     <string name="route_destination_unavailable">This friend has not shared a valid location yet.</string>
     <string name="route_approximate_description">Showing a direct-line estimate. Tap Start Navigation for road directions in Google Maps.</string>
     <string name="route_fastest_driving">Fastest driving route</string>
+    <string name="route_navigation_unavailable">No navigation app is available</string>
     <string name="route_duration_and_distance">%1$s (%2$s)</string>
     <string name="route_distance_meters">%1$d m</string>
     <string name="route_distance_kilometers_decimal">%1$.1f km</string>
