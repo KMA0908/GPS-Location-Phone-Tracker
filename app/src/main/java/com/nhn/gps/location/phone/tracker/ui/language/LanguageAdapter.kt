@@ -37,8 +37,7 @@ class LanguageAdapter(
         ViewCompat.setElevation(holder.itemView, elevation)
         ivClickLanguageGuide.visibility = if (showGuide) View.VISIBLE else View.GONE
         if (showGuide) {
-            // TEMP DISABLED: ls-leansoft-publishing-sdk unavailable
-            // Glide.with(ivClickLanguageGuide).asGif().load(R.raw.click_language).fitCenter().into(ivClickLanguageGuide)
+            Glide.with(ivClickLanguageGuide).asGif().load(R.raw.click_language).fitCenter().into(ivClickLanguageGuide)
         } else {
             Glide.with(ivClickLanguageGuide).clear(ivClickLanguageGuide)
         }

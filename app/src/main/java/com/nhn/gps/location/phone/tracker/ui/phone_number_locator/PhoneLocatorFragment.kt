@@ -25,6 +25,8 @@ import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import android.graphics.Bitmap
 import com.nhn.gps.location.phone.tracker.R
+import com.nhn.gps.location.phone.tracker.ads.GpsAdPlacement
+import com.nhn.gps.location.phone.tracker.ads.GpsAds
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
 import com.nhn.gps.location.phone.tracker.data.model.Country
 import com.nhn.gps.location.phone.tracker.data.model.UserLocation
@@ -95,7 +97,11 @@ class PhoneLocatorFragment : BaseFragment<FragmentPhoneLocatorBinding, PhoneLoca
             val dialCode = selectedCountry?.dialCode ?: DEFAULT_DIAL_CODE
             
             if (phone.isNotBlank()) {
-                viewModel.findUser(dialCode, phone)
+                GpsAds.showInterThen(
+                    placement = GpsAdPlacement.INTER_PHONE_NUMBER,
+                    fragmentManager = parentFragmentManager,
+                    next = { if (isAdded) viewModel.findUser(dialCode, phone) },
+                )
             } else {
                 layoutPhone.error = getString(R.string.err_enter_phone)
             }
@@ -171,7 +177,6 @@ class PhoneLocatorFragment : BaseFragment<FragmentPhoneLocatorBinding, PhoneLoca
         val isSearching = mode == ScreenMode.SEARCH
         val searchVisibility = if (isSearching) View.VISIBLE else View.GONE
 
-        adContainer.visibility = searchVisibility
         cardTrusted.visibility = searchVisibility
         mapSpace.visibility = searchVisibility
         cardInput.visibility = searchVisibility

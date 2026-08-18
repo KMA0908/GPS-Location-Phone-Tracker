@@ -1,71 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.appcompat.widget.LinearLayoutCompat xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="100dp"
-    android:layout_height="140dp"
-    android:layout_marginEnd="12dp"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="0dp"
-    app:strokeWidth="0dp">
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="10dp"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
+    android:orientation="vertical">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivThumbnail"
+        android:layout_width="148dp"
+        android:layout_height="100dp"
+        android:background="#E1E4E8"
+        android:contentDescription="@null"
+        android:scaleType="centerCrop"
+        app:shapeAppearanceOverlay="@style/EarthPlaceImageRounded8"
+        tools:src="@tools:sample/backgrounds/scenic" />
 
-        <ImageView
-            android:id="@+id/ivThumbnail"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:scaleType="centerCrop"
-            tools:src="@tools:sample/backgrounds/scenic" />
+    <TextView
+        android:id="@+id/tvName"
+        android:layout_width="148dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:ellipsize="end"
+        android:fontFamily="@font/plus_jakarta_sans_semibold"
+        android:lines="2"
+        android:maxLines="2"
+        android:textColor="#30333A"
+        android:textSize="14sp"
+        tools:text="Eiffel Tower" />
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:background="@drawable/bg_gradient"
-            app:layout_constraintBottom_toBottomOf="parent" />
-
-        <TextView
-            android:id="@+id/tvName"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="8dp"
-            android:layout_marginBottom="2dp"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:textColor="@color/white"
-            android:textSize="11sp"
-            android:textStyle="bold"
-            app:layout_constraintBottom_toTopOf="@id/tvLocation"
-            tools:text="Eiffel Tower" />
-
-        <TextView
-            android:id="@+id/tvLocation"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="8dp"
-            android:layout_marginBottom="8dp"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:textColor="@color/white"
-            android:textSize="9sp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            tools:text="Paris, France" />
-
-        <TextView
-            android:id="@+id/tvAttribution"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="#80000000"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:paddingHorizontal="4dp"
-            android:textColor="@color/white"
-            android:textSize="8sp"
-            android:visibility="gone"
-            app:layout_constraintTop_toTopOf="parent" />
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
-
-</com.google.android.material.card.MaterialCardView>
+</androidx.appcompat.widget.LinearLayoutCompat>

@@ -7,6 +7,10 @@ plugins {
     id("kotlin-parcelize")
 }
 
+val bundledMapsApiKey = "AIzaSyAH7TC-3rHOGxrlTigvbPpOoTcCkcnkp4c"
+val mapsApiKey = providers.gradleProperty("MAPS_API_KEY").orElse(bundledMapsApiKey).get()
+val routesApiKey = providers.gradleProperty("ROUTES_API_KEY").orElse(mapsApiKey).get()
+
 android {
     namespace = "com.nhn.gps.location.phone.tracker"
     compileSdk = 36
@@ -20,9 +24,10 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["appName"] = "GPS Location Phone Tracker"
-        manifestPlaceholders["MAPS_API_KEY"] = "AIzaSyAH7TC-3rHOGxrlTigvbPpOoTcCkcnkp4c"
-        resValue("string", "maps_api_key", "AIzaSyAH7TC-3rHOGxrlTigvbPpOoTcCkcnkp4c")
-        manifestPlaceholders["admobAppId"] = "ca-app-pub-5019989394447925~7297235779"
+        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
+        resValue("string", "maps_api_key", mapsApiKey)
+        resValue("string", "routes_api_key", routesApiKey)
+        manifestPlaceholders["admobAppId"] = "ca-app-pub-3940256099942544~3347511713"
     }
 
     flavorDimensions += "environment"
@@ -60,6 +65,7 @@ android {
     }
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
     }
@@ -83,6 +89,7 @@ dependencies {
     implementation(libs.androidx.fragment.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.lifecycle.process)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.material)
     implementation(libs.kotlinx.coroutines.android)
@@ -113,7 +120,8 @@ dependencies {
     implementation(libs.zxing.android.embedded)
     implementation(libs.androidx.recyclerview)
     implementation(libs.facebook.shimmer)
-    // TEMP DISABLED: ls-leansoft-publishing-sdk unavailable
-    // implementation(libs.leansoft.ads)
+    implementation(libs.leansoft.ads)
     implementation(libs.ccp)
+    implementation(libs.worldwind)
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
 }

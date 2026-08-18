@@ -63,6 +63,7 @@ class ExploreViewModel @Inject constructor(
     private val maxCacheSize = 15
 
     private var currentCameraState: GlobeCameraState? = null
+    private var selectedCategoryId: Int = 1
 
     init {
         observeCamera()
@@ -109,6 +110,17 @@ class ExploreViewModel @Inject constructor(
         searchQueryFlow.value = query
     }
 
+    fun setCategoryFilter(categoryId: Int) {
+        val normalized = categoryId.coerceIn(1, 14)
+        if (selectedCategoryId == normalized && _uiState.value.places.isNotEmpty()) return
+        selectedCategoryId = normalized
+        viewModelScope.launch {
+            val state = currentCameraState ?: GlobeCameraState(20.0, 0.0, 0f)
+            currentCameraState = state
+            fetchPlacesForRegion(toRegionKey(state))
+        }
+    }
+
     @OptIn(FlowPreview::class)
     private fun observeCamera() {
         viewModelScope.launch {
@@ -144,19 +156,21 @@ class ExploreViewModel @Inject constructor(
         val centerLat = state.centerLatitude
         val centerLng = state.centerLongitude
 
-        // Get top 4 nearest places to the camera center
+        // Keep all photo markers from the category visible, like the reference globe.
         val nearby = allPlaces.asSequence()
+            .filter { it.idPlaceType == selectedCategoryId }
             .map { place ->
                 place to calculateAngularDistance(centerLat, centerLng, place.latitude, place.longitude)
             }
             .sortedBy { it.second }
-            .take(4)
             .map { it.first }
             .toList()
 
         _uiState.update { it.copy(
             places = nearby,
-            selectedPlaceId = nearby.firstOrNull()?.id,
+            selectedPlaceId = it.selectedPlaceId?.takeIf { selectedId ->
+                nearby.any { place -> place.id == selectedId }
+            },
             isLoading = false,
             isRefreshing = false,
             error = null
@@ -237,7 +251,7 @@ class ExploreViewModel @Inject constructor(
             _uiState.update { it.copy(selectedPlaceId = randomPlace.id) }
             viewModelScope.launch {
                 _effect.emit(ExploreEffect.AnimateGlobe(randomPlace.latitude, randomPlace.longitude))
-                _effect.emit(ExploreEffect.ScrollCarousel(index))
+                _effect.emit(ExploreEffect.OpenPlaceDetail(randomPlace.id))
             }
         }
     }
@@ -250,6 +264,10 @@ class ExploreViewModel @Inject constructor(
                 _effect.emit(ExploreEffect.OpenPlaceDetail(placeId))
             }
         }
+    }
+
+    fun clearSelection() {
+        _uiState.update { it.copy(selectedPlaceId = null) }
     }
 
     fun retryCurrentRegion() {

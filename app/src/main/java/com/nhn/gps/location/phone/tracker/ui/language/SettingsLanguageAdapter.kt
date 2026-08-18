@@ -40,8 +40,7 @@ class SettingsLanguageAdapter(
             ),
         )
         ivSelected.setBackgroundResource(
-            // TEMP DISABLED: ls-leansoft-publishing-sdk unavailable
-            if (selected) android.R.drawable.btn_radio else android.R.drawable.btn_radio
+            if (selected) R.drawable.bg_settings_language_radio_selected else R.drawable.bg_settings_language_radio,
         )
         ivSelected.setImageResource(if (selected) R.drawable.ic_check_white else 0)
         cardRoot.setOnClickListener { onClick(holder.bindingAdapterPosition) }

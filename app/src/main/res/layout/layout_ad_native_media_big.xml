@@ -1,13 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<com.google.android.gms.ads.nativead.NativeAdView xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/native_ad_view"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@color/native_ad_surface">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
-        app:layout_constraintTop_toTopOf="parent" app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -71,12 +68,10 @@
                     android:textSize="11sp" />
             </LinearLayout>
         </LinearLayout>
-        <androidx.appcompat.widget.AppCompatImageView
+        <com.google.android.gms.ads.nativead.MediaView
             android:id="@+id/ad_media"
             android:layout_width="match_parent"
-            android:layout_height="180dp"
-            android:scaleType="centerCrop"
-            android:contentDescription="@null" />
+            android:layout_height="180dp" />
         <TextView
             android:id="@+id/ad_call_to_action"
             android:layout_width="match_parent"
@@ -84,11 +79,11 @@
             android:layout_marginHorizontal="12dp"
             android:layout_marginTop="6dp"
             android:layout_marginBottom="8dp"
-            android:background="#35C759"
+            android:background="@drawable/bg_welcome_continue"
             android:fontFamily="@font/plus_jakarta_sans_semibold"
             android:gravity="center"
             android:includeFontPadding="false"
             android:textColor="@color/white"
             android:textSize="16sp" />
     </LinearLayout>
-</androidx.constraintlayout.widget.ConstraintLayout>
+</com.google.android.gms.ads.nativead.NativeAdView>

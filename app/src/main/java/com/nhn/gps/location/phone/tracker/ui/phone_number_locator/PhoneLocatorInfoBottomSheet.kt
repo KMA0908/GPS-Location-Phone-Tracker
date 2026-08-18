@@ -8,9 +8,11 @@ import android.view.ViewGroup
 import android.graphics.Color
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.nhn.gps.location.phone.tracker.R
+import com.nhn.gps.location.phone.tracker.ads.GpsAdPlacement
 import com.nhn.gps.location.phone.tracker.data.model.UserLocation
 import com.nhn.gps.location.phone.tracker.data.model.UserProfile
 import com.nhn.gps.location.phone.tracker.databinding.BottomSheetPhoneNumberLocatorInfoBinding
+import com.nhn.gps.location.phone.tracker.ui.main.MainActivity
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -54,10 +56,11 @@ class PhoneLocatorInfoBottomSheet : BottomSheetDialogFragment() {
     override fun onStart() {
         super.onStart()
         (binding.root.parent as? View)?.setBackgroundResource(android.R.color.transparent)
-
+        (activity as? MainActivity)?.showScreenBanner(GpsAdPlacement.BANNER_PHONE_NUMBER_DETAIL)
     }
 
     override fun onDestroyView() {
+        (activity as? MainActivity)?.restoreCurrentScreenAd()
         super.onDestroyView()
         _binding = null
     }

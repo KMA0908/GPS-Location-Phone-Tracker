@@ -2,44 +2,97 @@
 <defaults>
     <entry><key>hien_qc</key><value>true</value></entry>
     <entry><key>ad_unit_id_placement</key><value>{
-        "inter_resume":"ca-app-pub-5019989394447925/9193228228",
-        "inter_back":"ca-app-pub-5019989394447925/9193228228",
-        "inter_splash":"ca-app-pub-5019989394447925/9193228228",
-        "inter_splash_backup":"ca-app-pub-5019989394447925/9193228228",
-        "aoa_splash":"ca-app-pub-5019989394447925/9001656533",
-        "native_full_splash":"ca-app-pub-5019989394447925/6567064881",
-        "native_full_inter_splash":"ca-app-pub-5019989394447925/6567064881",
-        "banner_splash":"ca-app-pub-5019989394447925/6573548130",
-        "native_language":"ca-app-pub-5019989394447925/7600523499",
-        "native_click":"ca-app-pub-5019989394447925/7600523499",
-        "native_obd_1":"ca-app-pub-5019989394447925/7600523499",
-        "native_obd_full_1":"ca-app-pub-5019989394447925/6567064881",
-        "native_obd_2":"ca-app-pub-5019989394447925/7600523499",
-        "native_obd_full_2":"ca-app-pub-5019989394447925/6567064881",
-        "native_obd_3":"ca-app-pub-5019989394447925/7600523499",
-        "native_obd_full_3":"ca-app-pub-5019989394447925/6567064881",
-        "native_obd_4":"ca-app-pub-5019989394447925/7600523499",
-        "native_uninstall":"ca-app-pub-5019989394447925/7600523499",
-        "native_media_welcome_back":"ca-app-pub-5019989394447925/7600523499"
+        "aoa_resume":"ca-app-pub-3940256099942544/9257395921",
+        "native_full":"ca-app-pub-3940256099942544/2247696110",
+        "inter_back":"ca-app-pub-3940256099942544/1033173712",
+        "banner_splash":"ca-app-pub-3940256099942544/6300978111",
+        "inter_splash":"ca-app-pub-3940256099942544/1033173712",
+        "native_language":"ca-app-pub-3940256099942544/2247696110",
+        "native_click":"ca-app-pub-3940256099942544/2247696110",
+        "native_obd_1":"ca-app-pub-3940256099942544/2247696110",
+        "native_obd_full_1":"ca-app-pub-3940256099942544/2247696110",
+        "native_obd_2":"ca-app-pub-3940256099942544/2247696110",
+        "native_obd_full_2":"ca-app-pub-3940256099942544/2247696110",
+        "native_obd_3":"ca-app-pub-3940256099942544/2247696110",
+        "banner_permission":"ca-app-pub-3940256099942544/6300978111",
+        "inter_permission":"ca-app-pub-3940256099942544/1033173712",
+        "native_setup_profile":"ca-app-pub-3940256099942544/2247696110",
+        "inter_setup_profile":"ca-app-pub-3940256099942544/1033173712",
+        "native_home":"ca-app-pub-3940256099942544/2247696110",
+        "banner_home":"ca-app-pub-3940256099942544/6300978111",
+        "inter_home":"ca-app-pub-3940256099942544/1033173712",
+        "banner_realtime_tracker":"ca-app-pub-3940256099942544/6300978111",
+        "inter_realtime_tracker":"ca-app-pub-3940256099942544/1033173712",
+        "banner_direction":"ca-app-pub-3940256099942544/6300978111",
+        "inter_add_friend":"ca-app-pub-3940256099942544/1033173712",
+        "native_add_friend_qr":"ca-app-pub-3940256099942544/2247696110",
+        "native_add_friend_code":"ca-app-pub-3940256099942544/2247696110",
+        "native_qr_camera":"ca-app-pub-3940256099942544/2247696110",
+        "native_list_friend":"ca-app-pub-3940256099942544/2247696110",
+        "inter_list_friend":"ca-app-pub-3940256099942544/1033173712",
+        "native_friend_detail":"ca-app-pub-3940256099942544/2247696110",
+        "inter_friend_detail":"ca-app-pub-3940256099942544/1033173712",
+        "native_friend_detail_qr":"ca-app-pub-3940256099942544/2247696110",
+        "native_zone":"ca-app-pub-3940256099942544/2247696110",
+        "inter_zone":"ca-app-pub-3940256099942544/1033173712",
+        "banner_zone_detail":"ca-app-pub-3940256099942544/6300978111",
+        "inter_zone_detail":"ca-app-pub-3940256099942544/1033173712",
+        "banner_create_zone":"ca-app-pub-3940256099942544/6300978111",
+        "inter_create_zone":"ca-app-pub-3940256099942544/1033173712",
+        "native_zone_details":"ca-app-pub-3940256099942544/2247696110",
+        "inter_zone_details":"ca-app-pub-3940256099942544/1033173712",
+        "native_zone_alert":"ca-app-pub-3940256099942544/2247696110",
+        "banner_alert_detail":"ca-app-pub-3940256099942544/6300978111",
+        "banner_notification_center":"ca-app-pub-3940256099942544/6300978111",
+        "banner_phone_number":"ca-app-pub-3940256099942544/6300978111",
+        "inter_phone_number":"ca-app-pub-3940256099942544/1033173712",
+        "banner_phone_number_detail":"ca-app-pub-3940256099942544/6300978111",
+        "native_place":"ca-app-pub-3940256099942544/2247696110",
+        "inter_place":"ca-app-pub-3940256099942544/1033173712",
+        "banner_earth":"ca-app-pub-3940256099942544/6300978111",
+        "inter_earth":"ca-app-pub-3940256099942544/1033173712",
+        "banner_place_detail":"ca-app-pub-3940256099942544/6300978111",
+        "inter_place_detail":"ca-app-pub-3940256099942544/1033173712"
     }</value></entry>
     <entry><key>ad_enable_placement</key><value>{
-        "inter_resume":true,"inter_back":true,"inter_splash":true,"inter_splash_backup":true,
-        "aoa_splash":true,"native_full_splash":true,"native_full_inter_splash":true,"banner_splash":true,
-        "native_language":true,"native_click":true,"native_obd_1":true,"native_obd_full_1":true,
-        "native_obd_2":true,"native_obd_full_2":true,"native_obd_3":true,"native_obd_full_3":true,
-        "native_obd_4":true,"native_uninstall":false,"native_media_welcome_back":false
+        "aoa_resume":true,"native_full":true,"inter_back":true,
+        "banner_splash":true,"inter_splash":true,
+        "native_language":true,"native_click":true,
+        "native_obd_1":true,"native_obd_full_1":true,"native_obd_2":true,
+        "native_obd_full_2":true,"native_obd_3":true,
+        "banner_permission":true,"inter_permission":true,
+        "native_setup_profile":true,"inter_setup_profile":true,
+        "native_home":true,"banner_home":true,"inter_home":true,
+        "banner_realtime_tracker":true,"inter_realtime_tracker":true,"banner_direction":true,
+        "inter_add_friend":true,"native_add_friend_qr":true,"native_add_friend_code":true,"native_qr_camera":true,
+        "native_list_friend":true,"inter_list_friend":true,"native_friend_detail":true,
+        "inter_friend_detail":true,"native_friend_detail_qr":true,
+        "native_zone":true,"inter_zone":true,"banner_zone_detail":true,"inter_zone_detail":true,
+        "banner_create_zone":true,"inter_create_zone":true,"native_zone_details":true,
+        "inter_zone_details":true,"native_zone_alert":true,"banner_alert_detail":true,
+        "banner_notification_center":true,"banner_phone_number":true,"inter_phone_number":true,
+        "banner_phone_number_detail":true,"native_place":true,"inter_place":true,
+        "banner_earth":true,"inter_earth":true,"banner_place_detail":true,"inter_place_detail":true
     }</value></entry>
     <entry><key>always_preload_native</key><value>{
-        "ca-app-pub-5019989394447925/7600523499":1,
-        "ca-app-pub-5019989394447925/6567064881":1
+        "ca-app-pub-3940256099942544/2247696110":1
     }</value></entry>
-    <entry><key>always_preload_inter</key><value>{"ca-app-pub-5019989394447925/9193228228":true}</value></entry>
+    <entry><key>always_preload_inter</key><value>{
+        "ca-app-pub-3940256099942544/1033173712":true
+    }</value></entry>
     <entry><key>can_use_other_ad_unit</key><value>{"":false}</value></entry>
-    <entry><key>ad_delay_placement</key><value>{"inter_resume":30,"inter_back":30,"inter_splash":0,"inter_splash_backup":0}</value></entry>
+    <entry><key>ad_delay_placement</key><value>{
+        "inter_back":30,"inter_splash":0,"inter_permission":30,"inter_setup_profile":30,
+        "inter_home":30,"inter_realtime_tracker":30,"inter_add_friend":30,"inter_list_friend":30,
+        "inter_friend_detail":30,"inter_zone":30,"inter_zone_detail":30,"inter_create_zone":30,
+        "inter_zone_details":30,"inter_phone_number":30,"inter_place":30,"inter_earth":30,
+        "inter_place_detail":30
+    }</value></entry>
     <entry><key>ad_delay_extra_placement</key><value>{}</value></entry>
     <entry><key>ad_random_min_placement</key><value>{}</value></entry>
     <entry><key>ad_random_max_placement</key><value>{}</value></entry>
     <entry><key>inter_intervals</key><value>0</value></entry>
+    <entry><key>inter_interval</key><value>30</value></entry>
     <entry><key>inter_timeout</key><value>5</value></entry>
     <entry><key>app_open_timeout</key><value>5</value></entry>
     <entry><key>reward_timeout</key><value>5</value></entry>
@@ -53,9 +106,9 @@
     <entry><key>lfo_delay</key><value>0</value></entry>
     <entry><key>native_full_ob_close_btn</key><value>true</value></entry>
     <entry><key>ad_show_onclick_enable_placement</key><value>{
-        "native_language":false,"native_click":false,"native_obd_1":false,"native_obd_full_1":false,
-        "native_obd_2":false,"native_obd_full_2":false,"native_obd_3":false,"native_obd_full_3":false,
-        "native_obd_4":false,"native_media_welcome_back":false
+        "native_language":false,"native_click":false,"native_obd_1":false,
+        "native_obd_full_1":false,"native_obd_2":false,"native_obd_full_2":false,
+        "native_obd_3":false
     }</value></entry>
     <entry><key>native_inter_countdown</key><value>0</value></entry>
     <entry><key>timeout_page_onb</key><value>0</value></entry>
@@ -63,4 +116,6 @@
     <entry><key>min_android_version_code</key><value>0</value></entry>
     <entry><key>hide_detect_view</key><value>true</value></entry>
     <entry><key>ad_network_priority_order</key><value>admob</value></entry>
+    <entry><key>iap_enable</key><value>false</value></entry>
+    <entry><key>popup_open_app</key><value>false</value></entry>
 </defaults>

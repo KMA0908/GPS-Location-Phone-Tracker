@@ -6,9 +6,11 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
@@ -33,23 +35,32 @@ import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.Polyline
 import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.gms.maps.model.RoundCap
+import com.google.android.gms.maps.model.StrokeStyle
+import com.google.android.gms.maps.model.StyleSpan
 import com.google.maps.android.SphericalUtil
 import com.nhn.gps.location.phone.tracker.R
+import com.nhn.gps.location.phone.tracker.ads.GpsAdPlacement
+import com.nhn.gps.location.phone.tracker.ads.ResumeAdGuard
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
 import com.nhn.gps.location.phone.tracker.databinding.FragmentLocationBinding
 import com.nhn.gps.location.phone.tracker.databinding.LayoutCustomMarkerBinding
+import com.nhn.gps.location.phone.tracker.data.repository.DrivingRoute
+import com.nhn.gps.location.phone.tracker.data.repository.GoogleRoutesRepository
 import com.nhn.gps.location.phone.tracker.navigation.AppDestination
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.card.MaterialCardView
 import com.nhn.gps.location.phone.tracker.ui.friend.FriendAdapter
 import com.nhn.gps.location.phone.tracker.ui.main.MainViewModel
+import com.nhn.gps.location.phone.tracker.ui.main.MainActivity
 import com.nhn.gps.location.phone.tracker.ui.permission.LocationPermissionBottomSheet
 import com.nhn.gps.location.phone.tracker.util.MapMarkerHelper
 import com.nhn.gps.location.phone.tracker.util.MapUtils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -63,12 +74,16 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     @Inject
     lateinit var compassManager: CompassManager
 
+    @Inject
+    lateinit var routesRepository: GoogleRoutesRepository
+
     private var googleMap: GoogleMap? = null
     private val DEFAULT_ZOOM = 15f
     private val BASE_CONE_HEIGHT = 500.0 // Chiều dài cơ sở tại zoom 15
 
     private var selfMarker: Marker? = null
     private var selectedDestinationMarker: Marker? = null
+    private var routeOutline: Polyline? = null
     private var routeLine: Polyline? = null
     private var directionOverlay: GroundOverlay? = null
     private val friendMarkers = mutableMapOf<String, Marker>()
@@ -86,6 +101,11 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     private var activeRouteName: String? = null
     private var activeRoutePosition: LatLng? = null
     private var activeRouteFriendId: String? = null
+    private var pendingMapRouteRequest: MapRouteRequest? = null
+    private var routeJob: Job? = null
+    private var lastRouteOrigin: LatLng? = null
+    private var lastRouteDestination: LatLng? = null
+    private var lastRouteRequestAt = 0L
 
     override fun createBinding(
         inflater: LayoutInflater,
@@ -247,9 +267,10 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                     }.collectLatest { data ->
                         lastDataPackage = data
                         updateMarkersWithAvatars(data.self, data.friends, data.avatar)
+                        tryStartPendingMapRoute()
                         activeRoutePosition?.let { destination ->
                             data.self?.let { origin ->
-                                updateRouteLine(origin, destination, fitBounds = false)
+                                refreshRouteIfNeeded(origin, destination)
                             }
                         }
                         tryAutoZoom()
@@ -274,6 +295,15 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                         val displayList = if (friends.size > 2) friends.take(2) else friends
                         friendAdapter.submitList(displayList)
                         updateBottomSheetUi(friends)
+                    }
+                }
+
+                launch {
+                    mainViewModel.mapRouteRequest.collectLatest { request ->
+                        if (request != null) {
+                            pendingMapRouteRequest = request
+                            tryStartPendingMapRoute()
+                        }
                     }
                 }
             }
@@ -511,6 +541,9 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
 
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
+        lastDataPackage?.let { data ->
+            updateMarkersWithAvatars(data.self, data.friends, data.avatar)
+        }
         tryAutoZoom()
 
         map.setOnMarkerClickListener { marker ->
@@ -537,6 +570,8 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
             // Check if all markers are in view, if not, auto-zoom logic could go here
             // but the user only wanted it "once" or on button click.
         }
+
+        tryStartPendingMapRoute()
     }
 
     override fun onStart() {
@@ -579,6 +614,8 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     }
 
     override fun onDestroyView() {
+        routeJob?.cancel()
+        routeJob = null
         bottomSheetCallback?.let {
             if (::bottomSheetBehavior.isInitialized) {
                 bottomSheetBehavior.removeBottomSheetCallback(it)
@@ -599,28 +636,59 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         googleMap = null
         selfMarker = null
         selectedDestinationMarker = null
+        routeOutline = null
         routeLine = null
         directionOverlay = null
         
         activeRouteName = null
         activeRoutePosition = null
         activeRouteFriendId = null
+        pendingMapRouteRequest = null
+        lastRouteOrigin = null
+        lastRouteDestination = null
+        lastRouteRequestAt = 0L
         
         friendMarkers.clear()
         friendAvatars.clear()
     }
 
-    private fun showRouteTo(name: String, destination: LatLng, friendId: String? = null) {
+    private fun tryStartPendingMapRoute() {
+        val request = pendingMapRouteRequest ?: return
+        if (googleMap == null || viewModel.selfLocation.value == null) return
+        val started = showRouteTo(
+            name = request.destinationName,
+            destination = LatLng(request.latitude, request.longitude),
+            friendId = request.friendId,
+        )
+        if (started) {
+            pendingMapRouteRequest = null
+            mainViewModel.consumeMapRouteRequest(request.requestId)
+        }
+    }
+
+    private fun showRouteTo(
+        name: String,
+        destination: LatLng,
+        friendId: String? = null,
+    ): Boolean {
         val origin = viewModel.selfLocation.value
         if (origin == null) {
-            Toast.makeText(requireContext(), "Đang lấy vị trí hiện tại…", Toast.LENGTH_SHORT).show()
-            return
+            Toast.makeText(
+                requireContext(),
+                getString(R.string.route_waiting_for_location),
+                Toast.LENGTH_SHORT,
+            ).show()
+            return false
         }
 
         val distanceMeters = SphericalUtil.computeDistanceBetween(origin, destination)
         if (distanceMeters < 1.0) {
-            Toast.makeText(requireContext(), "Điểm đến trùng với vị trí hiện tại", Toast.LENGTH_SHORT).show()
-            return
+            Toast.makeText(
+                requireContext(),
+                getString(R.string.route_same_location),
+                Toast.LENGTH_SHORT,
+            ).show()
+            return false
         }
 
         activeRouteName = name
@@ -636,59 +704,194 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                 .zIndex(11f)
         )
 
-        updateRouteLine(origin, destination, fitBounds = true)
-        showDirectionPanels(distanceMeters)
+        showDirectionLoading()
+        requestRoute(origin, destination, fitBounds = true, force = true)
         bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+        return true
     }
 
-    private fun updateRouteLine(origin: LatLng, destination: LatLng, fitBounds: Boolean) {
+    private fun refreshRouteIfNeeded(origin: LatLng, destination: LatLng) {
+        val previousOrigin = lastRouteOrigin ?: return
+        val previousDestination = lastRouteDestination ?: return
+        val elapsed = android.os.SystemClock.elapsedRealtime() - lastRouteRequestAt
+        if (elapsed < ROUTE_REFRESH_INTERVAL_MS) return
+
+        val originMoved = SphericalUtil.computeDistanceBetween(previousOrigin, origin)
+        val destinationMoved = SphericalUtil.computeDistanceBetween(previousDestination, destination)
+        if (originMoved >= ROUTE_REFRESH_DISTANCE_METERS ||
+            destinationMoved >= ROUTE_REFRESH_DISTANCE_METERS
+        ) {
+            requestRoute(origin, destination, fitBounds = false, force = false)
+        }
+    }
+
+    private fun requestRoute(
+        origin: LatLng,
+        destination: LatLng,
+        fitBounds: Boolean,
+        force: Boolean,
+    ) {
+        if (!force && activeRoutePosition == null) return
+        lastRouteOrigin = origin
+        lastRouteDestination = destination
+        lastRouteRequestAt = android.os.SystemClock.elapsedRealtime()
+        routeJob?.cancel()
+        routeJob = viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val route = routesRepository.computeDrivingRoute(origin, destination)
+                val currentDestination = activeRoutePosition ?: return@launch
+                if (SphericalUtil.computeDistanceBetween(currentDestination, destination) >
+                    ROUTE_RESPONSE_STALE_DISTANCE_METERS
+                ) {
+                    return@launch
+                }
+                drawRouteLine(route, fitBounds)
+                showDirectionPanels(route.distanceMeters, route.durationSeconds)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                Log.e(TAG, "Unable to compute driving route", error)
+                val currentDestination = activeRoutePosition
+                if (currentDestination != null &&
+                    SphericalUtil.computeDistanceBetween(currentDestination, destination) <=
+                    ROUTE_RESPONSE_STALE_DISTANCE_METERS
+                ) {
+                    showRouteError()
+                }
+            }
+        }
+    }
+
+    private fun drawRouteLine(route: DrivingRoute, fitBounds: Boolean) {
         val map = googleMap ?: return
+        routeOutline?.remove()
         routeLine?.remove()
 
-        routeLine = map.addPolyline(
+        routeOutline = map.addPolyline(
             PolylineOptions()
-                .add(origin, destination)
-                .color(Color.rgb(35, 202, 184))
-                .width(9f)
+                .addAll(route.points)
+                .color(Color.argb(70, 0, 104, 96))
+                .width(15f)
                 .jointType(JointType.ROUND)
                 .startCap(RoundCap())
                 .endCap(RoundCap())
                 .geodesic(false)
-                .zIndex(4f)
+                .zIndex(3f),
+        )
+        routeLine = map.addPolyline(
+            PolylineOptions()
+                .addAll(route.points)
+                .color(ROUTE_END_COLOR)
+                .width(10f)
+                .jointType(JointType.ROUND)
+                .startCap(RoundCap())
+                .endCap(RoundCap())
+                .geodesic(false)
+                .addSpan(
+                    StyleSpan(
+                        StrokeStyle.gradientBuilder(ROUTE_START_COLOR, ROUTE_END_COLOR).build(),
+                    ),
+                )
+                .zIndex(4f),
         )
 
         if (fitBounds) {
-            val bounds = LatLngBounds.builder()
-                .include(origin)
-                .include(destination)
-                .build()
-            map.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 180))
+            val boundsBuilder = LatLngBounds.builder()
+            route.points.forEach(boundsBuilder::include)
+            map.animateCamera(CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), 180))
         }
     }
 
-    private fun showDirectionPanels(distanceMeters: Double) = with(binding) {
-        val distanceKm = distanceMeters / 1000.0
-        val minutes = kotlin.math.max(1, kotlin.math.ceil(distanceMeters / 350.0).toInt())
-        val distanceText = if (distanceKm < 10) {
-            String.format(java.util.Locale.getDefault(), "%.1f km", distanceKm)
-        } else {
-            String.format(java.util.Locale.getDefault(), "%.0f km", distanceKm)
-        }
-        val routeText = "$minutes min ($distanceText)"
-
-        directionTopPanel.tvCurrentLocation.text = "My location"
-        directionTopPanel.tvDestination.text = activeRouteName ?: "Selected location"
-        directionBottomPanel.tvRouteTime.text = routeText
-        directionBottomPanel.tvTraffic.text = "Fastest route, light traffic"
+    private fun showDirectionLoading() = with(binding) {
+        (activity as? MainActivity)?.showScreenBanner(GpsAdPlacement.BANNER_DIRECTION)
+        routeOutline?.remove()
+        routeOutline = null
+        routeLine?.remove()
+        routeLine = null
+        directionTopPanel.tvCurrentLocation.text = getString(R.string.route_my_location)
+        directionTopPanel.tvDestination.text =
+            activeRouteName ?: getString(R.string.route_selected_location)
+        directionBottomPanel.tvRouteTime.text = getString(R.string.route_calculating)
+        directionBottomPanel.tvTraffic.text = getString(R.string.route_calculating_description)
+        directionBottomPanel.btnStartNavigation.isEnabled = false
+        directionBottomPanel.btnStartNavigation.alpha = 0.55f
+        updateRouteOptionLabels(getString(R.string.route_calculating_short), "")
         directionTopPanel.root.visibility = View.VISIBLE
         directionBottomPanel.root.visibility = View.VISIBLE
 
         layoutTools.visibility = View.GONE
         cardSearch.visibility = View.GONE
-        txtTitle.text = "Directions"
+        txtTitle.text = getString(R.string.directions)
+    }
+
+    private fun showDirectionPanels(distanceMeters: Int, durationSeconds: Long) = with(binding) {
+        val distanceText = formatDistance(distanceMeters)
+        val durationText = formatDuration(durationSeconds)
+        directionBottomPanel.tvRouteTime.text =
+            getString(R.string.route_duration_and_distance, durationText, distanceText)
+        directionBottomPanel.tvTraffic.text = getString(R.string.route_fastest_driving)
+        directionBottomPanel.btnStartNavigation.isEnabled = true
+        directionBottomPanel.btnStartNavigation.alpha = 1f
+        updateRouteOptionLabels(durationText, distanceText)
+    }
+
+    private fun showRouteError() = with(binding) {
+        routeOutline?.remove()
+        routeOutline = null
+        routeLine?.remove()
+        routeLine = null
+        directionBottomPanel.tvRouteTime.text = getString(R.string.route_not_found)
+        directionBottomPanel.tvTraffic.text = getString(R.string.route_not_found_description)
+        directionBottomPanel.btnStartNavigation.isEnabled = true
+        directionBottomPanel.btnStartNavigation.alpha = 1f
+        updateRouteOptionLabels("--", "")
+        Toast.makeText(requireContext(), R.string.route_not_found_description, Toast.LENGTH_LONG)
+            .show()
+    }
+
+    private fun updateRouteOptionLabels(durationText: String, distanceText: String) {
+        val routeOptions = binding.directionTopPanel.layoutRoutes
+        for (index in 0 until routeOptions.childCount) {
+            routeOptions.getChildAt(index).apply {
+                findViewById<TextView>(R.id.tvDuration)?.text = durationText
+                findViewById<TextView>(R.id.tvDistance)?.text = distanceText
+            }
+        }
+    }
+
+    private fun formatDistance(distanceMeters: Int): String {
+        if (distanceMeters < 1_000) {
+            return getString(R.string.route_distance_meters, distanceMeters)
+        }
+        val distanceKm = distanceMeters / 1_000.0
+        return if (distanceKm < 10.0) {
+            getString(R.string.route_distance_kilometers_decimal, distanceKm)
+        } else {
+            getString(R.string.route_distance_kilometers, kotlin.math.round(distanceKm).toInt())
+        }
+    }
+
+    private fun formatDuration(durationSeconds: Long): String {
+        val minutes = kotlin.math.max(1, kotlin.math.ceil(durationSeconds / 60.0).toInt())
+        return if (minutes < 60) {
+            getString(R.string.route_minutes, minutes)
+        } else {
+            val hours = minutes / 60
+            val remainingMinutes = minutes % 60
+            if (remainingMinutes == 0) {
+                getString(R.string.route_hours, hours)
+            } else {
+                getString(R.string.route_hours_minutes, hours, remainingMinutes)
+            }
+        }
     }
 
     private fun clearRoute() = with(binding) {
+        routeJob?.cancel()
+        routeJob = null
+        (activity as? MainActivity)?.showScreenBanner(GpsAdPlacement.BANNER_REALTIME_TRACKER)
+        routeOutline?.remove()
+        routeOutline = null
         routeLine?.remove()
         routeLine = null
         selectedDestinationMarker?.remove()
@@ -696,6 +899,9 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         activeRouteName = null
         activeRoutePosition = null
         activeRouteFriendId = null
+        lastRouteOrigin = null
+        lastRouteDestination = null
+        lastRouteRequestAt = 0L
         directionTopPanel.root.visibility = View.GONE
         directionBottomPanel.root.visibility = View.GONE
         layoutTools.visibility = View.VISIBLE
@@ -705,6 +911,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
 
     private fun startExternalNavigation() {
         val destination = activeRoutePosition ?: return
+        ResumeAdGuard.suppressNextResumeAd()
         val navigationUri = Uri.parse(
             "google.navigation:q=${destination.latitude},${destination.longitude}&mode=d"
         )
@@ -724,6 +931,13 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     }
 
     companion object {
+        private const val TAG = "LocationFragment"
+        private const val ROUTE_REFRESH_INTERVAL_MS = 8_000L
+        private const val ROUTE_REFRESH_DISTANCE_METERS = 40.0
+        private const val ROUTE_RESPONSE_STALE_DISTANCE_METERS = 50.0
+        private val ROUTE_START_COLOR = Color.rgb(62, 218, 105)
+        private val ROUTE_END_COLOR = Color.rgb(65, 218, 221)
+
         fun newInstance() = LocationFragment()
 
         private data class DataPackage(

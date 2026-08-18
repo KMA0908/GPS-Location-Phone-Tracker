@@ -12,12 +12,20 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.leansoft.ads.AdManager
 import com.nhn.gps.location.phone.tracker.R
+import com.nhn.gps.location.phone.tracker.ads.GpsAdPlacement
+import com.nhn.gps.location.phone.tracker.ads.GpsAdViewBinder
+import com.nhn.gps.location.phone.tracker.ads.GpsAds
+import com.nhn.gps.location.phone.tracker.ads.NativeAdRowAdapter
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
 import com.nhn.gps.location.phone.tracker.databinding.FragmentMyFriendBinding
 import com.nhn.gps.location.phone.tracker.navigation.AppDestination
+import com.nhn.gps.location.phone.tracker.ui.main.MainActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -27,7 +35,6 @@ class MyFriendFragment : BaseFragment<FragmentMyFriendBinding, FriendListViewMod
 
     override val viewModel: FriendListViewModel by viewModels()
     private val locationViewModel: com.nhn.gps.location.phone.tracker.ui.location.LocationViewModel by activityViewModels()
-    private lateinit var adapter: FriendAdapter
 
     override fun createBinding(
         inflater: LayoutInflater,
@@ -43,14 +50,7 @@ class MyFriendFragment : BaseFragment<FragmentMyFriendBinding, FriendListViewMod
             }
         }
 
-        adapter = FriendAdapter(
-            showMoreButton = true,
-            onItemClick = { friend -> viewModel.onFriendClicked(friend) },
-            onMoreClick = { friend -> viewModel.onMoreClicked(friend) }
-        )
-        
         layoutFriendList.rvFriends.layoutManager = LinearLayoutManager(requireContext())
-        layoutFriendList.rvFriends.adapter = adapter
 
         // btnAddFriend is part of the layout_no_friend include
         layoutNoFriend.btnAddFriend.setOnClickListener {
@@ -137,6 +137,11 @@ class MyFriendFragment : BaseFragment<FragmentMyFriendBinding, FriendListViewMod
     }
 
     private fun showProfile(friend: com.nhn.gps.location.phone.tracker.data.model.FriendLocation) = with(binding) {
+        (activity as? MainActivity)?.showScreenNative(
+            GpsAdPlacement.NATIVE_FRIEND_DETAIL,
+            GpsAdViewBinder.NativeFormat.MEDIUM,
+        )
+        (activity as? MainActivity)?.overrideNextRouteInterstitial(GpsAdPlacement.INTER_FRIEND_DETAIL)
         layoutFriendProfile.tvName.text = friend.name
         layoutFriendProfile.tvUserId.text = "ID: ${friend.id}"
         layoutFriendProfile.tvPhoneNumber.text = "+84 000 0000"
@@ -161,6 +166,8 @@ class MyFriendFragment : BaseFragment<FragmentMyFriendBinding, FriendListViewMod
     private fun hideProfile() = with(binding) {
         viewDim.visibility = View.GONE
         layoutFriendProfile.root.visibility = View.GONE
+        (activity as? MainActivity)?.clearScreenAd()
+        (activity as? MainActivity)?.overrideNextRouteInterstitial(null)
     }
 
     private fun shareProfile() {
@@ -208,7 +215,25 @@ class MyFriendFragment : BaseFragment<FragmentMyFriendBinding, FriendListViewMod
     }
 
     private fun updateFriendList(friends: List<com.nhn.gps.location.phone.tracker.data.model.FriendLocation>) = with(binding) {
-        adapter.submitList(friends)
+        val adapters = mutableListOf<RecyclerView.Adapter<out RecyclerView.ViewHolder>>()
+        friends.chunked(3).forEach { group ->
+            adapters += FriendAdapter(
+                showMoreButton = true,
+                onItemClick = { friend ->
+                    showListInterThen { viewModel.onFriendClicked(friend) }
+                },
+                onMoreClick = { friend ->
+                    showListInterThen { viewModel.onMoreClicked(friend) }
+                },
+            ).apply { submitList(group) }
+            if (group.size == 3) {
+                adapters += NativeAdRowAdapter(
+                    GpsAdPlacement.NATIVE_LIST_FRIEND,
+                    GpsAdViewBinder.NativeFormat.SMALL,
+                )
+            }
+        }
+        layoutFriendList.rvFriends.adapter = ConcatAdapter(adapters)
         layoutFriendList.tvFriendCount.text = "Friends (${friends.size})"
         
         if (friends.isEmpty()) {
@@ -218,6 +243,20 @@ class MyFriendFragment : BaseFragment<FragmentMyFriendBinding, FriendListViewMod
             layoutNoFriend.root.visibility = View.GONE
             layoutFriendList.root.visibility = View.VISIBLE
         }
+    }
+
+    override fun onDestroyView() {
+        binding.layoutFriendList.rvFriends.adapter = null
+        runCatching { AdManager.instance.destroyNativeAd(GpsAdPlacement.NATIVE_LIST_FRIEND) }
+        super.onDestroyView()
+    }
+
+    private fun showListInterThen(next: () -> Unit) {
+        GpsAds.showInterThen(
+            placement = GpsAdPlacement.INTER_LIST_FRIEND,
+            fragmentManager = parentFragmentManager,
+            next = { if (isAdded) next() },
+        )
     }
 
     companion object {

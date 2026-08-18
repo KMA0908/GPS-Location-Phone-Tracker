@@ -9,9 +9,14 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.nhn.gps.location.phone.tracker.R
+import com.nhn.gps.location.phone.tracker.ads.GpsAdPlacement
+import com.nhn.gps.location.phone.tracker.ads.GpsAdViewBinder
+import com.nhn.gps.location.phone.tracker.analytics.GpsAnalyticsEvent
+import com.nhn.gps.location.phone.tracker.analytics.GpsAnalyticsTracker
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
 import com.nhn.gps.location.phone.tracker.databinding.FragmentHomeBinding
 import com.nhn.gps.location.phone.tracker.ui.explore.ExploreCardAdapter
+import com.nhn.gps.location.phone.tracker.ui.explore.loadFamousPlaceImage
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -30,17 +35,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, MainViewModel>() {
                 navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.PlaceDetail)
             },
             onBindPhoto = { item, imageView ->
-                val photoFileName = item.previewPhotos.firstOrNull()
-                if (photoFileName != null) {
-                    com.bumptech.glide.Glide.with(imageView)
-                        .load("file:///android_asset/famous_places_images/$photoFileName")
-                        .placeholder(R.drawable.ic_paris)
-                        .error(R.drawable.ic_paris)
-                        .centerCrop()
-                        .into(imageView)
-                } else {
-                    imageView.setImageResource(R.drawable.ic_paris)
-                }
+                imageView.loadFamousPlaceImage(item)
             },
             layoutMode = ExploreCardAdapter.LayoutMode.HOME_HORIZONTAL
         )
@@ -52,7 +47,13 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, MainViewModel>() {
     ): FragmentHomeBinding = FragmentHomeBinding.inflate(inflater, container, false)
 
     override fun setupViews(savedInstanceState: Bundle?) = with(binding) {
+        GpsAnalyticsTracker.logEvent(GpsAnalyticsEvent.HOME_VIEW)
         setupExploreRecyclerView()
+        GpsAdViewBinder.bindNative(
+            adNativeHome,
+            GpsAdPlacement.NATIVE_HOME,
+            GpsAdViewBinder.NativeFormat.SMALL,
+        )
 
         bottomNavigationCustom.navHome.setOnClickListener {
             navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.Home)
@@ -137,6 +138,11 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, MainViewModel>() {
                 imageView.background = null
             }
         }
+    }
+
+    override fun onDestroyView() {
+        GpsAdViewBinder.clear(binding.adNativeHome)
+        super.onDestroyView()
     }
 
     companion object {

@@ -4,157 +4,68 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/color_f8f9fa">
+    android:background="@android:color/white">
 
-    <!-- Header -->
-    <include
-        android:id="@+id/header"
-        layout="@layout/include_famous_header"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/d_12"
+    <ImageView
+        android:id="@+id/btnBack"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/back"
+        android:padding="12dp"
+        android:src="@drawable/ic_back"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <androidx.core.widget.NestedScrollView
-        android:layout_width="match_parent"
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="2dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="16dp"
+        android:fontFamily="@font/plus_jakarta_sans_extra_bold"
+        android:gravity="center_vertical"
+        android:text="@string/famous_places"
+        android:textColor="#171717"
+        android:textSize="20sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/btnBack"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvCategories"
+        android:layout_width="0dp"
         android:layout_height="0dp"
-        android:fillViewport="true"
-        app:layout_constraintBottom_toTopOf="@id/bottomNavigationCustom"
-        app:layout_constraintTop_toBottomOf="@id/header">
+        android:clipToPadding="false"
+        android:paddingStart="8dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="88dp"
+        app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvTitle"
+        app:spanCount="2"
+        tools:itemCount="6"
+        tools:listitem="@layout/item_famous_category" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingBottom="@dimen/d_80">
-
-            <!-- Search Bar -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="@dimen/d_16"
-                android:layout_marginTop="@dimen/d_16"
-                android:background="@drawable/bg_card"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:padding="@dimen/d_2">
-
-                <ImageView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/d_10"
-                    android:src="@drawable/ic_search"
-                    app:tint="@color/color_999999" />
-
-                <EditText
-                    android:id="@+id/etSearch"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/d_12"
-                    android:layout_weight="1"
-                    android:background="@null"
-                    android:hint="@string/search_place"
-                    android:imeOptions="actionSearch"
-                    android:inputType="text"
-                    android:textSize="@dimen/sp_14" />
-
-                <ImageView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="@dimen/d_12"
-                    android:src="@drawable/ic_sw_famous"
-                    app:tint="@color/color_999999" />
-
-                <ImageView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:src="@drawable/ic_mic_famous"
-                    app:tint="@color/color_999999" />
-            </LinearLayout>
-
-            <!-- Categories -->
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvCategories"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/d_16"
-                android:clipToPadding="false"
-                android:orientation="horizontal"
-                android:paddingHorizontal="@dimen/d_16"
-                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                tools:listitem="@layout/item_category_filter" />
-
-            <!-- Featured Card -->
-            <include
-                android:id="@+id/featuredCard"
-                layout="@layout/item_featured_place" />
-
-            <!-- Trending Header -->
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="@dimen/d_16"
-                android:layout_marginTop="@dimen/d_24">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/trending_nearby"
-                    android:textColor="@color/black"
-                    android:textSize="@dimen/sp_18"
-                    android:textStyle="bold"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
-
-                <TextView
-                    android:id="@+id/tvSeeAll"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/see_all"
-                    android:textColor="@color/bg_switch_permission"
-                    android:textSize="@dimen/sp_14"
-                    android:textStyle="bold"
-                    app:layout_constraintEnd_toStartOf="@id/ivContinue"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent" />
-
-                <ImageView
-                    android:id="@+id/ivContinue"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/d_4"
-                    android:src="@drawable/ic_continue"
-                    app:tint="@color/bg_switch_permission"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent" />
-
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-            <!-- Trending List -->
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvTrending"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/d_8"
-                android:nestedScrollingEnabled="false"
-                tools:listitem="@layout/item_famous_place" />
-
-        </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
-
-    <!-- See Map Button -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/btnSeeMap"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="@dimen/d_20"
-        android:layout_marginBottom="@dimen/d_16"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="18dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackground"
         app:cardBackgroundColor="@color/bg_switch_permission"
-        app:cardCornerRadius="@dimen/d_28"
-        app:cardElevation="@dimen/d_6"
-        app:layout_constraintBottom_toTopOf="@id/bottomNavigationCustom"
+        app:cardCornerRadius="28dp"
+        app:cardElevation="6dp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:strokeWidth="0dp">
 
@@ -163,38 +74,33 @@
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingHorizontal="@dimen/d_20"
-            android:paddingVertical="@dimen/d_12">
+            android:paddingHorizontal="20dp"
+            android:paddingVertical="12dp">
 
             <ImageView
-                android:layout_width="@dimen/d_20"
-                android:layout_height="@dimen/d_20"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:contentDescription="@null"
                 android:src="@drawable/ic_map_home_bottom"
-                app:tint="@color/white" />
+                app:tint="@android:color/white" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/d_8"
+                android:layout_marginStart="8dp"
+                android:fontFamily="@font/plus_jakarta_sans_semibold"
                 android:text="@string/see_map"
-                android:textColor="@color/white"
-                android:textStyle="bold" />
+                android:textColor="@android:color/white"
+                android:textSize="15sp" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- Bottom Navigation -->
-    <include
-        android:id="@+id/bottomNavigationCustom"
-        layout="@layout/layout_bottom_nav_shared"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="parent" />
-
-    <ProgressBar
+    <com.google.android.material.progressindicator.CircularProgressIndicator
         android:id="@+id/progressBar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
         android:visibility="gone"
+        app:indicatorColor="#25C85B"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

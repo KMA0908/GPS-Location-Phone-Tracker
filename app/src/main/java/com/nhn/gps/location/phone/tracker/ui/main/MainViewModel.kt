@@ -8,6 +8,7 @@ import com.nhn.gps.location.phone.tracker.data.repository.ExploreRepository
 import com.nhn.gps.location.phone.tracker.data.repository.ExploreResult
 import com.nhn.gps.location.phone.tracker.navigation.AppDestination
 import com.nhn.gps.location.phone.tracker.navigation.NavigationManager
+import com.nhn.gps.location.phone.tracker.ui.location.MapRouteRequest
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,6 +36,12 @@ class MainViewModel @Inject constructor(
 
     private val _selectedPlaceId = MutableStateFlow<String?>(null)
     val selectedPlaceId: StateFlow<String?> = _selectedPlaceId.asStateFlow()
+
+    private val _selectedFamousCategoryId = MutableStateFlow(1)
+    val selectedFamousCategoryId: StateFlow<Int> = _selectedFamousCategoryId.asStateFlow()
+
+    private val _mapRouteRequest = MutableStateFlow<MapRouteRequest?>(null)
+    val mapRouteRequest: StateFlow<MapRouteRequest?> = _mapRouteRequest.asStateFlow()
 
     private val _famousPlaces = MutableStateFlow<List<FamousPlaceModel>>(emptyList())
 
@@ -124,6 +131,27 @@ class MainViewModel @Inject constructor(
         navigationManager.navigateTo(AppDestination.Map)
     }
 
+    fun openRouteOnMap(
+        destinationName: String,
+        latitude: Double,
+        longitude: Double,
+        friendId: String? = null,
+    ) {
+        _mapRouteRequest.value = MapRouteRequest(
+            destinationName = destinationName,
+            latitude = latitude,
+            longitude = longitude,
+            friendId = friendId,
+        )
+        navigationManager.navigateTo(AppDestination.Map)
+    }
+
+    fun consumeMapRouteRequest(requestId: String) {
+        if (_mapRouteRequest.value?.requestId == requestId) {
+            _mapRouteRequest.value = null
+        }
+    }
+
     fun openPhoneLocator() {
         navigationManager.navigateTo(AppDestination.PhoneLocator)
     }
@@ -152,6 +180,10 @@ class MainViewModel @Inject constructor(
 
     fun setSelectedPlaceId(placeId: String?) {
         _selectedPlaceId.value = placeId
+    }
+
+    fun setSelectedFamousCategoryId(categoryId: Int) {
+        _selectedFamousCategoryId.value = categoryId.coerceIn(1, 14)
     }
 
     fun navigateBack(): Boolean {

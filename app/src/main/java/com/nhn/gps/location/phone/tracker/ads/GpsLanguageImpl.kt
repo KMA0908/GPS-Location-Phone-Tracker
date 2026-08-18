@@ -5,30 +5,26 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.LinearLayoutManager
-// TEMP DISABLED: ls-leansoft-publishing-sdk unavailable
-/*
 import com.leansoft.ads.enums.AdStatus
 import com.leansoft.ads.ui.language.LeansoftLanguageInterface
 import com.leansoft.ads.view.NativeAdViewContainer
-*/
 import com.nhn.gps.location.phone.tracker.databinding.FragmentLanguageBinding
 import com.nhn.gps.location.phone.tracker.ui.language.LanguageAdapter
 import com.nhn.gps.location.phone.tracker.util.LanguageHelper
 
-// TEMP DISABLED: ls-leansoft-publishing-sdk unavailable
-class GpsLanguageImpl /* : LeansoftLanguageInterface */ {
+class GpsLanguageImpl : LeansoftLanguageInterface {
     private var binding: FragmentLanguageBinding? = null
     private var adapter: LanguageAdapter? = null
     private var selectListener: ((String) -> Unit)? = null
     private var applyListener: ((String) -> Unit)? = null
     private var selectedCode = ""
 
-    fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentLanguageBinding.inflate(inflater, container, false)
         return requireNotNull(binding).root
     }
 
-    fun onViewCreated(view: View, savedInstanceState: Bundle?, languageCodeSelected: String?) {
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?, languageCodeSelected: String?) {
         val currentBinding = binding ?: return
         val items = LanguageHelper.languages()
         selectedCode = languageCodeSelected.orEmpty()
@@ -56,16 +52,14 @@ class GpsLanguageImpl /* : LeansoftLanguageInterface */ {
         }
     }
 
-    // fun getNativeAdContainer(): NativeAdViewContainer =
-    //    binding?.nativeAdViewContainer ?: error("Language view is not created")
+    override fun getNativeAdContainer(): NativeAdViewContainer =
+        binding?.nativeAdViewContainer ?: error("Language view is not created")
 
-    fun registerSelectLanguageEvent(listener: (String) -> Unit) { selectListener = listener }
-    fun registerSetLanguageEvent(listener: (String) -> Unit) { applyListener = listener }
-    fun updateUI(needEasy: Boolean) {
-        /*
+    override fun registerSelectLanguageEvent(listener: (String) -> Unit) { selectListener = listener }
+    override fun registerSetLanguageEvent(listener: (String) -> Unit) { applyListener = listener }
+    override fun updateUI(needEasy: Boolean) {
         binding?.nativeAdViewContainer?.let {
             it.visibility = if (it.adStatus == AdStatus.LOADING || it.adStatus == AdStatus.LOADED) View.VISIBLE else View.GONE
         }
-        */
     }
 }

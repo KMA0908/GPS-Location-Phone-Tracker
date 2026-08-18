@@ -92,18 +92,7 @@ class PlaceDetailFragment : BaseFragment<FragmentPlaceDetailBinding, PlaceDetail
         // Hero Attribution (not applicable for local assets)
         tvHeroAttribution.visibility = View.GONE
 
-        // Load Hero image from local assets
-        val photoFileName = place.previewPhotos.firstOrNull()
-        if (photoFileName != null) {
-            com.bumptech.glide.Glide.with(ivHero)
-                .load("file:///android_asset/famous_places_images/$photoFileName")
-                .placeholder(R.drawable.ic_paris)
-                .error(R.drawable.ic_paris)
-                .centerCrop()
-                .into(ivHero)
-        } else {
-            ivHero.setImageResource(R.drawable.ic_paris)
-        }
+        ivHero.loadFamousPlaceImage(place)
         
         // Update visit info cards
         with(cardVisitTime) {
@@ -128,10 +117,11 @@ class PlaceDetailFragment : BaseFragment<FragmentPlaceDetailBinding, PlaceDetail
 
         // Setup Intents
         btnDirections.root.setOnClickListener {
-            val gmmIntentUri = Uri.parse("geo:${place.latitude},${place.longitude}?q=${Uri.encode(place.name)}")
-            val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
-            mapIntent.setPackage("com.google.android.apps.maps")
-            startActivity(mapIntent)
+            mainViewModel.openRouteOnMap(
+                destinationName = place.name,
+                latitude = place.latitude,
+                longitude = place.longitude,
+            )
         }
 
         btnStreetView.root.setOnClickListener {

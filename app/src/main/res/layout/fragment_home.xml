@@ -183,13 +183,13 @@
 
             </LinearLayout>
 
-            <!-- Ads -->
-            <ImageView
+            <!-- Native ad shown above Explore Nearby -->
+            <FrameLayout
+                android:id="@+id/adNativeHome"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/d_16"
-                android:scaleType="centerCrop"
-                android:src="@drawable/ic_banner_home"/>
+                android:visibility="gone" />
 
             <!-- Explore -->
             <TextView

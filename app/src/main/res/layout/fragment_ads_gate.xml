@@ -3,9 +3,9 @@
     android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/white" android:padding="20dp">
     <TextView android:id="@+id/tvTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/welcome_back" android:textColor="@color/ads_text" android:textSize="26sp" android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent" />
-    <FrameLayout android:id="@+id/nativeAdViewContainer" android:layout_width="0dp" android:layout_height="0dp"
-        android:layout_marginTop="20dp"
+    <com.leansoft.ads.view.NativeAdViewContainer android:id="@+id/nativeAdViewContainer" android:layout_width="0dp" android:layout_height="0dp"
+        android:layout_marginTop="20dp" app:ads_layout_loaded="@layout/layout_ad_native_media_big" app:ads_layout_loading="@layout/layout_ad_native_loading_media_big"
         app:layout_constraintBottom_toTopOf="@id/btnContinue" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/tvTitle" />
-    <TextView android:id="@+id/btnContinue" android:layout_width="0dp" android:layout_height="54dp" android:layout_marginTop="16dp" android:background="#35C759" android:gravity="center" android:text="@string/continue_text" android:textColor="@color/white" android:textSize="17sp" android:textStyle="bold"
+    <TextView android:id="@+id/btnContinue" android:layout_width="0dp" android:layout_height="54dp" android:layout_marginTop="16dp" android:background="@drawable/bg_welcome_continue" android:gravity="center" android:text="@string/continue_text" android:textColor="@color/white" android:textSize="17sp" android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>

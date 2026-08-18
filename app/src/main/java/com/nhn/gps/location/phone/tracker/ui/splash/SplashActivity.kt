@@ -4,10 +4,10 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.graphics.Color
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
-import androidx.appcompat.app.AppCompatActivity
-// TEMP DISABLED: ls-leansoft-publishing-sdk unavailable
-// import com.leansoft.ads.ui.activity.LeansoftSplashActivity
+import com.leansoft.ads.ui.activity.LeansoftSplashActivity
 import com.nhn.gps.location.phone.tracker.R
 import com.nhn.gps.location.phone.tracker.data.local.AppPreferences
 import com.nhn.gps.location.phone.tracker.ui.main.MainActivity
@@ -20,21 +20,24 @@ import kotlinx.coroutines.runBlocking
 
 @SuppressLint("CustomSplashScreen")
 @AndroidEntryPoint
-// TEMP DISABLED: ls-leansoft-publishing-sdk unavailable
-class SplashActivity : AppCompatActivity() /* LeansoftSplashActivity() */ {
+class SplashActivity : LeansoftSplashActivity() {
     @Inject lateinit var preferences: AppPreferences
     private var navigated = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_splash)
-        // Immediately trigger navigation logic for now
-        finishOnboarding(Bundle())
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.statusBarColor = Color.TRANSPARENT
+        window.navigationBarColor = Color.TRANSPARENT
+        WindowCompat.getInsetsController(window, window.decorView).apply {
+            isAppearanceLightStatusBars = false
+            isAppearanceLightNavigationBars = false
+        }
     }
 
-    // override fun loadedRemoteConfig(isSuccess: Boolean) = Unit
+    override fun loadedRemoteConfig(isSuccess: Boolean) = Unit
 
-    fun finishOnboarding(bundle: Bundle) {
+    override fun finishOnboarding(bundle: Bundle) {
         if (navigated) return
         navigated = true
         lifecycleScope.launch {
@@ -51,12 +54,12 @@ class SplashActivity : AppCompatActivity() /* LeansoftSplashActivity() */ {
         }
     }
 
-    fun setLanguage(languageCode: String) {
+    override fun setLanguage(languageCode: String) {
         runBlocking { preferences.saveSelectedLanguage(languageCode) }
         LanguageHelper.setAppLanguage(this, languageCode)
     }
 
-    // override fun getRemoteConfigDefault(): Int = R.xml.remote_config_defaults
+    override fun getRemoteConfigDefault(): Int = R.xml.remote_config_defaults
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LanguageHelper.wrapContext(newBase))

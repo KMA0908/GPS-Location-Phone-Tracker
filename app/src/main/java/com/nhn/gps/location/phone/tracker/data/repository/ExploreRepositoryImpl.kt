@@ -2,6 +2,7 @@ package com.nhn.gps.location.phone.tracker.data.repository
 
 import android.content.Context
 import com.google.android.libraries.places.api.model.PhotoMetadata
+import com.nhn.gps.location.phone.tracker.R
 import com.nhn.gps.location.phone.tracker.data.model.FamousPlaceModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -33,6 +34,7 @@ class ExploreRepositoryImpl @Inject constructor(
                 }
                 
                 val idInt = obj.getInt("id")
+                val type = obj.getInt("idPlaceType")
                 val lat = obj.getDouble("latitude")
                 val lng = obj.getDouble("longitude")
                 
@@ -41,14 +43,14 @@ class ExploreRepositoryImpl @Inject constructor(
                         id = idInt.toString(),
                         name = obj.getString("placeName"),
                         location = "",
-                        imageRes = 0,
+                        imageRes = mapTypeToImage(type),
                         rating = 0f,
                         reviewCount = 0,
                         distanceKm = 0.0,
-                        category = mapTypeToCategory(obj.getInt("idPlaceType")),
+                        category = mapTypeToCategory(type),
                         latitude = lat,
                         longitude = lng,
-                        idPlaceType = obj.getInt("idPlaceType"),
+                        idPlaceType = type,
                         descriptionResKey = obj.optString("descriptionResKey"),
                         previewPhotos = previewPhotos
                     )
@@ -80,6 +82,23 @@ class ExploreRepositoryImpl @Inject constructor(
             14 -> "Nightlife"
             else -> "Famous"
         }
+    }
+
+    private fun mapTypeToImage(type: Int): Int = when (type.coerceIn(1, 14)) {
+        1 -> R.drawable.place_category_1
+        2 -> R.drawable.place_category_2
+        3 -> R.drawable.place_category_3
+        4 -> R.drawable.place_category_4
+        5 -> R.drawable.place_category_5
+        6 -> R.drawable.place_category_6
+        7 -> R.drawable.place_category_7
+        8 -> R.drawable.place_category_8
+        9 -> R.drawable.place_category_9
+        10 -> R.drawable.place_category_10
+        11 -> R.drawable.place_category_11
+        12 -> R.drawable.place_category_12
+        13 -> R.drawable.place_category_13
+        else -> R.drawable.place_category_14
     }
 
     override suspend fun getNearbyFamousPlaces(

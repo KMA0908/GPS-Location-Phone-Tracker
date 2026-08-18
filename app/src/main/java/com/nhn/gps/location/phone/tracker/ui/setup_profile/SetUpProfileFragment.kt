@@ -17,6 +17,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.bumptech.glide.Glide
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.nhn.gps.location.phone.tracker.R
+import com.nhn.gps.location.phone.tracker.ads.ResumeAdGuard
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
 import com.nhn.gps.location.phone.tracker.base.UiMessage
 import com.nhn.gps.location.phone.tracker.databinding.FragmentSetUpProfileBinding
@@ -32,6 +33,7 @@ class SetUpProfileFragment : BaseFragment<FragmentSetUpProfileBinding, SetUpProf
     private var selectedImageUri: Uri? = null
 
     private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        ResumeAdGuard.onSystemDialogFinished()
         uri?.let {
             selectedImageUri = it
             viewModel.onAvatarChanged(it)
@@ -48,6 +50,7 @@ class SetUpProfileFragment : BaseFragment<FragmentSetUpProfileBinding, SetUpProf
         imgBack.setOnClickListener { handleToolbarBack() }
 
         imgProfile.setOnClickListener {
+            ResumeAdGuard.onSystemDialogRequested()
             pickImageLauncher.launch("image/*")
         }
 

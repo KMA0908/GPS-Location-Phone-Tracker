@@ -117,6 +117,21 @@
     <string name="radius_m">%1$d m</string>
 
     <string name="famous_place">Famous place</string>
+    <string name="famous_places">Famous places</string>
+    <string name="category_romantic">Romantic</string>
+    <string name="category_amusement">Amusement</string>
+    <string name="category_mountain">Mountain</string>
+    <string name="category_nature">Nature</string>
+    <string name="category_dangerous">Dangerous</string>
+    <string name="category_mysterious">Mysterious</string>
+    <string name="category_surf">Surf sports</string>
+    <string name="category_ghost_towns">Ghost towns</string>
+    <string name="category_filming">Filming</string>
+    <string name="category_weather">Weather</string>
+    <string name="category_holiday">Holiday</string>
+    <string name="category_destinations">Destinations</string>
+    <string name="category_clubs">Clubs</string>
+    <string name="category_night">Night life</string>
     <string name="nearby">Nearby</string>
     <string name="gps_location">GPS LOCATION</string>
     <string name="quick_actions">Quick actions</string>
@@ -125,8 +140,15 @@
     <string name="trending_nearby">Trending nearby</string>
     <string name="see_all">See all</string>
     <string name="see_map">See map</string>
+    <string name="street_view">Street view</string>
+    <string name="famous_place_description_fallback">Discover %1$s and explore its most memorable views, landmarks, and surroundings.</string>
     <string name="open_now">Open now</string>
     <string name="explore_now">Explore now</string>
+    <string name="places_around_the_world">Places around the world</string>
+    <string name="random_place">Random place</string>
+    <string name="reset_earth">Reset globe</string>
+    <string name="clear_search">Clear search</string>
+    <string name="close">Close</string>
 
     <string name="view_friend_dots">View friend...</string>
     <string name="see_shares_dots">See shares...</string>
@@ -137,4 +159,23 @@
     <string name="explore_dots">Explore...</string>
     <string name="zone_dots">Zone...</string>
     <string name="entered_an_dots">Entered an...</string>
+
+    <!-- Directions -->
+    <string name="route_my_location">My location</string>
+    <string name="route_selected_location">Selected location</string>
+    <string name="route_waiting_for_location">Getting your current location…</string>
+    <string name="route_same_location">The destination is the same as your current location</string>
+    <string name="route_calculating">Finding the best route…</string>
+    <string name="route_calculating_short">…</string>
+    <string name="route_calculating_description">Calculating a route that follows the road</string>
+    <string name="route_not_found">Route unavailable</string>
+    <string name="route_not_found_description">Could not calculate this route. Check your connection and Routes API configuration.</string>
+    <string name="route_fastest_driving">Fastest driving route</string>
+    <string name="route_duration_and_distance">%1$s (%2$s)</string>
+    <string name="route_distance_meters">%1$d m</string>
+    <string name="route_distance_kilometers_decimal">%1$.1f km</string>
+    <string name="route_distance_kilometers">%1$d km</string>
+    <string name="route_minutes">%1$d min</string>
+    <string name="route_hours">%1$d hr</string>
+    <string name="route_hours_minutes">%1$d hr %2$d min</string>
 </resources>

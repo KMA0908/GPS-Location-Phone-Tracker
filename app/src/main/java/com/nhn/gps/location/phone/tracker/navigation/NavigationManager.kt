@@ -16,15 +16,18 @@ class NavigationManager @Inject constructor() {
     val currentDestination: StateFlow<AppDestination?> = _currentDestination.asStateFlow()
 
     private var lastNavigateTime = 0L
+    private var lastDestination: AppDestination? = null
     private val NAVIGATE_THRESHOLD = 500L
 
     fun navigateTo(destination: AppDestination, clearStack: Boolean = false) {
-        val currentTime = System.currentTimeMillis()
-        if (currentTime - lastNavigateTime < NAVIGATE_THRESHOLD) return
-        lastNavigateTime = currentTime
-
-        // Kiểm tra tránh điều hướng trùng màn hình hiện tại
+        // Ignore only duplicate taps. A valid fast chain such as
+        // Home -> Famous places -> Earth must not be swallowed.
         if (destination == _currentDestination.value) return
+
+        val currentTime = System.currentTimeMillis()
+        if (destination == lastDestination && currentTime - lastNavigateTime < NAVIGATE_THRESHOLD) return
+        lastNavigateTime = currentTime
+        lastDestination = destination
 
         if (clearStack) {
             backStack.clear()
@@ -44,12 +47,19 @@ class NavigationManager @Inject constructor() {
         if (backStack.isEmpty()) return false
         
         val previous = backStack.pop()
+        // Back is a completed navigation too. Reset the tap guard to the
+        // screen we actually reached so reopening the screen we just left is
+        // never mistaken for a duplicate tap.
+        lastDestination = previous
+        lastNavigateTime = 0L
         _currentDestination.value = previous
         return true
     }
 
     fun reset() {
         backStack.clear()
+        lastDestination = null
+        lastNavigateTime = 0L
         _currentDestination.value = AppDestination.Home
     }
 }

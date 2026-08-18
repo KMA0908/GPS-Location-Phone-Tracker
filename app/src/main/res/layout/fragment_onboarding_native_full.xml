@@ -1,19 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.leansoft.ads.ui.custom.SafeAreaView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/native_ad_surface">
-    <FrameLayout
+    <com.leansoft.ads.view.NativeAdViewContainer
         android:id="@+id/native_ad_view_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/native_ad_surface" />
+        android:background="@color/native_ad_surface"
+        app:ads_layout_loaded="@layout/layout_ad_native_full"
+        app:ads_layout_loading="@layout/layout_ad_native_loading_full" />
     <View
         android:id="@+id/close_scrim"
         android:layout_width="0dp"
         android:layout_height="120dp"
-        android:background="#80000000"
+        android:background="@drawable/bg_native_full_close_scrim"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -28,4 +30,4 @@
         android:translationZ="20dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
-</androidx.constraintlayout.widget.ConstraintLayout>
+</com.leansoft.ads.ui.custom.SafeAreaView>

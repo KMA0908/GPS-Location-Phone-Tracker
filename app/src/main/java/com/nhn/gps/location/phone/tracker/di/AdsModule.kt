@@ -1,7 +1,5 @@
 package com.nhn.gps.location.phone.tracker.di
 
-// TEMP DISABLED: ls-leansoft-publishing-sdk unavailable
-/*
 import com.leansoft.ads.AdConfig
 import com.leansoft.ads.ui.language.LeansoftLanguageInterface
 import com.leansoft.ads.ui.onboarding.LeansoftOnboardingInterface
@@ -30,4 +28,3 @@ object AdsModule {
     @Provides @Singleton fun provideUninstall(): LeansoftUninstallInterface = GpsUninstallImpl()
     @Provides @Singleton fun provideWelcomeBack(): LeansoftWelcomeBackInterface = GpsWelcomeBackImpl()
 }
-*/

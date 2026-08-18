@@ -17,6 +17,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.nhn.gps.location.phone.tracker.R
+import com.nhn.gps.location.phone.tracker.ads.ResumeAdGuard
 import com.nhn.gps.location.phone.tracker.databinding.FragmentPermissionBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -28,6 +29,7 @@ class PermissionFragment : BaseFragment<FragmentPermissionBinding, PermissionVie
 
     private val locationLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
+            ResumeAdGuard.onSystemDialogFinished()
             val granted = results.values.all { it }
             viewModel.updatePermission(PermissionType.LOCATION, granted)
             withBinding {
@@ -37,6 +39,7 @@ class PermissionFragment : BaseFragment<FragmentPermissionBinding, PermissionVie
 
     private val cameraLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            ResumeAdGuard.onSystemDialogFinished()
             viewModel.updatePermission(PermissionType.CAMERA, granted)
             withBinding {
                 updateSwitchUi(cardCamera.swPermission, granted)
@@ -45,6 +48,7 @@ class PermissionFragment : BaseFragment<FragmentPermissionBinding, PermissionVie
 
     private val notificationLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            ResumeAdGuard.onSystemDialogFinished()
             viewModel.updatePermission(PermissionType.NOTIFICATION, granted)
             withBinding {
                 updateSwitchUi(cardNotification.swPermission, granted)
@@ -104,6 +108,7 @@ class PermissionFragment : BaseFragment<FragmentPermissionBinding, PermissionVie
 
                 launch {
                     viewModel.requestPermission.collect { type ->
+                        ResumeAdGuard.onSystemDialogRequested()
                         when (type) {
                             PermissionType.LOCATION -> locationLauncher.launch(
                                 arrayOf(
@@ -116,6 +121,8 @@ class PermissionFragment : BaseFragment<FragmentPermissionBinding, PermissionVie
                             PermissionType.NOTIFICATION -> {
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                                     notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                } else {
+                                    ResumeAdGuard.onSystemDialogFinished()
                                 }
                             }
                         }

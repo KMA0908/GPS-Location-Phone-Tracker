@@ -7,19 +7,14 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import com.bumptech.glide.Glide
-// TEMP DISABLED: ls-leansoft-publishing-sdk unavailable
-/*
 import com.leansoft.ads.enums.AdStatus
 import com.leansoft.ads.ui.onboarding.LeansoftOnboardingInterface
 import com.leansoft.ads.utils.LeansoftAdPlacement
 import com.leansoft.ads.utils.LeansoftAdPlacementKt
 import com.leansoft.ads.view.NativeAdViewContainer
-*/
 import com.nhn.gps.location.phone.tracker.R
 
-// TEMP DISABLED: ls-leansoft-publishing-sdk unavailable
-class GpsOnboardingImpl /* : LeansoftOnboardingInterface */ {
-    /*
+class GpsOnboardingImpl : LeansoftOnboardingInterface() {
     private val containers = mutableMapOf<LeansoftAdPlacement, NativeAdViewContainer>()
     private val views = mutableMapOf<LeansoftAdPlacement, View>()
     private val nextListeners = mutableMapOf<LeansoftAdPlacement, () -> Unit>()
@@ -86,7 +81,6 @@ class GpsOnboardingImpl /* : LeansoftOnboardingInterface */ {
             }
         }
     }
-    */
 
     private data class Page(val image: Int, val title: Int, val description: Int, val dot: Int)
 
@@ -94,7 +88,6 @@ class GpsOnboardingImpl /* : LeansoftOnboardingInterface */ {
         val hint = view.findViewById<ImageView>(R.id.sw_onboard) ?: return
         Glide.with(view).clear(hint)
         hint.visibility = if (show) View.VISIBLE else View.GONE
-        // TEMP DISABLED: ls-leansoft-publishing-sdk unavailable
-        // if (show) Glide.with(view).asGif().load(R.raw.sw_onboard).into(hint)
+        if (show) Glide.with(view).asGif().load(R.raw.sw_onboard).into(hint)
     }
 }

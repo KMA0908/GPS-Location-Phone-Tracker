@@ -1,7 +1,10 @@
 package com.nhn.gps.location.phone.tracker.ui.explore
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -9,6 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
 import com.nhn.gps.location.phone.tracker.databinding.FragmentExploreBinding
+import com.nhn.gps.location.phone.tracker.navigation.AppDestination
 import com.nhn.gps.location.phone.tracker.ui.main.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
@@ -19,6 +23,7 @@ import com.nhn.gps.location.phone.tracker.R
 import com.nhn.gps.location.phone.tracker.data.model.FamousPlaceModel
 import android.view.inputmethod.EditorInfo
 import androidx.core.widget.addTextChangedListener
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 
 @AndroidEntryPoint
 class ExploreFragment : BaseFragment<FragmentExploreBinding, ExploreViewModel>() {
@@ -27,6 +32,7 @@ class ExploreFragment : BaseFragment<FragmentExploreBinding, ExploreViewModel>()
     private val mainViewModel: MainViewModel by viewModels({ requireActivity() })
     
     private val markerMap = mutableMapOf<String, GlobeMarker>()
+    private var bottomSheetBehavior: BottomSheetBehavior<android.widget.LinearLayout>? = null
     
     private val cardAdapter by lazy { 
         ExploreCardAdapter(
@@ -56,19 +62,44 @@ class ExploreFragment : BaseFragment<FragmentExploreBinding, ExploreViewModel>()
         setupRecyclerView()
         setupGlobe()
         setupSearch()
-        
-        btnExploreNow.setOnClickListener {
-            viewModel.exploreSelectedPlace()
-        }
+
+        btnBack.setOnClickListener { handleToolbarBack() }
 
         btnRandom.setOnClickListener {
             viewModel.selectRandomPlace()
         }
+
+        btnReset.setOnClickListener {
+            globeView.resetView()
+            viewModel.clearSelection()
+            hidePlaceSheet()
+        }
+
+        ivClear.setOnClickListener { etSearch.text?.clear() }
+        btnCloseSheet.setOnClickListener {
+            viewModel.clearSelection()
+            hidePlaceSheet()
+        }
+        btnDirections.setOnClickListener { openSelectedPlaceRoute() }
+        btnStreetView.setOnClickListener { openSelectedPlaceInMaps(streetView = true) }
+        btnCreateZone.setOnClickListener {
+            navigationManager.navigateTo(AppDestination.CreateZone)
+        }
+
+        bottomSheet.visibility = View.VISIBLE
+        bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet).apply {
+            isHideable = true
+            skipCollapsed = true
+            state = BottomSheetBehavior.STATE_HIDDEN
+        }
+
+        viewModel.setCategoryFilter(mainViewModel.selectedFamousCategoryId.value)
     }
 
     private fun setupSearch() = with(binding.etSearch) {
         addTextChangedListener {
             viewModel.onSearchQueryChanged(it.toString())
+            binding.ivClear.visibility = if (it.isNullOrEmpty()) View.GONE else View.VISIBLE
         }
         
         setOnEditorActionListener { _, actionId, _ ->
@@ -107,6 +138,15 @@ class ExploreFragment : BaseFragment<FragmentExploreBinding, ExploreViewModel>()
             state.places
         }
         cardAdapter.submitList(displayPlaces)
+
+        val selectedPlace = displayPlaces.firstOrNull { it.id == state.selectedPlaceId }
+        if (selectedPlace != null) {
+            tvPlacesTitle.text = selectedPlace.name
+            tvPlaceDescription.text = selectedPlace.descriptionText()
+            showPlaceSheet()
+        } else {
+            hidePlaceSheet()
+        }
         
         // Update markers on globe
         if (globeView.isSupported) {
@@ -119,6 +159,7 @@ class ExploreFragment : BaseFragment<FragmentExploreBinding, ExploreViewModel>()
                     id = place.id,
                     latitude = place.latitude,
                     longitude = place.longitude,
+                    imageRes = place.imageRes,
                     isSelected = place.id == state.selectedPlaceId
                 )
             }
@@ -134,6 +175,7 @@ class ExploreFragment : BaseFragment<FragmentExploreBinding, ExploreViewModel>()
                         id = place.id,
                         latitude = place.latitude,
                         longitude = place.longitude,
+                        imageRes = place.imageRes,
                         isSelected = place.id == state.selectedPlaceId
                     )
                 }
@@ -224,8 +266,51 @@ class ExploreFragment : BaseFragment<FragmentExploreBinding, ExploreViewModel>()
     }
 
     override fun onDestroyView() {
+        bottomSheetBehavior = null
+        binding.rvExploreCards.adapter = null
         markerMap.clear()
         super.onDestroyView()
+    }
+
+    private fun showPlaceSheet() {
+        bottomSheetBehavior?.state = BottomSheetBehavior.STATE_EXPANDED
+    }
+
+    private fun hidePlaceSheet() {
+        bottomSheetBehavior?.state = BottomSheetBehavior.STATE_HIDDEN
+    }
+
+    private fun FamousPlaceModel.descriptionText(): String {
+        val resourceId = descriptionResKey
+            ?.let { resources.getIdentifier(it, "string", requireContext().packageName) }
+            ?.takeIf { it != 0 }
+        return resourceId?.let(resources::getString)
+            ?: getString(R.string.famous_place_description_fallback, name)
+    }
+
+    private fun openSelectedPlaceInMaps(streetView: Boolean) {
+        val state = viewModel.uiState.value
+        val place = (listOfNotNull(state.searchedPlace) + state.places)
+            .firstOrNull { it.id == state.selectedPlaceId }
+            ?: return
+        val uri = if (streetView) {
+            Uri.parse("google.streetview:cbll=${place.latitude},${place.longitude}")
+        } else {
+            Uri.parse("geo:${place.latitude},${place.longitude}?q=${Uri.encode(place.name)}")
+        }
+        runCatching { startActivity(Intent(Intent.ACTION_VIEW, uri)) }
+    }
+
+    private fun openSelectedPlaceRoute() {
+        val state = viewModel.uiState.value
+        val place = (listOfNotNull(state.searchedPlace) + state.places)
+            .firstOrNull { it.id == state.selectedPlaceId }
+            ?: return
+        mainViewModel.openRouteOnMap(
+            destinationName = place.name,
+            latitude = place.latitude,
+            longitude = place.longitude,
+        )
     }
 
     private fun setupRecyclerView() = with(binding.rvExploreCards) {

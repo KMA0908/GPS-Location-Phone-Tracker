@@ -11,7 +11,12 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.nhn.gps.location.phone.tracker.base.BaseActivity
 import com.nhn.gps.location.phone.tracker.base.UiMessage
 import androidx.fragment.app.Fragment
+import com.leansoft.ads.AdManager
 import com.nhn.gps.location.phone.tracker.R
+import com.nhn.gps.location.phone.tracker.ads.GpsAdPlacement
+import com.nhn.gps.location.phone.tracker.ads.GpsAdScenario
+import com.nhn.gps.location.phone.tracker.ads.GpsAdViewBinder
+import com.nhn.gps.location.phone.tracker.ads.GpsAds
 import com.nhn.gps.location.phone.tracker.databinding.ActivityMainBinding
 import com.nhn.gps.location.phone.tracker.navigation.AppDestination
 import com.nhn.gps.location.phone.tracker.ui.friend.AddFriendFragment
@@ -40,6 +45,11 @@ import kotlinx.coroutines.launch
 class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>() {
 
     override val viewModel: MainViewModel by viewModels()
+    private var renderedRoute: String? = null
+    private var pendingRoute: String? = null
+    private var queuedState: MainUiState? = null
+    private var suppressNextRouteInterstitial = false
+    private var outgoingInterstitialOverride: String? = null
 
     override fun createBinding(inflater: LayoutInflater): ActivityMainBinding =
         ActivityMainBinding.inflate(inflater)
@@ -48,22 +58,13 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>() {
         val target = intent.getStringExtra("TARGET_DESTINATION")
         viewModel.handleIntent(target)
         setupBackPress()
+        runCatching { AdManager.instance.preloadAppOpenAd(GpsAdPlacement.AOA_RESUME) }
     }
 
     private fun setupBackPress() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                val currentRoute = viewModel.uiState.value.currentRoute
-                // Đồng bộ logic: Home và Permission nhấn Back hệ thống -> Thoát app
-                if (currentRoute == AppDestination.Permission.route || 
-                    currentRoute == AppDestination.Home.route) {
-                    finish()
-                } else {
-                    // Các màn hình khác: navigateBack
-                    if (!viewModel.navigateBack()) {
-                        finish()
-                    }
-                }
+                navigateBackWithAd()
             }
         })
     }
@@ -85,6 +86,14 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>() {
 
     private fun render(state: MainUiState) {
         val route = state.currentRoute ?: return
+        if (route == renderedRoute) return
+        if (pendingRoute != null) {
+            queuedState = state
+            return
+        }
+
+        val sourceRoute = renderedRoute
+        pendingRoute = route
         val fragment = when (route) {
             AppDestination.Permission.route -> PermissionFragment.newInstance()
             AppDestination.SetUpProfile.route -> SetUpProfileFragment.newInstance()
@@ -107,7 +116,34 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>() {
             AppDestination.PlaceDetail.route -> PlaceDetailFragment.newInstance()
             else -> HomeFragment.newInstance()
         }
-        replaceFragment(fragment)
+
+        val completeNavigation = {
+            if (!isFinishing && !isDestroyed && viewModel.uiState.value.currentRoute == route) {
+                replaceFragment(fragment)
+                renderedRoute = route
+                restoreCurrentScreenAd()
+            }
+            pendingRoute = null
+            val queued = queuedState
+            queuedState = null
+            if (queued != null && queued.currentRoute != renderedRoute) render(queued)
+        }
+
+        val skipInterstitial = suppressNextRouteInterstitial.also {
+            suppressNextRouteInterstitial = false
+        }
+        val placement = outgoingInterstitialOverride
+            ?.also { outgoingInterstitialOverride = null }
+            ?: sourceRoute?.let(GpsAdScenario::interstitialLeaving)
+        if (sourceRoute == null || skipInterstitial || placement == null) {
+            completeNavigation()
+        } else {
+            GpsAds.showInterThen(
+                placement = placement,
+                fragmentManager = supportFragmentManager,
+                next = completeNavigation,
+            )
+        }
     }
 
     private fun replaceFragment(fragment: Fragment) {
@@ -126,5 +162,48 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>() {
             is UiMessage.Info -> message.message
         }
         Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
+    }
+
+    fun navigateBackWithAd() {
+        if (isFinishing || isDestroyed) return
+        GpsAds.showInterThen(
+            placement = GpsAdPlacement.INTER_BACK,
+            fragmentManager = supportFragmentManager,
+        ) {
+            if (isFinishing || isDestroyed) return@showInterThen
+            suppressNextRouteInterstitial = true
+            if (!viewModel.navigateBack()) finish()
+        }
+    }
+
+    fun showScreenBanner(placement: String) {
+        if (isFinishing || isDestroyed) return
+        GpsAdViewBinder.bindBanner(binding.screenAdHost, placement)
+    }
+
+    fun showScreenNative(placement: String, format: GpsAdViewBinder.NativeFormat) {
+        if (isFinishing || isDestroyed) return
+        GpsAdViewBinder.bindNative(binding.screenAdHost, placement, format)
+    }
+
+    fun clearScreenAd() {
+        GpsAdViewBinder.clear(binding.screenAdHost)
+    }
+
+    fun overrideNextRouteInterstitial(placement: String?) {
+        outgoingInterstitialOverride = placement
+    }
+
+    fun restoreCurrentScreenAd() {
+        when (val ad = viewModel.uiState.value.currentRoute?.let(GpsAdScenario::screenAd)) {
+            is GpsAdScenario.ScreenAd.Banner -> showScreenBanner(ad.placement)
+            is GpsAdScenario.ScreenAd.Native -> showScreenNative(ad.placement, ad.format)
+            null -> clearScreenAd()
+        }
+    }
+
+    override fun onDestroy() {
+        GpsAdViewBinder.clear(binding.screenAdHost)
+        super.onDestroy()
     }
 }

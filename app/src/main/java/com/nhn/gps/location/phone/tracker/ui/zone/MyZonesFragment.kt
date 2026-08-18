@@ -14,6 +14,8 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.ConcatAdapter
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -25,13 +27,19 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.leansoft.ads.AdManager
 import com.nhn.gps.location.phone.tracker.R
+import com.nhn.gps.location.phone.tracker.ads.GpsAdPlacement
+import com.nhn.gps.location.phone.tracker.ads.GpsAdViewBinder
+import com.nhn.gps.location.phone.tracker.ads.GpsAds
+import com.nhn.gps.location.phone.tracker.ads.NativeAdRowAdapter
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
 import com.nhn.gps.location.phone.tracker.data.model.Zone
 import com.nhn.gps.location.phone.tracker.data.model.ZoneType
 import com.nhn.gps.location.phone.tracker.data.repository.ZoneRepository
 import com.nhn.gps.location.phone.tracker.databinding.FragmentMyZonesLocalBinding
 import com.nhn.gps.location.phone.tracker.ui.main.MainViewModel
+import com.nhn.gps.location.phone.tracker.ui.main.MainActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -41,8 +49,6 @@ import javax.inject.Inject
 class MyZonesFragment : BaseFragment<FragmentMyZonesLocalBinding, MainViewModel>(), OnMapReadyCallback {
     override val viewModel: MainViewModel by viewModels({ requireActivity() })
     @Inject lateinit var zoneRepository: ZoneRepository
-    private lateinit var adapter: ZoneAdapter
-    private lateinit var adapterSheet: ZoneAdapter
     private var allZones: List<Zone> = emptyList()
     private var map: GoogleMap? = null
     private val circles = mutableListOf<Circle>()
@@ -66,26 +72,21 @@ class MyZonesFragment : BaseFragment<FragmentMyZonesLocalBinding, MainViewModel>
                         layoutListState.isVisible = allZones.isNotEmpty()
                         zonesMap.isVisible = false
                         layoutZoneDetail.isVisible = false
+                        (activity as? MainActivity)?.clearScreenAd()
+                        (activity as? MainActivity)?.overrideNextRouteInterstitial(null)
                     }
                 }
                 override fun onSlide(bottomSheet: View, slideOffset: Float) {}
             })
 
-            adapter = ZoneAdapter(
-                onClick = { selectZone(it) },
-                onActionClick = { navigateToDetail(it) }
-            )
-            recyclerZones.adapter = adapter
-            
-            adapterSheet = ZoneAdapter(
-                onClick = { selectZone(it) },
-                onActionClick = { navigateToDetail(it) }
-            )
-            recyclerZonesSheet.adapter = adapterSheet
+            recyclerZones.adapter = buildZoneListAdapter(emptyList())
+            recyclerZonesSheet.adapter = buildZoneListAdapter(emptyList())
 
             btnBack.setOnClickListener { 
                 if (layoutZoneDetail.isVisible) {
                     layoutZoneDetail.isVisible = false
+                    (activity as? MainActivity)?.clearScreenAd()
+                    (activity as? MainActivity)?.overrideNextRouteInterstitial(null)
                 } else if (bottomSheetBehavior.state != BottomSheetBehavior.STATE_HIDDEN) {
                     bottomSheetBehavior.isHideable = true
                     bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
@@ -124,6 +125,8 @@ class MyZonesFragment : BaseFragment<FragmentMyZonesLocalBinding, MainViewModel>
             override fun handleOnBackPressed() {
                 if (binding.layoutZoneDetail.isVisible) {
                     binding.layoutZoneDetail.isVisible = false
+                    (activity as? MainActivity)?.clearScreenAd()
+                    (activity as? MainActivity)?.overrideNextRouteInterstitial(null)
                 } else if (bottomSheetBehavior.state != BottomSheetBehavior.STATE_HIDDEN) {
                     bottomSheetBehavior.isHideable = true
                     bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
@@ -184,8 +187,8 @@ class MyZonesFragment : BaseFragment<FragmentMyZonesLocalBinding, MainViewModel>
         val filtered = if (query.isBlank()) allZones else allZones.filter {
             it.name.contains(query, true)
         }
-        adapter.submitList(filtered)
-        adapterSheet.submitList(filtered)
+        recyclerZones.adapter = buildZoneListAdapter(filtered)
+        recyclerZonesSheet.adapter = buildZoneListAdapter(filtered)
 
         val isEmpty = allZones.isEmpty()
         layoutEmptyState.isVisible = isEmpty
@@ -205,7 +208,11 @@ class MyZonesFragment : BaseFragment<FragmentMyZonesLocalBinding, MainViewModel>
     }
 
     private fun selectZone(zone: Zone) {
-        showZoneDetail(zone)
+        GpsAds.showInterThen(
+            placement = GpsAdPlacement.INTER_ZONE,
+            fragmentManager = parentFragmentManager,
+            next = { if (isAdded) showZoneDetail(zone) },
+        )
     }
 
     private fun navigateToDetail(zone: Zone) {
@@ -214,6 +221,8 @@ class MyZonesFragment : BaseFragment<FragmentMyZonesLocalBinding, MainViewModel>
     }
 
     private fun showZoneDetail(zone: Zone) = with(binding) {
+        (activity as? MainActivity)?.showScreenBanner(GpsAdPlacement.BANNER_ZONE_DETAIL)
+        (activity as? MainActivity)?.overrideNextRouteInterstitial(GpsAdPlacement.INTER_ZONE_DETAIL)
         // Show the Detail UI inside the Sheet
         layoutZoneDetail.isVisible = true
         
@@ -280,7 +289,27 @@ class MyZonesFragment : BaseFragment<FragmentMyZonesLocalBinding, MainViewModel>
         map = null
         circles.clear()
         markers.clear()
+        binding.recyclerZones.adapter = null
+        binding.recyclerZonesSheet.adapter = null
+        runCatching { AdManager.instance.destroyNativeAd(GpsAdPlacement.NATIVE_ZONE) }
         super.onDestroyView()
+    }
+
+    private fun buildZoneListAdapter(zones: List<Zone>): ConcatAdapter {
+        val adapters = mutableListOf<RecyclerView.Adapter<out RecyclerView.ViewHolder>>()
+        zones.chunked(3).forEach { group ->
+            adapters += ZoneAdapter(
+                onClick = { selectZone(it) },
+                onActionClick = { navigateToDetail(it) },
+            ).apply { submitList(group) }
+            if (group.size == 3) {
+                adapters += NativeAdRowAdapter(
+                    GpsAdPlacement.NATIVE_ZONE,
+                    GpsAdViewBinder.NativeFormat.SMALL,
+                )
+            }
+        }
+        return ConcatAdapter(adapters)
     }
 
     companion object { fun newInstance() = MyZonesFragment() }

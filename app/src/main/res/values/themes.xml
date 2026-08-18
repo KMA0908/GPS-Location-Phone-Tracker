@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <style name="ShapeAppearanceOverlay.Gps.FamousCategory" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">12dp</item>
+    </style>
+
     <style name="Theme.GpsTracker" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/brand_primary</item>
         <item name="colorOnPrimary">@color/brand_on_primary</item>
@@ -12,6 +17,11 @@
 
     <style name="CircleImage" parent="">
         <item name="cornerSize">50%</item>
+    </style>
+
+    <style name="EarthPlaceImageRounded8" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">8dp</item>
     </style>
 
     <style name="ZoneFilterChip">

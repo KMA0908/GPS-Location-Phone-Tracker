@@ -68,12 +68,8 @@ class ExploreCardAdapter(
 
         fun bind(item: FamousPlaceModel) = with(binding) {
             tvName.text = item.name
-            tvLocation.text = item.location
-            ivThumbnail.setImageResource(R.drawable.ic_paris) // Placeholder
+            ivThumbnail.setImageResource(item.imageRes.takeIf { it != 0 } ?: R.drawable.ic_paris)
             onBindPhoto(item, ivThumbnail)
-
-            tvAttribution.text = item.photoMetadata?.attributions ?: ""
-            tvAttribution.visibility = if (tvAttribution.text.isNotEmpty()) android.view.View.VISIBLE else android.view.View.GONE
 
             root.setOnClickListener { onClick(item) }
         }
@@ -84,7 +80,7 @@ class ExploreCardAdapter(
 
         fun bind(item: FamousPlaceModel) = with(binding) {
             tvName.text = item.name
-            ivThumbnail.setImageResource(R.drawable.ic_paris) // Placeholder
+            ivThumbnail.setImageResource(item.imageRes.takeIf { it != 0 } ?: R.drawable.ic_paris)
             onBindPhoto(item, ivThumbnail)
 
             root.setOnClickListener { onClick(item) }

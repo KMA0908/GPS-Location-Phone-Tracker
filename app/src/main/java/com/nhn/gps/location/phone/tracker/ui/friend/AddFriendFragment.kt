@@ -26,9 +26,14 @@ import com.google.zxing.common.HybridBinarizer
 import com.journeyapps.barcodescanner.BarcodeCallback
 import com.journeyapps.barcodescanner.BarcodeResult
 import com.nhn.gps.location.phone.tracker.R
+import com.nhn.gps.location.phone.tracker.ads.GpsAdPlacement
+import com.nhn.gps.location.phone.tracker.ads.GpsAdViewBinder
+import com.nhn.gps.location.phone.tracker.ads.GpsAds
+import com.nhn.gps.location.phone.tracker.ads.ResumeAdGuard
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
 import com.nhn.gps.location.phone.tracker.databinding.FragmentAddFriendBinding
 import com.nhn.gps.location.phone.tracker.navigation.AppDestination
+import com.nhn.gps.location.phone.tracker.ui.main.MainActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -53,6 +58,7 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
     }
 
     private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        ResumeAdGuard.onSystemDialogFinished()
         uri?.let { scanQrFromUri(it) }
     }
 
@@ -75,11 +81,17 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
         }
 
         layoutScanQR.btnOpenCamera.setOnClickListener {
-            cameraContainer.isVisible = true
-            setupCustomFramingRect()
-            layoutCamera.barcodeScanner.decodeContinuous(barcodeCallback)
-            layoutCamera.barcodeScanner.resume()
-            checkFlashSupport()
+            showAddFriendInterThen {
+                cameraContainer.isVisible = true
+                setupCustomFramingRect()
+                layoutCamera.barcodeScanner.decodeContinuous(barcodeCallback)
+                layoutCamera.barcodeScanner.resume()
+                checkFlashSupport()
+                (activity as? MainActivity)?.showScreenNative(
+                    GpsAdPlacement.NATIVE_QR_CAMERA,
+                    GpsAdViewBinder.NativeFormat.MEDIUM,
+                )
+            }
         }
         
         layoutScanQR.btnMyQR.setOnClickListener {
@@ -88,7 +100,7 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
 
         layoutEnterCode.btnFindFriend.setOnClickListener {
             val code = layoutEnterCode.edtFriendCode.text.toString()
-            viewModel.findFriend(code)
+            showAddFriendInterThen { viewModel.findFriend(code) }
         }
 
         // Camera Layout listeners
@@ -96,6 +108,7 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
             cameraContainer.isVisible = false
             layoutCamera.barcodeScanner.pause()
             turnOffFlash()
+            showTabAd(isScan = true)
         }
 
         layoutCamera.headerCamera.layoutFlash.setOnClickListener {
@@ -107,6 +120,7 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
         }
         
         layoutCamera.btnUpload.setOnClickListener {
+            ResumeAdGuard.onSystemDialogRequested()
             pickImageLauncher.launch("image/*")
         }
 
@@ -120,7 +134,7 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
         }
 
         layoutFriendFound.btnAddFriend.setOnClickListener {
-            viewModel.addFriend()
+            showAddFriendInterThen { viewModel.addFriend() }
         }
     }
 
@@ -195,6 +209,24 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
             layoutScanQR.root.isVisible = false
             layoutCamera.barcodeScanner.pause()
         }
+        showTabAd(isScan)
+    }
+
+    private fun showTabAd(isScan: Boolean) {
+        (activity as? MainActivity)?.showScreenNative(
+            if (isScan) GpsAdPlacement.NATIVE_ADD_FRIEND_QR else GpsAdPlacement.NATIVE_ADD_FRIEND_CODE,
+            GpsAdViewBinder.NativeFormat.SMALL,
+        )
+    }
+
+    private fun showAddFriendInterThen(next: () -> Unit) {
+        GpsAds.showInterThen(
+            placement = GpsAdPlacement.INTER_ADD_FRIEND,
+            fragmentManager = parentFragmentManager,
+            next = {
+                if (isAdded) next()
+            },
+        )
     }
 
     override fun observeData() {
