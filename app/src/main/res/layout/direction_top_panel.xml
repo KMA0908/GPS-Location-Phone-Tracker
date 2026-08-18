@@ -93,9 +93,9 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
-            <include layout="@layout/item_route_option_car"/>
-            <include layout="@layout/item_route_option_car"/>
-            <include layout="@layout/item_route_option_car"/>
+            <include android:id="@+id/itemCar" layout="@layout/item_route_option_car"/>
+            <include android:id="@+id/itemMotorcycle" layout="@layout/item_route_option_car"/>
+            <include android:id="@+id/itemWalking" layout="@layout/item_route_option_car"/>
 
         </LinearLayout>
 

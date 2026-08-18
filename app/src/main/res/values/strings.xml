@@ -149,4 +149,17 @@
     <string name="remove_from_favorites">Remove from favorites</string>
     <string name="save_place">Save</string>
     <string name="saved_place">Saved</string>
+
+    <string name="search_friend">Search friend</string>
+    <string name="clear_search">Clear search</string>
+    <string name="no_friends_found">No friends found</string>
+    <string name="clear_search_history">Clear search history</string>
+    <string name="remove_from_search_history">Remove from search history</string>
+    <string name="remove_friend_from_search_history">Remove %1$s from search history</string>
+    <string name="recent_history">Recent Search</string>
+
+    <string name="car">Car</string>
+    <string name="motorcycle">Motorcycle</string>
+    <string name="walking">Walking</string>
+    <string name="google_maps_not_installed">Google Maps is not installed</string>
 </resources>

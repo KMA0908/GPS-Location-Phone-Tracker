@@ -15,6 +15,10 @@
     <uses-feature android:name="android.graphics.openssl" android:required="false" />
     <uses-feature android:glEsVersion="0x00030000" android:required="false" />
 
+    <queries>
+        <package android:name="com.google.android.apps.maps" />
+    </queries>
+
     <application
         android:name=".GpsTrackerApp"
         android:allowBackup="true"
@@ -35,7 +39,8 @@
 
         <activity
             android:name=".ui.main.MainActivity"
-            android:exported="true" />
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize" />
 
         <service
             android:name=".data.notification.ZoneMonitoringService"

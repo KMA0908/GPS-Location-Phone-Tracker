@@ -33,4 +33,17 @@
     <string name="place_location_unavailable">Không có dữ liệu vị trí cho địa điểm này</string>
     <string name="add_to_favorites">Thêm vào yêu thích</string>
     <string name="remove_from_favorites">Xóa khỏi yêu thích</string>
+
+    <string name="search_friend">Tìm kiếm bạn bè</string>
+    <string name="clear_search">Xóa tìm kiếm</string>
+    <string name="no_friends_found">Không tìm thấy bạn bè</string>
+    <string name="clear_search_history">Xóa lịch sử tìm kiếm</string>
+    <string name="remove_from_search_history">Xóa khỏi lịch sử tìm kiếm</string>
+    <string name="remove_friend_from_search_history">Xóa %1$s khỏi lịch sử tìm kiếm</string>
+    <string name="recent_history">Tìm kiếm gần đây</string>
+
+    <string name="car">Ô tô</string>
+    <string name="motorcycle">Xe máy</string>
+    <string name="walking">Đi bộ</string>
+    <string name="google_maps_not_installed">Google Maps chưa được cài đặt</string>
 </resources>

@@ -21,9 +21,17 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+enum class TravelMode {
+    CAR,
+    MOTORCYCLE,
+    WALKING
+}
 
 @HiltViewModel
 class LocationViewModel @Inject constructor(
@@ -42,6 +50,52 @@ class LocationViewModel @Inject constructor(
 
     private val _isFriendsDataLoaded = MutableStateFlow(false)
     val isFriendsDataLoaded: StateFlow<Boolean> = _isFriendsDataLoaded.asStateFlow()
+
+    private val _selectedTravelMode = MutableStateFlow(TravelMode.CAR)
+    val selectedTravelMode: StateFlow<TravelMode> = _selectedTravelMode.asStateFlow()
+
+    private val _isFriendSearchActive = MutableStateFlow(false)
+    val isFriendSearchActive: StateFlow<Boolean> = _isFriendSearchActive.asStateFlow()
+
+    private val _friendSearchInput = MutableStateFlow("")
+    val friendSearchInput: StateFlow<String> = _friendSearchInput.asStateFlow()
+
+    private val _appliedFriendSearchQuery = MutableStateFlow("")
+    val appliedFriendSearchQuery: StateFlow<String> = _appliedFriendSearchQuery.asStateFlow()
+
+    val displayedFriends: StateFlow<List<FriendLocation>> = combine(
+        friendsLocations,
+        _appliedFriendSearchQuery
+    ) { friends, query ->
+        val normalizedQuery = query.trim()
+        if (normalizedQuery.isBlank()) {
+            friends
+        } else {
+            friends.filter { friend ->
+                friend.name.contains(normalizedQuery, ignoreCase = true) ||
+                        friend.id.contains(normalizedQuery, ignoreCase = true)
+            }
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5_000),
+        initialValue = emptyList<FriendLocation>()
+    )
+
+    val recentSearchedFriends: StateFlow<List<FriendLocation>> = combine(
+        friendsLocations,
+        appPreferences.friendSearchHistoryFlow
+    ) { friends, history ->
+        history.mapNotNull { entry ->
+            friends.firstOrNull { friend ->
+                friend.id == entry.friendId
+            }
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5_000),
+        initialValue = emptyList()
+    )
 
     private val locationCallback = object : LocationCallback() {
         override fun onLocationResult(result: LocationResult) {
@@ -114,6 +168,54 @@ class LocationViewModel @Inject constructor(
                 updatedAt = System.currentTimeMillis()
             )
             repository.updateSelfLocation(uid, userLocation)
+        }
+    }
+
+    fun setSelectedTravelMode(mode: TravelMode) {
+        _selectedTravelMode.value = mode
+    }
+
+    fun openFriendSearch() {
+        _friendSearchInput.value = ""
+        _appliedFriendSearchQuery.value = ""
+        _isFriendSearchActive.value = true
+    }
+
+    fun closeFriendSearch() {
+        _isFriendSearchActive.value = false
+        _friendSearchInput.value = ""
+        _appliedFriendSearchQuery.value = ""
+    }
+
+    fun updateFriendSearchInput(value: String) {
+        _friendSearchInput.value = value
+    }
+
+    fun submitFriendSearch() {
+        _appliedFriendSearchQuery.value = _friendSearchInput.value.trim()
+    }
+
+    fun clearFriendSearch() {
+        _friendSearchInput.value = ""
+        _appliedFriendSearchQuery.value = ""
+    }
+
+    fun recordFriendSearch(friendId: String) {
+        viewModelScope.launch {
+            appPreferences.recordFriendSearch(friendId)
+        }
+    }
+
+    fun removeFriendSearchHistory(friendId: String) {
+        if (friendId.isBlank()) return
+        viewModelScope.launch {
+            appPreferences.removeFriendSearchHistory(friendId)
+        }
+    }
+
+    fun clearFriendSearchHistory() {
+        viewModelScope.launch {
+            appPreferences.clearFriendSearchHistory()
         }
     }
 

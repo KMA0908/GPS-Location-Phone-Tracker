@@ -160,7 +160,7 @@
             android:id="@+id/groupMapUI"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:constraint_referenced_ids="cardBack,txtTitle,layoutTools,cardSearch" />
+            app:constraint_referenced_ids="cardBack,txtTitle" />
 
         <View
             android:id="@+id/viewDim"
@@ -187,8 +187,12 @@
 
     <include
         android:id="@+id/friendBottomSheetLayout"
-        layout="@layout/bottom_sheet_friend" />
+        layout="@layout/bottom_sheet_friend"/>
 
+    <include
+        android:id="@+id/friendSearchBottomSheetLayout"
+        layout="@layout/bottom_sheet_friend_search"
+        android:visibility="gone"/>
     <include
         android:id="@+id/directionTopPanel"
         android:visibility="gone"

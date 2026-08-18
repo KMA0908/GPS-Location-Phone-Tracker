@@ -7,7 +7,7 @@
     android:id="@+id/friendSearchBottomSheet"
 
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
 
     android:layout_gravity="bottom"
     android:layout_margin="16dp"
@@ -43,16 +43,15 @@
             android:layout_marginTop="20dp"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:background="@drawable/bg_bottom_nav_selected"
+            android:background="@drawable/bg_card"
             android:paddingHorizontal="12dp"
-            android:paddingVertical="8dp"
-            android:visibility="visible">
+            android:paddingVertical="8dp">
 
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
-                android:src="@drawable/ic_search"
-                app:tint="@color/bg_switch_permission"/>
+                android:contentDescription="@null"
+                android:src="@drawable/ic_search" />
 
             <EditText
                 android:id="@+id/edtFriendSearch"
@@ -80,6 +79,52 @@
 
         </LinearLayout>
 
+        <!-- History Section -->
+        <LinearLayout
+            android:id="@+id/historyContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:id="@+id/tvHistoryTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:text="@string/recent_history"
+                    android:textColor="@color/color_999999"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <ImageView
+                    android:id="@+id/btnClearAllHistory"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:contentDescription="@string/clear_search_history"
+                    android:padding="4dp"
+                    android:src="@drawable/ic_close"
+                    app:tint="@color/color_999999" />
+
+            </RelativeLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvSearchHistory"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:nestedScrollingEnabled="false" />
+
+        </LinearLayout>
+
         <!-- NO RESULTS -->
         <LinearLayout
             android:id="@+id/layoutNoFriendSearchResults"
@@ -93,6 +138,7 @@
             <ImageView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:contentDescription="@null"
                 android:src="@drawable/ic_no_friend"/>
 
             <TextView
@@ -108,11 +154,28 @@
 
         <!-- LIST -->
 
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/d_10"
+            android:orientation="horizontal">
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/d_10"
+                android:src="@drawable/ic_friend_mini"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="People you may know"
+                android:textSize="@dimen/d_12"/>
+        </LinearLayout>
+
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvSearchFriends"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="6dp"
             android:nestedScrollingEnabled="false"
             android:visibility="visible"/>
 

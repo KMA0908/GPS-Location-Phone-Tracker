@@ -38,6 +38,7 @@
         <!-- Header -->
 
         <LinearLayout
+            android:id="@+id/layoutFriendListHeader"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
@@ -47,6 +48,7 @@
             <ImageView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:contentDescription="@null"
                 android:src="@drawable/ic_friend_mini"/>
 
             <!-- Title -->
@@ -66,13 +68,13 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="#FFFFFF"
+                android:contentDescription="@string/todo"
                 android:src="@drawable/ic_add_friend_mini"
                 android:visibility="gone"/>
 
         </LinearLayout>
 
-        <!-- EMPTY -->
-
+        <!-- EMPTY (User has NO friends at all) -->
         <include
             android:id="@+id/layoutEmpty"
             android:visibility="visible"

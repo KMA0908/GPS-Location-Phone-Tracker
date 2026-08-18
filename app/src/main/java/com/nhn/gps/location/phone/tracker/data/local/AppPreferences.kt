@@ -85,6 +85,103 @@ class AppPreferences @Inject constructor(
         }
     }
 
+    data class FriendSearchHistoryEntry(
+        val friendId: String,
+        val searchedAt: Long
+    )
+
+    val friendSearchHistoryFlow: Flow<List<FriendSearchHistoryEntry>> = context.appDataStore.safeData.map { preferences ->
+        val json = preferences[FRIEND_SEARCH_HISTORY_JSON] ?: "[]"
+        try {
+            val array = JSONArray(json)
+            val list = mutableListOf<FriendSearchHistoryEntry>()
+            for (i in 0 until array.length()) {
+                val obj = array.getJSONObject(i)
+                val id = obj.optString("friendId")
+                if (id.isNotBlank()) {
+                    list.add(FriendSearchHistoryEntry(id, obj.optLong("searchedAt")))
+                }
+            }
+            list.distinctBy { it.friendId }
+                .sortedByDescending { it.searchedAt }
+                .take(2)
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    suspend fun recordFriendSearch(friendId: String) {
+        if (friendId.isBlank()) return
+        context.appDataStore.edit { preferences ->
+            val json = preferences[FRIEND_SEARCH_HISTORY_JSON] ?: "[]"
+            val list = try {
+                val array = JSONArray(json)
+                val temp = mutableListOf<FriendSearchHistoryEntry>()
+                for (i in 0 until array.length()) {
+                    val obj = array.getJSONObject(i)
+                    val id = obj.optString("friendId")
+                    if (id.isNotBlank()) {
+                        temp.add(FriendSearchHistoryEntry(id, obj.optLong("searchedAt")))
+                    }
+                }
+                temp
+            } catch (e: Exception) {
+                mutableListOf()
+            }
+
+            list.removeAll { it.friendId == friendId }
+            list.add(0, FriendSearchHistoryEntry(friendId, System.currentTimeMillis()))
+            
+            val newList = list.take(2)
+            val newArray = JSONArray()
+            newList.forEach { entry ->
+                val obj = JSONObject()
+                obj.put("friendId", entry.friendId)
+                obj.put("searchedAt", entry.searchedAt)
+                newArray.put(obj)
+            }
+            preferences[FRIEND_SEARCH_HISTORY_JSON] = newArray.toString()
+        }
+    }
+
+    suspend fun removeFriendSearchHistory(friendId: String) {
+        if (friendId.isBlank()) return
+        context.appDataStore.edit { preferences ->
+            val json = preferences[FRIEND_SEARCH_HISTORY_JSON] ?: "[]"
+            val list = try {
+                val array = JSONArray(json)
+                val temp = mutableListOf<FriendSearchHistoryEntry>()
+                for (i in 0 until array.length()) {
+                    val obj = array.getJSONObject(i)
+                    val id = obj.optString("friendId")
+                    if (id.isNotBlank()) {
+                        temp.add(FriendSearchHistoryEntry(id, obj.optLong("searchedAt")))
+                    }
+                }
+                temp
+            } catch (e: Exception) {
+                mutableListOf()
+            }
+
+            list.removeAll { it.friendId == friendId }
+            
+            val newArray = JSONArray()
+            list.forEach { entry ->
+                val obj = JSONObject()
+                obj.put("friendId", entry.friendId)
+                obj.put("searchedAt", entry.searchedAt)
+                newArray.put(obj)
+            }
+            preferences[FRIEND_SEARCH_HISTORY_JSON] = newArray.toString()
+        }
+    }
+
+    suspend fun clearFriendSearchHistory() {
+        context.appDataStore.edit { preferences ->
+            preferences.remove(FRIEND_SEARCH_HISTORY_JSON)
+        }
+    }
+
     val appOpenCount: Flow<Int> = context.appDataStore.safeData.map { preferences ->
         preferences[APP_OPEN_COUNT] ?: 0
     }
@@ -248,9 +345,10 @@ class AppPreferences @Inject constructor(
         val USER_AVATAR_KEY = stringPreferencesKey("user_avatar_key")
         val USER_ID = stringPreferencesKey("user_id")
         val SELECTED_LANGUAGE = stringPreferencesKey("selected_language")
-        val ZONES_JSON = androidx.datastore.preferences.core.stringPreferencesKey("zones_json")
-        val ZONE_ALERTS_JSON = androidx.datastore.preferences.core.stringPreferencesKey("zone_alerts_json")
-        val ZONE_STATES_JSON = androidx.datastore.preferences.core.stringPreferencesKey("zone_states_json")
+        val ZONES_JSON = stringPreferencesKey("zones_json")
+        val ZONE_ALERTS_JSON = stringPreferencesKey("zone_alerts_json")
+        val ZONE_STATES_JSON = stringPreferencesKey("zone_states_json")
         val FAVORITE_PLACES_JSON = stringPreferencesKey("favorite_places_json")
+        val FRIEND_SEARCH_HISTORY_JSON = stringPreferencesKey("friend_search_history_json")
     }
 }
