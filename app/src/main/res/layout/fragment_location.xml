@@ -22,7 +22,7 @@
 
         <!-- Back -->
 
-        <com.google.android.material.card.MaterialCardView
+                    <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardBack"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -124,8 +124,8 @@
                     android:id="@+id/search"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    app:cardCornerRadius="30dp"
-                    app:strokeWidth="0dp">
+                        app:cardCornerRadius="30dp"
+                        app:strokeWidth="0dp">
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -151,10 +151,10 @@
                             android:text="@string/search"/>
 
                     </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
+                    </com.google.android.material.card.MaterialCardView>
 
             </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+                    </com.google.android.material.card.MaterialCardView>
 
         <androidx.constraintlayout.widget.Group
             android:id="@+id/groupMapUI"
@@ -188,6 +188,18 @@
     <include
         android:id="@+id/friendBottomSheetLayout"
         layout="@layout/bottom_sheet_friend" />
+
+    <View
+        android:id="@+id/friendSearchScrim"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#66000000"
+        android:visibility="gone"
+        android:clickable="true" />
+
+    <include
+        android:id="@+id/friendSearchBottomSheetLayout"
+        layout="@layout/bottom_sheet_friend_search" />
 
     <include
         android:id="@+id/directionTopPanel"

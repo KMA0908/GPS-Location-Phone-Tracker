@@ -21,6 +21,8 @@ import kotlinx.coroutines.flow.map
 import org.json.JSONArray
 import org.json.JSONObject
 
+data class FriendSearchHistoryEntry(val friendId: String, val searchedAt: Long)
+
 private val Context.appDataStore: DataStore<Preferences> by preferencesDataStore(
     name = "app_preferences",
 )
@@ -29,6 +31,33 @@ private val Context.appDataStore: DataStore<Preferences> by preferencesDataStore
 class AppPreferences @Inject constructor(
     @param:ApplicationContext private val context: Context,
 ) {
+
+    val friendSearchHistoryFlow: Flow<List<FriendSearchHistoryEntry>> = context.appDataStore.safeData.map { preferences ->
+        parseFriendSearchHistory(preferences[FRIEND_SEARCH_HISTORY_JSON] ?: "[]")
+    }
+
+    suspend fun recordFriendSearch(friendId: String) {
+        if (friendId.isBlank()) return
+        context.appDataStore.edit { preferences ->
+            val entries = parseFriendSearchHistory(preferences[FRIEND_SEARCH_HISTORY_JSON] ?: "[]")
+                .filterNot { it.friendId == friendId }
+                .toMutableList()
+            entries.add(0, FriendSearchHistoryEntry(friendId, System.currentTimeMillis()))
+            preferences[FRIEND_SEARCH_HISTORY_JSON] = friendSearchHistoryJson(entries.take(2))
+        }
+    }
+
+    suspend fun removeFriendSearchHistory(friendId: String) {
+        context.appDataStore.edit { preferences ->
+            val entries = parseFriendSearchHistory(preferences[FRIEND_SEARCH_HISTORY_JSON] ?: "[]")
+                .filterNot { it.friendId == friendId }
+            preferences[FRIEND_SEARCH_HISTORY_JSON] = friendSearchHistoryJson(entries)
+        }
+    }
+
+    suspend fun clearFriendSearchHistory() {
+        context.appDataStore.edit { preferences -> preferences.remove(FRIEND_SEARCH_HISTORY_JSON) }
+    }
 
     val favoritePlacesFlow: Flow<List<FavoritePlaceRef>> = context.appDataStore.safeData.map { preferences ->
         val json = preferences[FAVORITE_PLACES_JSON] ?: "[]"
@@ -263,5 +292,27 @@ class AppPreferences @Inject constructor(
         val ZONE_ALERTS_JSON = androidx.datastore.preferences.core.stringPreferencesKey("zone_alerts_json")
         val ZONE_STATES_JSON = androidx.datastore.preferences.core.stringPreferencesKey("zone_states_json")
         val FAVORITE_PLACES_JSON = stringPreferencesKey("favorite_places_json")
+        val FRIEND_SEARCH_HISTORY_JSON = stringPreferencesKey("friend_search_history_json")
+
+        fun parseFriendSearchHistory(json: String): List<FriendSearchHistoryEntry> = try {
+            val array = JSONArray(json)
+            (0 until array.length()).mapNotNull { index ->
+                val item = array.optJSONObject(index) ?: return@mapNotNull null
+                item.optString("friendId").takeIf { it.isNotBlank() }?.let {
+                    FriendSearchHistoryEntry(it, item.optLong("searchedAt"))
+                }
+            }.sortedByDescending { it.searchedAt }
+        } catch (_: Exception) { emptyList() }
+
+        fun friendSearchHistoryJson(entries: List<FriendSearchHistoryEntry>): String {
+            val array = JSONArray()
+            entries.forEach { entry ->
+                array.put(JSONObject().apply {
+                    put("friendId", entry.friendId)
+                    put("searchedAt", entry.searchedAt)
+                })
+            }
+            return array.toString()
+        }
     }
 }

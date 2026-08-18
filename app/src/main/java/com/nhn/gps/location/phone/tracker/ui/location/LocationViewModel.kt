@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -43,6 +44,17 @@ class LocationViewModel @Inject constructor(
     private val _isFriendsDataLoaded = MutableStateFlow(false)
     val isFriendsDataLoaded: StateFlow<Boolean> = _isFriendsDataLoaded.asStateFlow()
 
+    private val _isFriendSearchActive = MutableStateFlow(false)
+    val isFriendSearchActive: StateFlow<Boolean> = _isFriendSearchActive.asStateFlow()
+    private val _friendSearchInput = MutableStateFlow("")
+    val friendSearchInput: StateFlow<String> = _friendSearchInput.asStateFlow()
+    private val _appliedFriendSearchQuery = MutableStateFlow("")
+    val appliedFriendSearchQuery: StateFlow<String> = _appliedFriendSearchQuery.asStateFlow()
+    private val _displayedFriends = MutableStateFlow<List<FriendLocation>>(emptyList())
+    val displayedFriends: StateFlow<List<FriendLocation>> = _displayedFriends.asStateFlow()
+    private val _recentSearchedFriends = MutableStateFlow<List<FriendLocation>>(emptyList())
+    val recentSearchedFriends: StateFlow<List<FriendLocation>> = _recentSearchedFriends.asStateFlow()
+
     private val locationCallback = object : LocationCallback() {
         override fun onLocationResult(result: LocationResult) {
             result.lastLocation?.let { loc ->
@@ -57,7 +69,31 @@ class LocationViewModel @Inject constructor(
     init {
         getCurrentLocation()
         observeAllLocations()
+        viewModelScope.launch {
+            combine(friendsLocations, appliedFriendSearchQuery) { friends, query ->
+                if (query.isBlank()) friends else friends.filter {
+                    it.name.contains(query, true) || it.id.contains(query, true)
+                }
+            }.collectLatest { _displayedFriends.value = it }
+        }
+        viewModelScope.launch {
+            appPreferences.friendSearchHistoryFlow.combine(friendsLocations) { entries, friends ->
+                entries.mapNotNull { entry -> friends.find { it.id == entry.friendId } }
+            }.collectLatest { _recentSearchedFriends.value = it }
+        }
     }
+
+    fun openFriendSearch() { _isFriendSearchActive.value = true; _friendSearchInput.value = ""; _appliedFriendSearchQuery.value = "" }
+    fun closeFriendSearch() { _isFriendSearchActive.value = false; _friendSearchInput.value = ""; _appliedFriendSearchQuery.value = "" }
+    fun updateFriendSearchInput(value: String) {
+        _friendSearchInput.value = value
+        if (value.isBlank()) _appliedFriendSearchQuery.value = ""
+    }
+    fun submitFriendSearch() { _appliedFriendSearchQuery.value = _friendSearchInput.value.trim() }
+    fun clearFriendSearch() { updateFriendSearchInput("") }
+    fun recordFriendSearch(friendId: String) { viewModelScope.launch { appPreferences.recordFriendSearch(friendId) } }
+    fun removeFriendSearchHistory(friendId: String) { viewModelScope.launch { appPreferences.removeFriendSearchHistory(friendId) } }
+    fun clearFriendSearchHistory() { viewModelScope.launch { appPreferences.clearFriendSearchHistory() } }
 
     @SuppressLint("MissingPermission")
     fun getCurrentLocation() {

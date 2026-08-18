@@ -52,6 +52,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.card.MaterialCardView
 import com.nhn.gps.location.phone.tracker.ui.friend.FriendAdapter
+import com.nhn.gps.location.phone.tracker.data.model.FriendLocation
+import android.view.inputmethod.EditorInfo
+import androidx.core.widget.doAfterTextChanged
 import com.nhn.gps.location.phone.tracker.ui.main.MainViewModel
 import com.nhn.gps.location.phone.tracker.ui.main.MainActivity
 import com.nhn.gps.location.phone.tracker.ui.permission.LocationPermissionBottomSheet
@@ -96,6 +99,9 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<MaterialCardView>
     private var bottomSheetCallback: BottomSheetBehavior.BottomSheetCallback? = null
     private lateinit var friendAdapter: FriendAdapter
+    private lateinit var friendSearchAdapter: FriendAdapter
+    private lateinit var friendSearchHistoryAdapter: FriendSearchHistoryAdapter
+    private lateinit var friendSearchBottomSheetBehavior: BottomSheetBehavior<MaterialCardView>
 
     private var isCompassEnabled = false
     private var hasAutoZoomed = false
@@ -104,6 +110,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     private var activeRouteName: String? = null
     private var activeRoutePosition: LatLng? = null
     private var activeRouteFriendId: String? = null
+    private var selectedFriendMarkerId: String? = null
     private var pendingMapRouteRequest: MapRouteRequest? = null
     private var routeJob: Job? = null
     private var lastRouteOrigin: LatLng? = null
@@ -146,8 +153,60 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
             }
         }
 
+        search.setOnClickListener { openFriendSearchSheet() }
+
         setupFriendBottomSheet()
+        setupFriendSearchBottomSheet()
         setupDirectionPanel()
+    }
+
+    private fun setupFriendSearchBottomSheet() = with(binding) {
+        friendSearchBottomSheetBehavior = BottomSheetBehavior.from(friendSearchBottomSheetLayout.friendSearchBottomSheet).apply {
+            isHideable = true
+            skipCollapsed = true
+            isFitToContents = false
+            expandedOffset = 80
+            state = BottomSheetBehavior.STATE_HIDDEN
+        }
+        friendSearchAdapter = FriendAdapter(showMoreButton = false, onItemClick = ::onSearchFriendClick)
+        friendSearchHistoryAdapter = FriendSearchHistoryAdapter(::onSearchFriendClick) { viewModel.removeFriendSearchHistory(it.id) }
+        friendSearchBottomSheetLayout.rvFriendSearch.layoutManager = LinearLayoutManager(requireContext())
+        friendSearchBottomSheetLayout.rvFriendSearch.adapter = friendSearchAdapter
+        friendSearchBottomSheetLayout.rvFriendSearchHistory.layoutManager = LinearLayoutManager(requireContext())
+        friendSearchBottomSheetLayout.rvFriendSearchHistory.adapter = friendSearchHistoryAdapter
+        friendSearchBottomSheetLayout.edtFriendSearch.doAfterTextChanged { viewModel.updateFriendSearchInput(it?.toString().orEmpty()) }
+        friendSearchBottomSheetLayout.edtFriendSearch.setOnEditorActionListener { _, actionId, event ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH || event?.keyCode == android.view.KeyEvent.KEYCODE_ENTER) { viewModel.submitFriendSearch(); true } else false
+        }
+        friendSearchBottomSheetLayout.searchInputLayout.setEndIconOnClickListener { viewModel.clearFriendSearch() }
+        friendSearchBottomSheetLayout.btnClearHistory.setOnClickListener { viewModel.clearFriendSearchHistory() }
+        friendSearchScrim.setOnClickListener { closeFriendSearchSheet() }
+    }
+
+    private fun openFriendSearchSheet() {
+        viewModel.openFriendSearch()
+        bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+        binding.friendSearchScrim.visibility = View.VISIBLE
+        binding.friendSearchBottomSheetLayout.friendSearchBottomSheet.post {
+            friendSearchBottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+            binding.friendSearchBottomSheetLayout.edtFriendSearch.requestFocus()
+            val controller = androidx.core.view.WindowCompat.getInsetsController(requireActivity().window, binding.friendSearchBottomSheetLayout.edtFriendSearch)
+            controller.show(androidx.core.view.WindowInsetsCompat.Type.ime())
+        }
+    }
+
+    private fun closeFriendSearchSheet() {
+        viewModel.closeFriendSearch()
+        val controller = androidx.core.view.WindowCompat.getInsetsController(requireActivity().window, binding.friendSearchBottomSheetLayout.edtFriendSearch)
+        controller.hide(androidx.core.view.WindowInsetsCompat.Type.ime())
+        binding.friendSearchBottomSheetLayout.edtFriendSearch.clearFocus()
+        binding.friendSearchScrim.visibility = View.GONE
+        friendSearchBottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+    }
+
+    private fun onSearchFriendClick(friend: FriendLocation) {
+        viewModel.recordFriendSearch(friend.id)
+        googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(friend.latitude, friend.longitude), DEFAULT_ZOOM))
     }
 
     private fun initializeGoogleMap() {
@@ -322,6 +381,8 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                         updateBottomSheetUi(friends)
                     }
                 }
+                launch { viewModel.displayedFriends.collectLatest { friendSearchAdapter.submitList(it); binding.friendSearchBottomSheetLayout.tvNoFriends.visibility = if (viewModel.appliedFriendSearchQuery.value.isNotBlank() && it.isEmpty()) View.VISIBLE else View.GONE } }
+                launch { viewModel.recentSearchedFriends.collectLatest { history -> friendSearchHistoryAdapter.submitList(history); binding.friendSearchBottomSheetLayout.recentHeader.visibility = if (history.isEmpty()) View.GONE else View.VISIBLE; binding.friendSearchBottomSheetLayout.rvFriendSearchHistory.visibility = if (history.isEmpty()) View.GONE else View.VISIBLE } }
 
                 launch {
                     mainViewModel.mapRouteRequest.collectLatest { request ->
@@ -466,10 +527,37 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
             }
             friendAvatars[friend.id] = friend.avatarUrl
         }
+        applyMarkerSelection()
     }
 
     private fun updateMarkerIcon(marker: Marker, avatarKey: String?, avatarUrl: String?, label: String? = null) {
         MapMarkerHelper.updateMarkerIcon(requireContext(), marker, avatarKey, avatarUrl, style = MapMarkerHelper.MarkerStyle.DEFAULT, label = label)
+    }
+
+    private fun applyMarkerSelection() {
+        val selectedId = selectedFriendMarkerId
+        friendMarkers.forEach { (friendId, marker) ->
+            marker.isVisible = friendId != selectedId
+        }
+
+        if (selectedId != null) {
+            selfMarker?.apply {
+                setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ic_my_location))
+                setAnchor(0.5f, 0.5f)
+                isVisible = true
+            }
+        } else {
+            selfMarker?.let { marker ->
+                val self = lastDataPackage
+                updateMarkerIcon(
+                    marker,
+                    mainViewModel.userAvatarKey.value,
+                    self?.avatar.orEmpty(),
+                    self?.name?.ifBlank { "You" } ?: "You",
+                )
+                marker.isVisible = true
+            }
+        }
     }
 
     private fun centerCameraOnSelf() {
@@ -587,7 +675,14 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                     friendId = it.id
                 )
                 true
-            } ?: false
+            } ?: run {
+                if (marker == selfMarker && selectedFriendMarkerId != null) {
+                    clearRoute()
+                    true
+                } else {
+                    false
+                }
+            }
         }
 
         // Long press gives the user a destination even when no friend marker is available.
@@ -739,6 +834,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         activeRouteName = name
         activeRoutePosition = destination
         activeRouteFriendId = friendId
+        selectedFriendMarkerId = friendId
         selectedDestinationMarker?.remove()
         selectedDestinationMarker = googleMap?.addMarker(
             MarkerOptions()
@@ -748,6 +844,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                 .anchor(0.5f, 1f)
                 .zIndex(11f)
         )
+        applyMarkerSelection()
 
         showDirectionLoading()
         requestRoute(origin, destination, fitBounds = true, force = true)
@@ -989,6 +1086,8 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         activeRouteName = null
         activeRoutePosition = null
         activeRouteFriendId = null
+        selectedFriendMarkerId = null
+        applyMarkerSelection()
         lastRouteOrigin = null
         lastRouteDestination = null
         lastRouteRequestAt = 0L
