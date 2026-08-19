@@ -192,6 +192,9 @@
     <string name="remove_from_favorites">Remove from favorites</string>
     <string name="save_place">Save</string>
     <string name="saved_place">Saved</string>
-    <string name="friends">Friends</string>
+    <string name="friends">People may you know</string>
     <string name="recent_history">Recent History</string>
+    <string name="search_friend">Search friend</string>
+    <string name="clear_search_history">Clear all search history</string>
+    <string name="no_friends_found">No friends found</string>
 </resources>

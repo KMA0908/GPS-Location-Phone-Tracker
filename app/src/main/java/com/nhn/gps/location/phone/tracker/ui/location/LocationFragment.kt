@@ -211,23 +211,24 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         friendSearchHistoryAdapter = FriendSearchHistoryAdapter(::onSearchFriendClick) {
             viewModel.removeFriendSearchHistory(it.id)
         }
-        friendSearchBottomSheetLayout.rvFriendSearch.layoutManager =
+        friendSearchBottomSheetLayout.rvSearchFriends.layoutManager =
             LinearLayoutManager(requireContext())
-        friendSearchBottomSheetLayout.rvFriendSearch.adapter = friendSearchAdapter
-        friendSearchBottomSheetLayout.rvFriendSearchHistory.layoutManager =
+        friendSearchBottomSheetLayout.rvSearchFriends.adapter = friendSearchAdapter
+        friendSearchBottomSheetLayout.rvSearchHistory.layoutManager =
             LinearLayoutManager(requireContext())
-        friendSearchBottomSheetLayout.rvFriendSearchHistory.adapter = friendSearchHistoryAdapter
+        friendSearchBottomSheetLayout.rvSearchHistory.adapter = friendSearchHistoryAdapter
         friendSearchBottomSheetLayout.edtFriendSearch.doAfterTextChanged {
             viewModel.updateFriendSearchInput(
                 it?.toString().orEmpty()
             )
+            friendSearchBottomSheetLayout.btnClearFriendSearch.isVisible = !it.isNullOrEmpty()
         }
         friendSearchBottomSheetLayout.edtFriendSearch.setOnEditorActionListener { _, actionId, event ->
             if (actionId == EditorInfo.IME_ACTION_SEARCH || event?.keyCode == android.view.KeyEvent.KEYCODE_ENTER) {
                 viewModel.submitFriendSearch(); true
             } else false
         }
-        friendSearchBottomSheetLayout.searchInputLayout.setEndIconOnClickListener { viewModel.clearFriendSearch() }
+        friendSearchBottomSheetLayout.btnClearFriendSearch.setOnClickListener { viewModel.clearFriendSearch() }
         friendSearchBottomSheetLayout.btnClearAllHistory.setOnClickListener { viewModel.clearFriendSearchHistory() }
         friendSearchScrim.setOnClickListener { closeFriendSearchSheet() }
     }
@@ -521,7 +522,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
             }.collectLatest { (friends, query) ->
                 friendSearchAdapter.submitList(friends)
                 val isQueryActive = query.isNotBlank()
-                binding.friendSearchBottomSheetLayout.tvNoFriends.visibility =
+                binding.friendSearchBottomSheetLayout.layoutNoFriendSearchResults.visibility =
                     if (isQueryActive && friends.isEmpty()) View.VISIBLE else View.GONE
                 binding.friendSearchBottomSheetLayout.friendsHeader.visibility =
                     if (isQueryActive) View.GONE else View.VISIBLE
@@ -714,9 +715,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         query: String
     ) {
         val visible = history.isNotEmpty() && input.isBlank() && query.isBlank()
-        binding.friendSearchBottomSheetLayout.recentHeader.visibility =
-            if (visible) View.VISIBLE else View.GONE
-        binding.friendSearchBottomSheetLayout.rvFriendSearchHistory.visibility =
+        binding.friendSearchBottomSheetLayout.historyContainer.visibility =
             if (visible) View.VISIBLE else View.GONE
     }
 

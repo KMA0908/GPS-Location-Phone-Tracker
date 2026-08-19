@@ -199,7 +199,8 @@
 
     <include
         android:id="@+id/friendSearchBottomSheetLayout"
-        layout="@layout/bottom_sheet_friend_search" />
+        layout="@layout/bottom_sheet_friend_search"
+        android:visibility="gone" />
 
     <include
         android:id="@+id/directionTopPanel"
