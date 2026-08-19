@@ -96,12 +96,16 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
         }
         
         layoutScanQR.btnMyQR.setOnClickListener {
-            navigationManager.navigateTo(AppDestination.ShowQrFriend)
+            navigationManager.navigateTo(AppDestination.ShowQrFriend(FriendCodeDisplayMode.QR))
         }
 
         layoutEnterCode.btnFindFriend.setOnClickListener {
             val code = layoutEnterCode.edtFriendCode.text.toString()
             showAddFriendInterThen { viewModel.findFriend(code) }
+        }
+
+        layoutEnterCode.btnMyCode.setOnClickListener {
+            navigationManager.navigateTo(AppDestination.ShowQrFriend(FriendCodeDisplayMode.CODE))
         }
 
         // Camera Layout listeners
@@ -117,7 +121,7 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
         }
         
         layoutCamera.btnMyQr.setOnClickListener {
-            navigationManager.navigateTo(AppDestination.ShowQrFriend)
+            navigationManager.navigateTo(AppDestination.ShowQrFriend(FriendCodeDisplayMode.QR))
         }
         
         layoutCamera.btnUpload.setOnClickListener {

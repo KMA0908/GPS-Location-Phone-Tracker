@@ -74,4 +74,15 @@
     <string name="search_friend">Tìm kiếm bạn bè</string>
     <string name="clear_search_history">Xóa tất cả lịch sử</string>
     <string name="no_friends_found">Không tìm thấy bạn bè</string>
+    <string name="my_code">Mã của tôi</string>
+    <string name="my_qr_code">Mã QR của tôi</string>
+    <string name="share_code">Chia sẻ mã</string>
+    <string name="share_qr">Chia sẻ QR</string>
+    <string name="uid_unavailable">Không có UID</string>
+    <string name="code_copied">Đã sao chép mã vào bộ nhớ tạm</string>
+    <string name="qr_downloaded">Đã tải mã QR về thư viện</string>
+    <string name="share_code_message">Thêm mình trên GPS Location Phone Tracker! Mã: %1$s. Nhập mã này trong tab Nhập mã.</string>
+    <string name="share_qr_message">Thêm mình trên GPS Location Phone Tracker! Dữ liệu QR: %1$s</string>
+    <string name="my_friend_code">Mã bạn bè của tôi</string>
+    <string name="share_code_guide">Chia sẻ mã của bạn với bạn bè</string>
 </resources>

@@ -105,7 +105,7 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>() {
             is AppDestination.Map -> LocationFragment.newInstance()
             is AppDestination.AddFriend -> AddFriendFragment.newInstance()
             is AppDestination.MyFriend -> MyFriendFragment.newInstance()
-            is AppDestination.ShowQrFriend -> ShowQrFriendFragment.newInstance()
+            is AppDestination.ShowQrFriend -> ShowQrFriendFragment.newInstance(destination.mode)
             is AppDestination.Settings -> SettingsFragment.newInstance()
             is AppDestination.SettingsLanguage -> SettingsLanguageFragment.newInstance()
             is AppDestination.PhoneLocator -> PhoneLocatorFragment.newInstance()

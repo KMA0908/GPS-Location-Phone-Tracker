@@ -7,7 +7,7 @@ sealed class AppDestination(val route: String) {
     data object Map : AppDestination("map")
     data object AddFriend : AppDestination("add_friend")
     data object MyFriend : AppDestination("my_friend")
-    data object ShowQrFriend : AppDestination("show_qr_friend")
+    data class ShowQrFriend(val mode: com.nhn.gps.location.phone.tracker.ui.friend.FriendCodeDisplayMode) : AppDestination("show_qr_friend")
     data object Tracking : AppDestination("tracking")
     data object Settings : AppDestination("settings")
     data object PhoneLocator : AppDestination("phone_locator")

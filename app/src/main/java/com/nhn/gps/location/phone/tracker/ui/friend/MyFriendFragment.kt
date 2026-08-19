@@ -71,7 +71,7 @@ class MyFriendFragment : BaseFragment<FragmentMyFriendBinding, FriendListViewMod
         }
 
         layoutFriendProfile.cardShowCode.setOnClickListener {
-            navigationManager.navigateTo(AppDestination.ShowQrFriend)
+            navigationManager.navigateTo(AppDestination.ShowQrFriend(FriendCodeDisplayMode.CODE))
         }
 
         layoutFriendProfile.cardShareProfile.setOnClickListener {

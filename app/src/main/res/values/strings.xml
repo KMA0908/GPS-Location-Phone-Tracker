@@ -192,9 +192,20 @@
     <string name="remove_from_favorites">Remove from favorites</string>
     <string name="save_place">Save</string>
     <string name="saved_place">Saved</string>
-    <string name="friends">People may you know</string>
+    <string name="friends">Friends</string>
     <string name="recent_history">Recent History</string>
     <string name="search_friend">Search friend</string>
     <string name="clear_search_history">Clear all search history</string>
     <string name="no_friends_found">No friends found</string>
+    <string name="my_code">My code</string>
+    <string name="my_qr_code">My QR code</string>
+    <string name="share_code">Share code</string>
+    <string name="share_qr">Share QR</string>
+    <string name="uid_unavailable">UID unavailable</string>
+    <string name="code_copied">Code copied to clipboard</string>
+    <string name="qr_downloaded">QR Code downloaded to gallery</string>
+    <string name="share_code_message">Add me on GPS Location Phone Tracker! Code: %1$s. Enter this code in Enter Code tab.</string>
+    <string name="share_qr_message">Add me on GPS Location Phone Tracker! My QR payload: %1$s</string>
+    <string name="my_friend_code">My Friend Code</string>
+    <string name="share_code_guide">Share your code with friends</string>
 </resources>
