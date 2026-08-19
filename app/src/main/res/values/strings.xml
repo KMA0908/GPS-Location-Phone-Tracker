@@ -208,4 +208,5 @@
     <string name="share_qr_message">Add me on GPS Location Phone Tracker! My QR payload: %1$s</string>
     <string name="my_friend_code">My Friend Code</string>
     <string name="share_code_guide">Share your code with friends</string>
+    <string name="show_qr">Show QR</string>
 </resources>
