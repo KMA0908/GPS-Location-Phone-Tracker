@@ -147,6 +147,9 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
             if (bottomSheetBehavior.state == BottomSheetBehavior.STATE_EXPANDED) {
                 bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
             } else {
+                if (::friendSearchBottomSheetBehavior.isInitialized && friendSearchBottomSheetBehavior.state != BottomSheetBehavior.STATE_HIDDEN) {
+                    closeFriendSearchSheet()
+                }
                 bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
             }
         }
@@ -176,7 +179,6 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                     BottomSheetBehavior.STATE_DRAGGING,
                     BottomSheetBehavior.STATE_SETTLING -> {
                         updateCardSearchPosition(bottomSheet)
-                        bottomSheet.post { updateCardSearchPosition(bottomSheet) }
                     }
 
                     BottomSheetBehavior.STATE_HIDDEN,
@@ -273,7 +275,10 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     private fun updateCardSearchPosition(activeSheet: View?) {
         if (!isAdded || view == null) return
         val card = binding.cardSearch
-        if (binding.directionTopPanel.root.isVisible || binding.directionBottomPanel.root.isVisible) return
+        if (binding.directionTopPanel.root.isVisible || binding.directionBottomPanel.root.isVisible) {
+            card.visibility = View.GONE
+            return
+        }
         card.visibility = View.VISIBLE
         card.bringToFront()
         if (activeSheet == null || activeSheet.visibility != View.VISIBLE) {
@@ -283,8 +288,6 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
             val target = activeSheet.top.toFloat() - spacing - card.bottom.toFloat()
             card.translationY = target.coerceAtMost(0f)
         }
-        card.requestLayout()
-        card.invalidate()
     }
 
     private fun onSearchFriendClick(friend: FriendLocation) {
@@ -408,7 +411,6 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                                 resources.getColor(R.color.bg_botton_friend, null)
                             )
                             updateCardSearchPosition(bottomSheet)
-                            bottomSheet.post { updateCardSearchPosition(bottomSheet) }
                         }
 
                         BottomSheetBehavior.STATE_HIDDEN,
@@ -496,25 +498,33 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                 launch {
                     viewModel.selectedTravelMode.collectLatest { renderSelectedTravelMode(it) }
                 }
-                launch {
-                    viewModel.displayedFriends.collectLatest {
-                        friendSearchAdapter.submitList(
-                            it
-                        ); binding.friendSearchBottomSheetLayout.tvNoFriends.visibility =
-                        if (viewModel.appliedFriendSearchQuery.value.isNotBlank() && it.isEmpty()) View.VISIBLE else View.GONE
-                    }
-                }
-                launch {
-                    viewModel.recentSearchedFriends.collectLatest { history ->
-                        friendSearchHistoryAdapter.submitList(history)
-                        renderSearchHistoryVisibility(history)
-                    }
-                }
-                launch {
-                    viewModel.friendSearchInput.collectLatest {
-                        renderSearchHistoryVisibility(viewModel.recentSearchedFriends.value)
-                    }
-                }
+        launch {
+            combine(
+                viewModel.displayedFriends,
+                viewModel.appliedFriendSearchQuery
+            ) { friends, query ->
+                friends to query
+            }.collectLatest { (friends, query) ->
+                friendSearchAdapter.submitList(friends)
+                val isQueryActive = query.isNotBlank()
+                binding.friendSearchBottomSheetLayout.tvNoFriends.visibility =
+                    if (isQueryActive && friends.isEmpty()) View.VISIBLE else View.GONE
+                binding.friendSearchBottomSheetLayout.peopleYouMayKnowHeader.visibility =
+                    if (isQueryActive) View.GONE else View.VISIBLE
+            }
+        }
+        launch {
+            combine(
+                viewModel.recentSearchedFriends,
+                viewModel.friendSearchInput,
+                viewModel.appliedFriendSearchQuery
+            ) { history, input, query ->
+                Triple(history, input, query)
+            }.collectLatest { (history, input, query) ->
+                friendSearchHistoryAdapter.submitList(history)
+                renderSearchHistoryVisibility(history, input, query)
+            }
+        }
 
                 launch {
                     mainViewModel.mapRouteRequest.collectLatest { request ->
@@ -548,7 +558,14 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         if (isGranted) {
             viewDim.visibility = View.GONE
             imgAccessLocation.visibility = View.GONE
-            groupMapUI.visibility = View.VISIBLE
+            if (activeRoutePosition == null) {
+                groupMapUI.visibility = View.VISIBLE
+            } else {
+                cardBack.visibility = View.VISIBLE
+                txtTitle.visibility = View.VISIBLE
+                layoutTools.visibility = View.GONE
+                cardSearch.visibility = View.GONE
+            }
         } else {
             viewDim.visibility = View.VISIBLE
             imgAccessLocation.visibility = View.VISIBLE
@@ -677,10 +694,12 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         applyMarkerSelection()
     }
 
-    private fun renderSearchHistoryVisibility(history: List<FriendLocation>) {
-        val visible = history.isNotEmpty() &&
-                viewModel.friendSearchInput.value.isBlank() &&
-                viewModel.appliedFriendSearchQuery.value.isBlank()
+    private fun renderSearchHistoryVisibility(
+        history: List<FriendLocation>,
+        input: String,
+        query: String
+    ) {
+        val visible = history.isNotEmpty() && input.isBlank() && query.isBlank()
         binding.friendSearchBottomSheetLayout.recentHeader.visibility =
             if (visible) View.VISIBLE else View.GONE
         binding.friendSearchBottomSheetLayout.rvFriendSearchHistory.visibility =
