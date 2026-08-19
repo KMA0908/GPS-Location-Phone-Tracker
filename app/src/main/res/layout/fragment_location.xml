@@ -132,8 +132,7 @@
                         android:gravity="center_vertical"
                         android:padding="17dp"
                         android:orientation="horizontal"
-                        android:paddingHorizontal="20dp"
-                        tools:ignore="UseCompoundDrawables">
+                        android:paddingHorizontal="20dp">
 
                         <ImageView
                             android:id="@+id/imgChat"
@@ -200,8 +199,7 @@
 
     <include
         android:id="@+id/friendSearchBottomSheetLayout"
-        layout="@layout/bottom_sheet_friend_search"
-        android:visibility="gone"/>
+        layout="@layout/bottom_sheet_friend_search" />
 
     <include
         android:id="@+id/directionTopPanel"

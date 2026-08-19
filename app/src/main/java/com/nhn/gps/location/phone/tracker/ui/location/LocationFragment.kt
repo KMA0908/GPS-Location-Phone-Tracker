@@ -144,13 +144,14 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         }
 
         cardImgFriend.setOnClickListener {
-            if (bottomSheetBehavior.state == BottomSheetBehavior.STATE_EXPANDED) {
-                bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
-            } else {
+            val behavior = bottomSheetBehavior
+            if (behavior.state == BottomSheetBehavior.STATE_EXPANDED || behavior.state == BottomSheetBehavior.STATE_HALF_EXPANDED) {
+                behavior.state = BottomSheetBehavior.STATE_HIDDEN
+            } else if (behavior.state == BottomSheetBehavior.STATE_HIDDEN || behavior.state == BottomSheetBehavior.STATE_COLLAPSED) {
                 if (::friendSearchBottomSheetBehavior.isInitialized && friendSearchBottomSheetBehavior.state != BottomSheetBehavior.STATE_HIDDEN) {
                     closeFriendSearchSheet()
                 }
-                bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+                behavior.state = BottomSheetBehavior.STATE_EXPANDED
             }
         }
 
@@ -284,7 +285,6 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
             return
         }
         card.visibility = View.VISIBLE
-        card.bringToFront()
         if (activeSheet == null || activeSheet.visibility != View.VISIBLE) {
             card.translationY = 0f
         } else {
@@ -368,9 +368,11 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     }
 
     private fun setupFriendBottomSheet() = with(binding) {
-        bottomSheetBehavior = BottomSheetBehavior.from(friendBottomSheetLayout.friendBottomSheet)
-        bottomSheetBehavior.isHideable = true
-        bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+        bottomSheetBehavior = BottomSheetBehavior.from(friendBottomSheetLayout.friendBottomSheet).apply {
+            isHideable = true
+            skipCollapsed = true
+            state = BottomSheetBehavior.STATE_HIDDEN
+        }
 
         friendAdapter = FriendAdapter(
             showMoreButton = false,
