@@ -173,6 +173,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
             }
         searchBottomSheetCallback = object : BottomSheetBehavior.BottomSheetCallback() {
             override fun onStateChanged(bottomSheet: View, newState: Int) {
+                renderSearchActionSelected(newState != BottomSheetBehavior.STATE_HIDDEN)
                 when (newState) {
                     BottomSheetBehavior.STATE_EXPANDED,
                     BottomSheetBehavior.STATE_HALF_EXPANDED,
@@ -182,9 +183,12 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                     }
 
                     BottomSheetBehavior.STATE_HIDDEN,
-                    BottomSheetBehavior.STATE_COLLAPSED -> updateCardSearchPosition(
-                        activeVisibleSheet()
-                    )
+                    BottomSheetBehavior.STATE_COLLAPSED -> {
+                        updateCardSearchPosition(activeVisibleSheet())
+                        if (newState == BottomSheetBehavior.STATE_HIDDEN) {
+                            binding.friendSearchScrim.visibility = View.GONE
+                        }
+                    }
                 }
             }
 
@@ -221,7 +225,9 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
 
     private fun openFriendSearchSheet() {
         viewModel.openFriendSearch()
-        bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+        if (::bottomSheetBehavior.isInitialized && bottomSheetBehavior.state != BottomSheetBehavior.STATE_HIDDEN) {
+            bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+        }
         binding.friendSearchScrim.visibility = View.VISIBLE
         renderSearchActionSelected(true)
         binding.friendSearchBottomSheetLayout.friendSearchBottomSheet.post {
@@ -243,27 +249,25 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         )
         controller.hide(androidx.core.view.WindowInsetsCompat.Type.ime())
         binding.friendSearchBottomSheetLayout.edtFriendSearch.clearFocus()
-        binding.friendSearchScrim.visibility = View.GONE
         friendSearchBottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
-        renderSearchActionSelected(false)
+    }
+
+    private fun renderFriendActionSelected(isSelected: Boolean) = with(binding) {
+        cardImgFriend.setCardBackgroundColor(
+            if (isSelected) resources.getColor(R.color.bg_botton_friend, null) else Color.TRANSPARENT
+        )
     }
 
     private fun renderSearchActionSelected(isSelected: Boolean) = with(binding) {
-        search.setCardBackgroundColor(
+        val selectedColor = resources.getColor(R.color.bg_botton_friend, null)
+        val defaultColor = resources.getColor(R.color.text_primary, null)
+        val bgColor =
             resources.getColor(if (isSelected) R.color.color_e8f5e9 else R.color.white, null)
-        )
-        searchLabel.setTextColor(
-            resources.getColor(
-                if (isSelected) R.color.bg_botton_friend else R.color.text_primary,
-                null
-            )
-        )
-        imgChat.imageTintList = ColorStateList.valueOf(
-            resources.getColor(
-                if (isSelected) R.color.bg_botton_friend else R.color.text_primary,
-                null
-            )
-        )
+
+        search.setCardBackgroundColor(bgColor)
+        searchLabel.setTextColor(if (isSelected) selectedColor else defaultColor)
+        imgChat.imageTintList =
+            ColorStateList.valueOf(if (isSelected) selectedColor else defaultColor)
     }
 
     private fun activeVisibleSheet(): View? = when {
@@ -354,10 +358,11 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         val options = binding.directionTopPanel.layoutRoutes
         val selectedColor = resources.getColor(R.color.color_e8f5e9, null)
         val defaultColor = resources.getColor(R.color.white, null)
-        for (index in 0 until minOf(options.childCount, 3)) {
+        val modes = DirectionTravelMode.entries
+        for (index in 0 until minOf(options.childCount, modes.size)) {
             val item = options.getChildAt(index) as? MaterialCardView ?: continue
             item.setCardBackgroundColor(
-                if (DirectionTravelMode.entries[index] == selectedMode) selectedColor else defaultColor
+                if (modes[index] == selectedMode) selectedColor else defaultColor
             )
         }
     }
@@ -402,24 +407,23 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         bottomSheetCallback = object : BottomSheetBehavior.BottomSheetCallback() {
             override fun onStateChanged(bottomSheet: View, newState: Int) {
                 withBinding {
+                    renderFriendActionSelected(newState != BottomSheetBehavior.STATE_HIDDEN)
                     when (newState) {
                         BottomSheetBehavior.STATE_EXPANDED,
                         BottomSheetBehavior.STATE_HALF_EXPANDED,
                         BottomSheetBehavior.STATE_DRAGGING,
                         BottomSheetBehavior.STATE_SETTLING -> {
-                            cardImgFriend.setCardBackgroundColor(
-                                resources.getColor(R.color.bg_botton_friend, null)
-                            )
                             updateCardSearchPosition(bottomSheet)
                         }
 
                         BottomSheetBehavior.STATE_HIDDEN,
                         BottomSheetBehavior.STATE_COLLAPSED -> {
-                            cardImgFriend.setCardBackgroundColor(Color.TRANSPARENT)
                             updateCardSearchPosition(activeVisibleSheet())
-                            pendingDestination?.let {
-                                navigationManager.navigateTo(it)
-                                pendingDestination = null
+                            if (newState == BottomSheetBehavior.STATE_HIDDEN) {
+                                pendingDestination?.let {
+                                    navigationManager.navigateTo(it)
+                                    pendingDestination = null
+                                }
                             }
                         }
                     }

@@ -17,8 +17,7 @@
         android:layout_height="match_parent"
         android:gravity="center"
         android:orientation="horizontal"
-        android:alpha="0.9"
-        android:background="#FFFFFF">
+        android:alpha="0.9">
 
         <ImageView
             android:id="@+id/ivMode"
