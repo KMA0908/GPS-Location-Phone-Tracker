@@ -203,6 +203,9 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                     isFriendSheetVisible = false,
                     isSearchActive = newState != BottomSheetBehavior.STATE_HIDDEN
                 )
+                if (newState == BottomSheetBehavior.STATE_COLLAPSED || newState == BottomSheetBehavior.STATE_HIDDEN) {
+                    hideKeyboardAndClearSearchFocus()
+                }
                 when (newState) {
                     BottomSheetBehavior.STATE_EXPANDED,
                     BottomSheetBehavior.STATE_HALF_EXPANDED,
@@ -278,13 +281,19 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
 
     private fun closeFriendSearchSheet() {
         if (!::friendSearchBottomSheetBehavior.isInitialized) return
+        hideKeyboardAndClearSearchFocus()
+        viewModel.closeFriendSearch()
+        friendSearchBottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+    }
+
+    private fun hideKeyboardAndClearSearchFocus() {
+        if (view == null) return
+        binding.friendSearchBottomSheetLayout.edtFriendSearch.clearFocus()
         val controller = androidx.core.view.WindowCompat.getInsetsController(
             requireActivity().window,
             binding.friendSearchBottomSheetLayout.edtFriendSearch
         )
         controller.hide(androidx.core.view.WindowInsetsCompat.Type.ime())
-        binding.friendSearchBottomSheetLayout.edtFriendSearch.clearFocus()
-        friendSearchBottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
     }
 
     private fun renderBottomActionState(

@@ -69,6 +69,10 @@ class ExploreFragment : BaseFragment<FragmentExploreBinding, ExploreViewModel>()
             viewModel.selectRandomPlace()
         }
 
+        btnExploreNow.setOnClickListener {
+            viewModel.exploreSelectedPlace()
+        }
+
         btnReset.setOnClickListener {
             globeView.resetView()
             viewModel.clearSelection()

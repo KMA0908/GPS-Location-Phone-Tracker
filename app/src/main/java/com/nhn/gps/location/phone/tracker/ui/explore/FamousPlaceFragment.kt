@@ -2,19 +2,26 @@ package com.nhn.gps.location.phone.tracker.ui.explore
 
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
-import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.viewModels
-import androidx.recyclerview.widget.GridLayoutManager
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.nhn.gps.location.phone.tracker.R
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
+import com.nhn.gps.location.phone.tracker.data.model.FamousPlaceModel
 import com.nhn.gps.location.phone.tracker.databinding.FragmentFamousPlaceListBinding
-import com.nhn.gps.location.phone.tracker.databinding.ItemFamousCategoryBinding
+import com.nhn.gps.location.phone.tracker.databinding.ItemCategoryFilterBinding
 import com.nhn.gps.location.phone.tracker.navigation.AppDestination
 import com.nhn.gps.location.phone.tracker.ui.main.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class FamousPlaceFragment : BaseFragment<FragmentFamousPlaceListBinding, FamousPlaceViewModel>() {
@@ -23,10 +30,17 @@ class FamousPlaceFragment : BaseFragment<FragmentFamousPlaceListBinding, FamousP
     private val mainViewModel: MainViewModel by viewModels({ requireActivity() })
 
     private val categoryAdapter = FamousCategoryAdapter { category ->
-        // Keep the app's original flow: choosing a category only changes the
-        // content. Earth is opened explicitly from the "See map" action.
         viewModel.onCategorySelected(category.filterName)
-        mainViewModel.setSelectedFamousCategoryId(category.id)
+    }
+
+    private val placesAdapter by lazy {
+        FamousPlaceAdapter(
+            onClick = { place -> viewModel.onPlaceClicked(place) },
+            onFavoriteClick = { id -> viewModel.toggleFavorite(id) },
+            onBindPhoto = { item, imageView ->
+                imageView.loadFamousPlaceImage(item)
+            }
+        )
     }
 
     override fun createBinding(
@@ -36,22 +50,91 @@ class FamousPlaceFragment : BaseFragment<FragmentFamousPlaceListBinding, FamousP
         FragmentFamousPlaceListBinding.inflate(inflater, container, false)
 
     override fun setupViews(savedInstanceState: Bundle?) = with(binding) {
-        btnBack.setOnClickListener { handleToolbarBack() }
+        header.btnBack.setOnClickListener { handleToolbarBack() }
+        header.tvTitle.setText(R.string.famous_place)
+        header.btnRight.setOnClickListener {
+            // TODO: Header favorite chưa có flow riêng. Hiện tại có thể lọc danh sách yêu thích nếu cần.
+        }
+
+        etSearch.addTextChangedListener {
+            viewModel.onSearchQueryChanged(it.toString())
+        }
+
         btnSeeMap.setOnClickListener {
             navigationManager.navigateTo(AppDestination.Explore)
         }
+
         rvCategories.apply {
-            layoutManager = GridLayoutManager(requireContext(), 2)
+            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
             adapter = categoryAdapter
             itemAnimator = null
         }
+
+        rvFamousPlaces.apply {
+            layoutManager = LinearLayoutManager(requireContext())
+            adapter = placesAdapter
+        }
+
+        btnSeeAll.setOnClickListener {
+            etSearch.text?.clear()
+            viewModel.onCategorySelected("All")
+        }
+
         categoryAdapter.submit(CATEGORIES)
     }
 
-    override fun observeData() = Unit
+    override fun observeData() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel.uiState.collectLatest { state ->
+                        handleUiState(state)
+                    }
+                }
+                launch {
+                    viewModel.effect.collectLatest { effect ->
+                        when (effect) {
+                            is FamousPlaceEffect.OpenPlaceDetail -> {
+                                mainViewModel.setSelectedPlaceId(effect.placeId)
+                                navigationManager.navigateTo(AppDestination.PlaceDetail)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun handleUiState(state: FamousPlaceUiState) = with(binding) {
+        progressBar.visibility = if (state.isLoading) View.VISIBLE else View.GONE
+        
+        categoryAdapter.setSelected(state.selectedCategory)
+        
+        featuredContainer.visibility = if (state.featuredPlace != null) View.VISIBLE else View.GONE
+        state.featuredPlace?.let { renderFeaturedPlace(it) }
+
+        trendingHeader.visibility = if (state.trendingPlaces.isNotEmpty()) View.VISIBLE else View.GONE
+        placesAdapter.submitList(state.trendingPlaces)
+    }
+
+    private fun renderFeaturedPlace(place: FamousPlaceModel) = with(binding.featuredItem) {
+        tvFeaturedName.text = place.name
+        tvFeaturedLocation.text = place.location
+        tvFeaturedRating.text = String.format(java.util.Locale.getDefault(), "%.1f", place.rating)
+        tvKm.text = String.format(java.util.Locale.getDefault(), "%.1f km", place.distanceKm)
+        
+        ivFeatured.loadFamousPlaceImage(place)
+
+        val iconRes = if (place.isFavorite) R.drawable.ic_love_fill else R.drawable.ic_love_white
+        btnFavorite.setImageResource(iconRes)
+
+        root.setOnClickListener { viewModel.onPlaceClicked(place) }
+        btnFavorite.setOnClickListener { viewModel.toggleFavorite(place.id) }
+    }
 
     override fun onDestroyView() {
         binding.rvCategories.adapter = null
+        binding.rvFamousPlaces.adapter = null
         super.onDestroyView()
     }
 
@@ -59,8 +142,6 @@ class FamousPlaceFragment : BaseFragment<FragmentFamousPlaceListBinding, FamousP
         val id: Int,
         @StringRes val nameRes: Int,
         val filterName: String,
-        @DrawableRes val photoRes: Int,
-        @DrawableRes val iconRes: Int,
     )
 
     private class FamousCategoryAdapter(
@@ -68,6 +149,7 @@ class FamousPlaceFragment : BaseFragment<FragmentFamousPlaceListBinding, FamousP
     ) : RecyclerView.Adapter<FamousCategoryAdapter.CategoryViewHolder>() {
 
         private val items = mutableListOf<FamousCategory>()
+        private var selectedFilterName: String = "All"
 
         fun submit(categories: List<FamousCategory>) {
             items.clear()
@@ -75,9 +157,15 @@ class FamousPlaceFragment : BaseFragment<FragmentFamousPlaceListBinding, FamousP
             notifyDataSetChanged()
         }
 
+        fun setSelected(filterName: String) {
+            if (selectedFilterName == filterName) return
+            selectedFilterName = filterName
+            notifyDataSetChanged()
+        }
+
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CategoryViewHolder =
             CategoryViewHolder(
-                ItemFamousCategoryBinding.inflate(LayoutInflater.from(parent.context), parent, false),
+                ItemCategoryFilterBinding.inflate(LayoutInflater.from(parent.context), parent, false),
             )
 
         override fun onBindViewHolder(holder: CategoryViewHolder, position: Int) =
@@ -86,13 +174,22 @@ class FamousPlaceFragment : BaseFragment<FragmentFamousPlaceListBinding, FamousP
         override fun getItemCount(): Int = items.size
 
         inner class CategoryViewHolder(
-            private val binding: ItemFamousCategoryBinding,
+            private val binding: ItemCategoryFilterBinding,
         ) : RecyclerView.ViewHolder(binding.root) {
 
             fun bind(category: FamousCategory) = with(binding) {
-                tvName.setText(category.nameRes)
-                ivPhoto.setImageResource(category.photoRes)
-                ivIcon.setImageResource(category.iconRes)
+                tvCategoryName.setText(category.nameRes)
+                val isSelected = category.filterName == selectedFilterName
+                
+                val context = root.context
+                val bgColor = if (isSelected) context.getColor(R.color.color_e8f5e9) else context.getColor(R.color.white)
+                val strokeColor = if (isSelected) context.getColor(R.color.bg_switch_permission) else context.getColor(R.color.color_e0e0e0)
+                val textColor = if (isSelected) context.getColor(R.color.bg_switch_permission) else context.getColor(R.color.text_secondary)
+
+                cardCategory.setCardBackgroundColor(bgColor)
+                cardCategory.strokeColor = strokeColor
+                tvCategoryName.setTextColor(textColor)
+
                 root.setOnClickListener { onClick(category) }
             }
         }
@@ -100,20 +197,11 @@ class FamousPlaceFragment : BaseFragment<FragmentFamousPlaceListBinding, FamousP
 
     companion object {
         private val CATEGORIES = listOf(
-            FamousCategory(1, R.string.category_romantic, "Romantic", R.drawable.place_category_1, R.drawable.place_type_icon_14),
-            FamousCategory(2, R.string.category_amusement, "Theme Parks", R.drawable.place_category_2, R.drawable.place_type_icon_1),
-            FamousCategory(3, R.string.category_mountain, "Mountains", R.drawable.place_category_3, R.drawable.place_type_icon_2),
-            FamousCategory(4, R.string.category_nature, "Nature", R.drawable.place_category_4, R.drawable.place_type_icon_3),
-            FamousCategory(5, R.string.category_dangerous, "Dangerous", R.drawable.place_category_5, R.drawable.place_type_icon_4),
-            FamousCategory(6, R.string.category_mysterious, "Mysterious", R.drawable.place_category_6, R.drawable.place_type_icon_5),
-            FamousCategory(7, R.string.category_surf, "Surf", R.drawable.place_category_7, R.drawable.place_type_icon_6),
-            FamousCategory(8, R.string.category_ghost_towns, "Ghost Towns", R.drawable.place_category_8, R.drawable.place_type_icon_7),
-            FamousCategory(9, R.string.category_filming, "Film Locations", R.drawable.place_category_9, R.drawable.place_type_icon_8),
-            FamousCategory(10, R.string.category_weather, "Extreme Weather", R.drawable.place_category_10, R.drawable.place_type_icon_9),
-            FamousCategory(11, R.string.category_holiday, "Family", R.drawable.place_category_11, R.drawable.place_type_icon_10),
-            FamousCategory(12, R.string.category_destinations, "Cities", R.drawable.place_category_12, R.drawable.place_type_icon_11),
-            FamousCategory(13, R.string.category_clubs, "Clubs", R.drawable.place_category_13, R.drawable.place_type_icon_12),
-            FamousCategory(14, R.string.category_night, "Nightlife", R.drawable.place_category_14, R.drawable.place_type_icon_13),
+            FamousCategory(0, R.string.all, "All"),
+            FamousCategory(1, R.string.famous_place, "Romantic"), // Mapping "Famous" to "Romantic" as per initial data mapping logic if needed, or just "All"
+            FamousCategory(7, R.string.category_surf, "Surf"), // Beach
+            FamousCategory(12, R.string.category_destinations, "Cities"), // City
+            FamousCategory(4, R.string.category_nature, "Nature"),
         )
 
         fun newInstance() = FamousPlaceFragment()

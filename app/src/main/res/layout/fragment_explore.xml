@@ -30,43 +30,89 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/btnBack"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_marginStart="16dp"
+            <!-- New Header -->
+            <LinearLayout
+                android:id="@+id/headerContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
-                android:clickable="true"
-                android:focusable="true"
-                android:visibility="visible"
-                app:cardBackgroundColor="#F2FFFFFF"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:strokeColor="#26003D45"
-                app:strokeWidth="1dp">
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="16dp"
+                app:layout_constraintTop_toTopOf="parent">
 
                 <ImageView
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:contentDescription="@string/back"
-                    android:padding="12dp"
-                    android:src="@drawable/ic_back" />
-            </com.google.android.material.card.MaterialCardView>
+                    android:id="@+id/ivEarthIcon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_earth_3d" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/plus_jakarta_sans_extra_bold"
+                        android:text="@string/earth_3d"
+                        android:textColor="@color/white"
+                        android:textSize="18sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/explore_the_world"
+                        android:textColor="#B0B3B8"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/btnRandom"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:cardBackgroundColor="#26FFFFFF"
+                    app:cardCornerRadius="10dp"
+                    app:cardElevation="0dp"
+                    app:strokeColor="#4DFFFFFF"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:src="@drawable/ic_sw_famous"
+                            android:tint="@color/white"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/random"
+                            android:textColor="@color/white"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
 
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/searchCard"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_marginStart="9dp"
-                android:layout_marginEnd="16dp"
-                app:cardBackgroundColor="#F7FFFFFF"
-                app:cardCornerRadius="12dp"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginHorizontal="16dp"
+                app:cardBackgroundColor="#F21A1D21"
+                app:cardCornerRadius="26dp"
                 app:cardElevation="2dp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toEndOf="@id/btnBack"
-                app:layout_constraintTop_toTopOf="@id/btnBack"
+                app:layout_constraintTop_toBottomOf="@id/headerContainer"
                 app:strokeColor="#1F003D45"
                 app:strokeWidth="1dp">
 
@@ -80,8 +126,9 @@
                         android:layout_width="48dp"
                         android:layout_height="48dp"
                         android:contentDescription="@null"
-                        android:padding="13dp"
-                        android:src="@drawable/ic_search" />
+                        android:padding="14dp"
+                        android:src="@drawable/ic_search"
+                        app:tint="#B0B3B8" />
 
                     <EditText
                         android:id="@+id/etSearch"
@@ -95,9 +142,16 @@
                         android:inputType="textNoSuggestions"
                         android:maxLines="1"
                         android:padding="0dp"
-                        android:textColor="#151515"
-                        android:textColorHint="#80151515"
+                        android:textColor="@color/white"
+                        android:textColorHint="#80FFFFFF"
                         android:textSize="14sp" />
+
+                    <ImageView
+                        android:id="@+id/ivMicroPlaceholder"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/ic_mic_famous"
+                        app:tint="#B0B3B8" />
 
                     <ImageView
                         android:id="@+id/ivClear"
@@ -108,30 +162,6 @@
                         android:src="@drawable/ic_earth_close"
                         android:visibility="gone" />
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/btnRandom"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_marginTop="12dp"
-                android:layout_marginEnd="16dp"
-                android:clickable="true"
-                android:focusable="true"
-                app:cardBackgroundColor="#F2FFFFFF"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/searchCard"
-                app:strokeColor="#26003D45"
-                app:strokeWidth="1dp">
-
-                <ImageView
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:contentDescription="@string/random_place"
-                    android:padding="12dp"
-                    android:src="@drawable/ic_earth_random" />
             </com.google.android.material.card.MaterialCardView>
 
             <com.google.android.material.card.MaterialCardView
@@ -169,7 +199,7 @@
         android:focusable="true"
         android:orientation="vertical"
         android:paddingTop="10dp"
-        android:paddingBottom="20dp"
+        android:paddingBottom="24dp"
         android:visibility="gone"
         app:behavior_hideable="true"
         app:behavior_peekHeight="0dp"
@@ -180,7 +210,7 @@
             android:layout_height="4dp"
             android:layout_gravity="center_horizontal"
             android:layout_marginBottom="8dp"
-            android:background="#CBD1D1" />
+            android:background="@drawable/bg_handle" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -219,7 +249,7 @@
             android:orientation="horizontal"
             android:paddingStart="16dp"
             android:paddingEnd="6dp"
-            tools:listitem="@layout/item_earth_place_photo" />
+            tools:listitem="@layout/item_explore_vertical_card" />
 
         <TextView
             android:id="@+id/tvPlaceDescription"
@@ -233,16 +263,36 @@
             android:lineSpacingExtra="2dp"
             android:maxLines="5"
             android:textColor="#5F6366"
-            android:textSize="12sp" />
+            android:textSize="12sp"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnExploreNow"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/d_60"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="16dp"
+            android:text="@string/explore_now"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:backgroundTint="@color/bg_switch_permission"
+            app:cornerRadius="@dimen/d_30"
+            app:icon="@drawable/ic_continue"
+            app:iconGravity="textEnd"
+            app:iconPadding="8dp" />
 
         <LinearLayout
+            android:id="@+id/oldActionLayout"
             android:layout_width="match_parent"
             android:layout_height="52dp"
             android:layout_marginStart="16dp"
             android:layout_marginTop="16dp"
             android:layout_marginEnd="16dp"
             android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:visibility="gone">
 
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/btnDirections"

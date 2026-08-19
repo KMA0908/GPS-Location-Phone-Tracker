@@ -145,7 +145,11 @@
     <string name="open_now">Open now</string>
     <string name="explore_now">Explore now</string>
     <string name="places_around_the_world">Places around the world</string>
+    <string name="earth_3d">Earth 3D</string>
+    <string name="explore_the_world">Explore the world</string>
+    <string name="random">Random</string>
     <string name="random_place">Random place</string>
+    <string name="all">All</string>
     <string name="reset_earth">Reset globe</string>
     <string name="clear_search">Clear search</string>
     <string name="close">Close</string>
