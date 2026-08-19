@@ -144,14 +144,22 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         }
 
         cardImgFriend.setOnClickListener {
-            val behavior = bottomSheetBehavior
-            if (behavior.state == BottomSheetBehavior.STATE_EXPANDED || behavior.state == BottomSheetBehavior.STATE_HALF_EXPANDED) {
-                behavior.state = BottomSheetBehavior.STATE_HIDDEN
-            } else if (behavior.state == BottomSheetBehavior.STATE_HIDDEN || behavior.state == BottomSheetBehavior.STATE_COLLAPSED) {
-                if (::friendSearchBottomSheetBehavior.isInitialized && friendSearchBottomSheetBehavior.state != BottomSheetBehavior.STATE_HIDDEN) {
-                    closeFriendSearchSheet()
+            if (::bottomSheetBehavior.isInitialized) {
+                val behavior = bottomSheetBehavior
+                if (behavior.state == BottomSheetBehavior.STATE_EXPANDED ||
+                    behavior.state == BottomSheetBehavior.STATE_HALF_EXPANDED
+                ) {
+                    behavior.state = BottomSheetBehavior.STATE_HIDDEN
+                } else if (behavior.state == BottomSheetBehavior.STATE_HIDDEN ||
+                    behavior.state == BottomSheetBehavior.STATE_COLLAPSED
+                ) {
+                    if (::friendSearchBottomSheetBehavior.isInitialized &&
+                        friendSearchBottomSheetBehavior.state != BottomSheetBehavior.STATE_HIDDEN
+                    ) {
+                        closeFriendSearchSheet()
+                    }
+                    behavior.state = BottomSheetBehavior.STATE_EXPANDED
                 }
-                behavior.state = BottomSheetBehavior.STATE_EXPANDED
             }
         }
 
@@ -163,7 +171,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         setupDirectionPanel()
     }
 
-    private fun setupFriendSearchBottomSheet() = with(binding) {
+    private fun setupFriendSearchBottomSheet() = withBinding {
         friendSearchBottomSheetBehavior =
             BottomSheetBehavior.from(friendSearchBottomSheetLayout.friendSearchBottomSheet).apply {
                 isHideable = true
@@ -243,6 +251,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     }
 
     private fun closeFriendSearchSheet() {
+        if (!::friendSearchBottomSheetBehavior.isInitialized) return
         viewModel.closeFriendSearch()
         val controller = androidx.core.view.WindowCompat.getInsetsController(
             requireActivity().window,
@@ -253,22 +262,21 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         friendSearchBottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
     }
 
-    private fun renderFriendActionSelected(isSelected: Boolean) = with(binding) {
+    private fun renderFriendActionSelected(isSelected: Boolean) = withBinding {
         cardImgFriend.setCardBackgroundColor(
-            if (isSelected) resources.getColor(R.color.bg_botton_friend, null) else Color.TRANSPARENT
+            if (isSelected) resources.getColor(R.color.bg_botton_friend, null)
+            else Color.TRANSPARENT
         )
     }
 
-    private fun renderSearchActionSelected(isSelected: Boolean) = with(binding) {
+    private fun renderSearchActionSelected(isSelected: Boolean) = withBinding {
         val selectedColor = resources.getColor(R.color.bg_botton_friend, null)
         val defaultColor = resources.getColor(R.color.text_primary, null)
-        val bgColor =
-            resources.getColor(if (isSelected) R.color.color_e8f5e9 else R.color.white, null)
+        val bgColor = resources.getColor(if (isSelected) R.color.color_e8f5e9 else R.color.white, null)
 
         search.setCardBackgroundColor(bgColor)
         searchLabel.setTextColor(if (isSelected) selectedColor else defaultColor)
-        imgChat.imageTintList =
-            ColorStateList.valueOf(if (isSelected) selectedColor else defaultColor)
+        imgChat.imageTintList = ColorStateList.valueOf(if (isSelected) selectedColor else defaultColor)
     }
 
     private fun activeVisibleSheet(): View? = when {
@@ -515,7 +523,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                 val isQueryActive = query.isNotBlank()
                 binding.friendSearchBottomSheetLayout.tvNoFriends.visibility =
                     if (isQueryActive && friends.isEmpty()) View.VISIBLE else View.GONE
-                binding.friendSearchBottomSheetLayout.peopleYouMayKnowHeader.visibility =
+                binding.friendSearchBottomSheetLayout.friendsHeader.visibility =
                     if (isQueryActive) View.GONE else View.VISIBLE
             }
         }

@@ -69,4 +69,6 @@
     <string name="place_location_unavailable">Không có dữ liệu vị trí cho địa điểm này</string>
     <string name="add_to_favorites">Thêm vào yêu thích</string>
     <string name="remove_from_favorites">Xóa khỏi yêu thích</string>
+    <string name="friends">Bạn bè</string>
+    <string name="recent_history">Lịch sử tìm kiếm</string>
 </resources>
