@@ -25,7 +25,7 @@ object GpsAdScenario {
             GpsAdPlacement.NATIVE_ADD_FRIEND_QR,
             GpsAdViewBinder.NativeFormat.SMALL,
         )
-        AppDestination.ShowQrFriend.route -> ScreenAd.Native(
+        SHOW_QR_FRIEND_ROUTE -> ScreenAd.Native(
             GpsAdPlacement.NATIVE_FRIEND_DETAIL_QR,
             GpsAdViewBinder.NativeFormat.BIG,
         )
@@ -57,7 +57,7 @@ object GpsAdScenario {
         AppDestination.Map.route -> GpsAdPlacement.INTER_REALTIME_TRACKER
         AppDestination.AddFriend.route -> GpsAdPlacement.INTER_ADD_FRIEND
         AppDestination.MyFriend.route -> GpsAdPlacement.INTER_LIST_FRIEND
-        AppDestination.ShowQrFriend.route -> GpsAdPlacement.INTER_FRIEND_DETAIL
+        SHOW_QR_FRIEND_ROUTE -> GpsAdPlacement.INTER_FRIEND_DETAIL
         AppDestination.PhoneLocator.route -> GpsAdPlacement.INTER_PHONE_NUMBER
         AppDestination.MyZones.route -> GpsAdPlacement.INTER_ZONE
         AppDestination.CreateZone().route -> GpsAdPlacement.INTER_CREATE_ZONE
@@ -67,4 +67,6 @@ object GpsAdScenario {
         AppDestination.PlaceDetail.route -> GpsAdPlacement.INTER_PLACE_DETAIL
         else -> null
     }
+
+    private const val SHOW_QR_FRIEND_ROUTE = "show_qr_friend"
 }

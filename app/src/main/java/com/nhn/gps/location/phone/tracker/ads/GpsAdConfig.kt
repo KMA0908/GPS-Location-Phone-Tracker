@@ -27,7 +27,7 @@ class GpsAdConfig @Inject constructor() : AdConfig() {
     companion object {
         // Keep the ad SDK wired for later re-enable, but match comment_ads by
         // disabling every placement in the current develop build.
-        const val ADS_ENABLED = false
+        const val ADS_ENABLED = true
         const val TEST_APP_OPEN_ID = "ca-app-pub-3940256099942544/9257395921"
         const val TEST_BANNER_ID = "ca-app-pub-3940256099942544/6300978111"
         const val TEST_INTERSTITIAL_ID = "ca-app-pub-3940256099942544/1033173712"
