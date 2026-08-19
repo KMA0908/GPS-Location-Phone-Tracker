@@ -30,6 +30,7 @@ import com.nhn.gps.location.phone.tracker.ui.setup_profile.SetUpProfileFragment
 import com.nhn.gps.location.phone.tracker.ui.zone.AlertDetailFragment
 import com.nhn.gps.location.phone.tracker.ui.settings.SettingsFragment
 import com.nhn.gps.location.phone.tracker.ui.settings.SettingsLanguageFragment
+import com.nhn.gps.location.phone.tracker.ui.settings.EditProfileFragment
 import com.nhn.gps.location.phone.tracker.ui.zone.CreateZoneFragment
 import com.nhn.gps.location.phone.tracker.ui.zone.MyZonesFragment
 import com.nhn.gps.location.phone.tracker.ui.zone.NotificationsFragment
@@ -107,6 +108,7 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>() {
             is AppDestination.MyFriend -> MyFriendFragment.newInstance()
             is AppDestination.ShowQrFriend -> ShowQrFriendFragment.newInstance(destination.mode)
             is AppDestination.Settings -> SettingsFragment.newInstance()
+            is AppDestination.EditProfile -> EditProfileFragment.newInstance()
             is AppDestination.SettingsLanguage -> SettingsLanguageFragment.newInstance()
             is AppDestination.PhoneLocator -> PhoneLocatorFragment.newInstance()
             is AppDestination.MyZones -> MyZonesFragment.newInstance()

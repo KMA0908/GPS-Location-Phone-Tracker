@@ -16,10 +16,11 @@ pluginManagement {
         maven {
             url = uri("https://maven.pkg.github.com/ngoxuanhungbk/ls-leansoft-publishing-sdk")
             credentials {
-                username = providers.gradleProperty("GITHUB_USERNAME").orNull
-                    ?: System.getenv("GITHUB_USERNAME") ?: ""
-                password = providers.gradleProperty("GITHUB_TOKEN").orNull
-                    ?: System.getenv("GITHUB_TOKEN") ?: ""
+                username = providers.gradleProperty("gpr.user").orNull
+                    ?: System.getenv("GITHUB_USERNAME")
+
+                password = providers.gradleProperty("gpr.key").orNull
+                    ?: System.getenv("GITHUB_TOKEN")
             }
         }
         maven { url = uri("https://storage.googleapis.com/r8-releases/raw") }
@@ -40,10 +41,11 @@ dependencyResolutionManagement {
         maven {
             url = uri("https://maven.pkg.github.com/ngoxuanhungbk/ls-leansoft-publishing-sdk")
             credentials {
-                username = providers.gradleProperty("GITHUB_USERNAME").orNull
-                    ?: System.getenv("GITHUB_USERNAME") ?: ""
-                password = providers.gradleProperty("GITHUB_TOKEN").orNull
-                    ?: System.getenv("GITHUB_TOKEN") ?: ""
+                username = providers.gradleProperty("gpr.user").orNull
+                    ?: System.getenv("GITHUB_USERNAME")
+
+                password = providers.gradleProperty("gpr.key").orNull
+                    ?: System.getenv("GITHUB_TOKEN")
             }
         }
         maven { url = uri("https://storage.googleapis.com/r8-releases/raw") }

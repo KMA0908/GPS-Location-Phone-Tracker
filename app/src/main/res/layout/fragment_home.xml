@@ -64,7 +64,8 @@
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_card"
                     android:padding="@dimen/d_8"
-                    android:src="@drawable/ic_crown_home"/>
+                    android:src="@drawable/ic_crown_home"
+                    android:visibility="gone"/>
 
                 <ImageButton
                     android:id="@+id/btnNotifications"

@@ -87,4 +87,21 @@
     <string name="share_code_guide">Chia sẻ mã của bạn với bạn bè</string>
     <string name="show_qr">Hiện QR</string>
     <string name="all">Tất cả</string>
+    <string name="get_premium">Nâng cấp Premium</string>
+    <string name="get_premium_desc">Mở khóa tất cả nội dung \u0026 xóa quảng cáo ngay</string>
+    <string name="upgrade_now">Nâng cấp ngay</string>
+    <string name="location_sharing">Chia sẻ vị trí</string>
+    <string name="location_sharing_desc">Cho phép bạn bè thấy vị trí của bạn</string>
+    <string name="language_selected">Ngôn ngữ</string>
+    <string name="notification_title">Thông báo</string>
+    <string name="permission_menu">Quyền</string>
+    <string name="manage_subscription">Quản lý gói đăng ký</string>
+    <string name="turn_off_location_sharing_title">Tắt chia sẻ vị trí?</string>
+    <string name="turn_off_location_sharing_msg">Bạn bè của bạn sẽ không còn thấy vị trí trực tiếp của bạn.</string>
+    <string name="keep_on">Giữ bật</string>
+    <string name="turn_off">Tắt</string>
+    <string name="edit_profile">Chỉnh sửa hồ sơ</string>
+    <string name="phone_number">Số điện thoại</string>
+    <string name="save_changes">Lưu thay đổi</string>
+    <string name="share_profile">Chia sẻ hồ sơ</string>
 </resources>

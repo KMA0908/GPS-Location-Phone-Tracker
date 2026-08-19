@@ -192,6 +192,20 @@ class AppPreferences @Inject constructor(
         }
     }
 
+    val userPhone: Flow<String> = context.appDataStore.safeData.map { preferences ->
+        preferences[USER_PHONE] ?: ""
+    }
+
+    val isLocationSharingEnabled: Flow<Boolean> = context.appDataStore.safeData.map { preferences ->
+        preferences[LOCATION_SHARING_ENABLED] ?: true
+    }
+
+    suspend fun setLocationSharingEnabled(enabled: Boolean) {
+        context.appDataStore.edit { preferences ->
+            preferences[LOCATION_SHARING_ENABLED] = enabled
+        }
+    }
+
     val userAvatar: Flow<String> = context.appDataStore.safeData.map { preferences ->
         preferences[USER_AVATAR] ?: ""
     }
@@ -278,6 +292,7 @@ class AppPreferences @Inject constructor(
     private companion object {
         val APP_OPEN_COUNT = intPreferencesKey("app_open_count")
         val LOCATION_ENABLED = booleanPreferencesKey("location_enabled")
+        val LOCATION_SHARING_ENABLED = booleanPreferencesKey("location_sharing_enabled")
         val CAMERA_ENABLED = booleanPreferencesKey("camera_enabled")
         val NOTIFICATION_ENABLED = booleanPreferencesKey("notification_enabled")
         val PERMISSION_SHOWN = booleanPreferencesKey("permission_shown")

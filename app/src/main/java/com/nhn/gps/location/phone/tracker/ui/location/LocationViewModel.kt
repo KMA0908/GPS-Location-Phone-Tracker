@@ -156,6 +156,7 @@ class LocationViewModel @Inject constructor(
 
     private fun syncLocationWithFirebase(latLng: LatLng) {
         viewModelScope.launch {
+            if (!appPreferences.isLocationSharingEnabled.first()) return@launch
             val uid = appPreferences.userId.first() ?: return@launch
             val userLocation = UserLocation(
                 latitude = latLng.latitude,

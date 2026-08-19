@@ -68,4 +68,14 @@
     <color name="settings_language_flag_stroke">#EBEAF8</color>
     <color name="settings_language_radio_stroke">#D4D6DD</color>
 
+    <color name="bg_settings">#F8FCF8</color>
+    <color name="bg_settings_card">#FFFFFF</color>
+    <color name="bg_premium_card">#C8E6C9</color>
+    <color name="text_premium_title">#1B5E20</color>
+    <color name="text_premium_desc">#2E7D32</color>
+    <color name="bg_upgrade_btn">#27B64D</color>
+    <color name="bg_switch_track_on">#C8E6C9</color>
+    <color name="bg_switch_thumb_on">#27B64D</color>
+    <color name="bg_dialog_cancel">#F5F5F5</color>
+    <color name="bg_dialog_confirm">#D32F2F</color>
 </resources>

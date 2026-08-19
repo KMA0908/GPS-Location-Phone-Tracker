@@ -52,6 +52,8 @@ class ShowQrFriendFragment : BaseFragment<FragmentShowQrFriendBinding, FriendLis
         binding.tvShareLabel.text = getString(
             if (mode == FriendCodeDisplayMode.CODE) R.string.share_code else R.string.share_qr
         )
+        binding.tvCode.isVisible = mode == FriendCodeDisplayMode.CODE
+        binding.imgCopy.isVisible = mode == FriendCodeDisplayMode.CODE
 
         viewLifecycleOwner.lifecycleScope.launch {
             val uid = appPreferences.userId.first()

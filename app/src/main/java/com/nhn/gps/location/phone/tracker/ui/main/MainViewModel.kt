@@ -107,6 +107,30 @@ class MainViewModel @Inject constructor(
         initialValue = ""
     )
 
+    val userPhone: StateFlow<String> = preferences.userPhone.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = ""
+    )
+
+    val userId: StateFlow<String?> = preferences.userId.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = null
+    )
+
+    val isLocationSharingEnabled: StateFlow<Boolean> = preferences.isLocationSharingEnabled.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = true
+    )
+
+    val selectedLanguage: StateFlow<String> = preferences.selectedLanguage.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = "en"
+    )
+
     val uiState = combine(
         preferences.appOpenCount,
         navigationManager.currentDestination,
@@ -231,6 +255,12 @@ class MainViewModel @Inject constructor(
     fun updateLocationPermissionStatus(isGranted: Boolean) {
         viewModelScope.launch {
             preferences.setLocationEnabled(isGranted)
+        }
+    }
+
+    fun setLocationSharingEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            preferences.setLocationSharingEnabled(enabled)
         }
     }
 

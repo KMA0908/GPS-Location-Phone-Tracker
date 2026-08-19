@@ -5,27 +5,156 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
-import androidx.fragment.app.viewModels
+import androidx.appcompat.app.AlertDialog
+import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import com.nhn.gps.location.phone.tracker.R
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
+import com.nhn.gps.location.phone.tracker.databinding.DialogTurnOffLocationSharingBinding
 import com.nhn.gps.location.phone.tracker.databinding.FragmentSettingsBinding
+import com.nhn.gps.location.phone.tracker.databinding.ItemSettingsMenuBinding
+import com.nhn.gps.location.phone.tracker.navigation.AppDestination
 import com.nhn.gps.location.phone.tracker.ui.main.MainViewModel
+import com.nhn.gps.location.phone.tracker.util.loadAvatar
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class SettingsFragment : BaseFragment<FragmentSettingsBinding, MainViewModel>() {
-    override val viewModel: MainViewModel by viewModels({ requireActivity() })
+    override val viewModel: MainViewModel by activityViewModels()
 
     override fun createBinding(inflater: LayoutInflater, container: ViewGroup?) =
         FragmentSettingsBinding.inflate(inflater, container, false)
 
-    override fun setupViews(savedInstanceState: Bundle?) = with(binding) {
-        btnBack.setOnClickListener { viewModel.navigateBack() }
-        rowLanguage.setOnClickListener { viewModel.openSettingsLanguage() }
-        rowShare.setOnClickListener { shareApp() }
-        rowPrivacy.setOnClickListener { openUrl(PRIVACY_POLICY_URL) }
-        rowTerms.setOnClickListener { openUrl(TERMS_URL) }
-        rowRate.setOnClickListener { openStore() }
+    override fun setupViews(savedInstanceState: Bundle?): Unit {
+        with(binding) {
+            btnBack.setOnClickListener { viewModel.navigateBack() }
+
+            cardProfile.setOnClickListener {
+                navigationManager.navigateTo(AppDestination.EditProfile)
+            }
+
+            switchLocationSharing.setOnCheckedChangeListener { _, isChecked ->
+                if (!isChecked && viewModel.isLocationSharingEnabled.value) {
+                    // Prevent immediate switch off, show dialog first
+                    switchLocationSharing.isChecked = true
+                    showTurnOffLocationDialog()
+                } else if (isChecked && !viewModel.isLocationSharingEnabled.value) {
+                    viewModel.setLocationSharingEnabled(true)
+                }
+            }
+
+            setupMenuItems()
+        }
+    }
+
+    private fun setupMenuItems() = with(binding) {
+        itemLanguage.apply {
+            ivIcon.setImageResource(R.drawable.ic_language_setting)
+            tvTitle.text = getString(R.string.language_selected)
+            tvValue.visibility = View.VISIBLE
+            tvValue.text = "English" // TODO: Get from preferences
+            root.setOnClickListener { viewModel.openSettingsLanguage() }
+        }
+
+        itemNotification.apply {
+            ivIcon.setImageResource(R.drawable.ic_notification)
+            tvTitle.text = getString(R.string.notification_title)
+            root.setOnClickListener {
+                // TODO: Show notification settings
+            }
+        }
+
+        itemPermission.apply {
+            ivIcon.setImageResource(R.drawable.ic_permission)
+            tvTitle.text = getString(R.string.permission_menu)
+            root.setOnClickListener { navigationManager.navigateTo(AppDestination.Permission) }
+        }
+
+        itemSubscription.apply {
+            ivIcon.setImageResource(R.drawable.ic_crown_home)
+            tvTitle.text = getString(R.string.manage_subscription)
+            root.setOnClickListener {
+                // TODO: Manage subscription
+            }
+        }
+
+        itemRate.apply {
+            ivIcon.setImageResource(R.drawable.ic_rate_setting)
+            tvTitle.text = getString(R.string.rate_us)
+            root.setOnClickListener { openStore() }
+        }
+
+        itemShare.apply {
+            ivIcon.setImageResource(R.drawable.ic_share_setting)
+            tvTitle.text = getString(R.string.share_app)
+            root.setOnClickListener { shareApp() }
+        }
+
+        itemPrivacy.apply {
+            ivIcon.setImageResource(R.drawable.ic_policy_setting)
+            tvTitle.text = getString(R.string.privacy_policy)
+            root.setOnClickListener { openUrl(PRIVACY_POLICY_URL) }
+        }
+    }
+
+    private fun showTurnOffLocationDialog() {
+        val dialogBinding = DialogTurnOffLocationSharingBinding.inflate(layoutInflater)
+        val dialog = AlertDialog.Builder(requireContext(), R.style.CustomAlertDialog)
+            .setView(dialogBinding.root)
+            .setCancelable(true)
+            .create()
+
+        dialogBinding.btnClose.setOnClickListener { dialog.dismiss() }
+        dialogBinding.btnKeepOn.setOnClickListener { dialog.dismiss() }
+        dialogBinding.btnTurnOff.setOnClickListener {
+            viewModel.setLocationSharingEnabled(false)
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
+
+    override fun observeData() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel.userName.collectLatest { name ->
+                        binding.tvName.text = name.ifBlank { "Guest" }
+                    }
+                }
+                launch {
+                    viewModel.userPhone.collectLatest { phone ->
+                        binding.tvPhone.text = phone.ifBlank { "+84 000000" }
+                    }
+                }
+                launch {
+                    viewModel.selectedLanguage.collectLatest { lang ->
+                        binding.itemLanguage.tvValue.visibility = View.VISIBLE
+                        binding.itemLanguage.tvValue.text = if (lang == "vi") "Tiếng Việt" else "English"
+                    }
+                }
+                launch {
+                    viewModel.userAvatar.collectLatest { avatar ->
+                        binding.imgAvatar.loadAvatar(
+                            viewModel.userAvatarKey.value,
+                            avatar,
+                            fallbackRes = R.drawable.ic_profile
+                        )
+                    }
+                }
+                launch {
+                    viewModel.isLocationSharingEnabled.collectLatest { enabled ->
+                        binding.switchLocationSharing.isChecked = enabled
+                    }
+                }
+            }
+        }
     }
 
     private fun shareApp() {

@@ -87,6 +87,23 @@
     <string name="rate_us">Rate us</string>
     <string name="continue_text">Continue</string>
     <string name="welcome_back">Welcome back</string>
+    <string name="get_premium">Get Premium</string>
+    <string name="get_premium_desc">Unlock all premium content \u0026 remove all ads now</string>
+    <string name="upgrade_now">Upgrade now</string>
+    <string name="location_sharing">Location sharing</string>
+    <string name="location_sharing_desc">Allow friends to see shared location</string>
+    <string name="language_selected">Language</string>
+    <string name="notification_title">Notification</string>
+    <string name="permission_menu">Permission</string>
+    <string name="manage_subscription">Manage Subscription</string>
+    <string name="turn_off_location_sharing_title">Turn off location sharing?</string>
+    <string name="turn_off_location_sharing_msg">Your friends won\'t be able to see your live location and updates anymore.</string>
+    <string name="keep_on">Keep on</string>
+    <string name="turn_off">Turn off</string>
+    <string name="edit_profile">Edit profile</string>
+    <string name="phone_number">Phone number</string>
+    <string name="save_changes">Save changes</string>
+    <string name="share_profile">Share Profile</string>
     <string name="invalid_phone">Số điện thoại không hợp lệ</string>
 
     <!-- Phone Locator -->

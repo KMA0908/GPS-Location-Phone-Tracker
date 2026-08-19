@@ -10,7 +10,7 @@ import com.bumptech.glide.Glide
 import com.leansoft.ads.enums.AdStatus
 import com.leansoft.ads.ui.onboarding.LeansoftOnboardingInterface
 import com.leansoft.ads.utils.LeansoftAdPlacement
-import com.leansoft.ads.utils.LeansoftAdPlacementKt
+import com.leansoft.ads.utils.leansofttNativeFullPlacements
 import com.leansoft.ads.view.NativeAdViewContainer
 import com.nhn.gps.location.phone.tracker.R
 
@@ -18,7 +18,7 @@ class GpsOnboardingImpl : LeansoftOnboardingInterface() {
     private val containers = mutableMapOf<LeansoftAdPlacement, NativeAdViewContainer>()
     private val views = mutableMapOf<LeansoftAdPlacement, View>()
     private val nextListeners = mutableMapOf<LeansoftAdPlacement, () -> Unit>()
-    private val fullPlacements = LeansoftAdPlacementKt.getLeansofttNativeFullPlacements()
+    private val fullPlacements = leansofttNativeFullPlacements
 
     override fun onCreateView(
         inflater: LayoutInflater,
