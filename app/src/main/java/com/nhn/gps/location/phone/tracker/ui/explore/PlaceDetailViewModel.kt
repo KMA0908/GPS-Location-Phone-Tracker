@@ -1,7 +1,9 @@
 package com.nhn.gps.location.phone.tracker.ui.explore
 
 import androidx.lifecycle.viewModelScope
+import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.model.PhotoMetadata
+import com.google.maps.android.SphericalUtil
 import com.nhn.gps.location.phone.tracker.base.BaseViewModel
 import com.nhn.gps.location.phone.tracker.data.model.FamousPlaceModel
 import com.nhn.gps.location.phone.tracker.data.repository.ExploreRepository
@@ -20,6 +22,8 @@ import javax.inject.Inject
 
 data class PlaceDetailUiState(
     val place: FamousPlaceModel? = null,
+    val userLocation: LatLng? = null,
+    val distanceMeters: Double? = null,
     val isLoading: Boolean = false,
     val error: String? = null,
     val isFavorite: Boolean = false
@@ -35,6 +39,29 @@ class PlaceDetailViewModel @Inject constructor(
 
     init {
         observeFavorites()
+        observeDistance()
+    }
+
+    private fun observeDistance() {
+        viewModelScope.launch {
+            _uiState.collectLatest { state ->
+                val place = state.place
+                val userLoc = state.userLocation
+                if (place != null && userLoc != null) {
+                    val distance = SphericalUtil.computeDistanceBetween(
+                        userLoc,
+                        LatLng(place.latitude, place.longitude)
+                    )
+                    _uiState.update { it.copy(distanceMeters = distance) }
+                } else if (state.distanceMeters != null) {
+                    _uiState.update { it.copy(distanceMeters = null) }
+                }
+            }
+        }
+    }
+
+    fun updateUserLocation(location: LatLng?) {
+        _uiState.update { it.copy(userLocation = location) }
     }
 
     private fun observeFavorites() {

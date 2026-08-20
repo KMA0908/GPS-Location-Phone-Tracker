@@ -46,17 +46,22 @@ class ExploreRepositoryImpl @Inject constructor(
                     FamousPlaceModel(
                         id = idInt.toString(),
                         name = obj.getString("placeName"),
-                        location = "",
+                        location = obj.optString("address", ""),
                         imageRes = mapTypeToImage(type),
-                        rating = 0f,
-                        reviewCount = 0,
+                        rating = obj.optDouble("rating", 0.0).toFloat(),
+                        reviewCount = obj.optInt("reviewCount", 0),
                         distanceKm = 0.0,
                         category = mapTypeToCategory(type),
                         latitude = lat,
                         longitude = lng,
                         idPlaceType = type,
                         descriptionResKey = obj.optString("descriptionResKey"),
-                        previewPhotos = previewPhotos
+                        previewPhotos = previewPhotos,
+                        address = obj.optString("address"),
+                        isOpen = if (obj.has("isOpen")) obj.getBoolean("isOpen") else null,
+                        elevationMeters = if (obj.has("elevationMeters")) obj.getDouble("elevationMeters") else null,
+                        estimatedVisitMinutes = if (obj.has("estimatedVisitMinutes")) obj.getInt("estimatedVisitMinutes") else null,
+                        reviewCountLong = obj.optLong("reviewCount")
                     )
                 )
             }

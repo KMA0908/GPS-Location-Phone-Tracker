@@ -25,15 +25,18 @@ object GpsAds {
 
         runCatching {
             if (!AdManager.instance.adEnablePlacement(placement)) {
+                Log.d(TAG, "Interstitial disabled: $placement")
                 continueOnce()
                 return@runCatching
             }
+            Log.d(TAG, "Showing interstitial: $placement")
             AdManager.instance.showInterAd(
                 placement,
                 forceShow,
                 showLoading,
                 timeoutMillis,
             ) { showed ->
+                Log.d(TAG, "Interstitial result: $placement, showed=$showed")
                 val canShowNativeFull = showed &&
                     showNativeFullAfterInter &&
                     fragmentManager != null &&
@@ -41,6 +44,7 @@ object GpsAds {
                     !fragmentManager.isStateSaved &&
                     AdManager.instance.adEnablePlacement(GpsAdPlacement.NATIVE_FULL)
                 if (canShowNativeFull) {
+                    Log.d(TAG, "Showing native full after: $placement")
                     runCatching {
                         AdManager.instance.showNativeFullDialog(
                             fragmentManager,
@@ -76,14 +80,17 @@ object GpsAds {
 
         runCatching {
             if (!AdManager.instance.adEnablePlacement(placement)) {
+                Log.d(TAG, "App-open disabled: $placement")
                 continueOnce()
                 return@runCatching
             }
+            Log.d(TAG, "Showing app-open: $placement")
             AdManager.instance.showAppOpenAd(
                 placement,
                 timeoutMillis,
                 showLoading,
             ) {
+                Log.d(TAG, "App-open finished: $placement")
                 runCatching { AdManager.instance.preloadAppOpenAd(placement) }
                 continueOnce()
             }

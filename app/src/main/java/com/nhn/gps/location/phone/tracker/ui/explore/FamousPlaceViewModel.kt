@@ -8,6 +8,8 @@ import com.nhn.gps.location.phone.tracker.data.repository.ExploreRepository
 import com.nhn.gps.location.phone.tracker.data.repository.ExploreResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -29,7 +31,8 @@ data class FamousPlaceUiState(
     val error: String? = null,
     val selectedCategory: String = "All",
     val hasMore: Boolean = false,
-    val favoriteIds: Set<String> = emptySet()
+    val favoriteIds: Set<String> = emptySet(),
+    val isReset: Boolean = false
 )
 
 sealed interface FamousPlaceEffect {
@@ -50,8 +53,9 @@ class FamousPlaceViewModel @Inject constructor(
     private val searchQueryFlow = MutableStateFlow("")
 
     private var fullFilteredList: List<FamousPlaceModel> = emptyList()
-    private var visibleCount = 5
-    private val pageSize = 5
+    private var visibleCount = INITIAL_PAGE_SIZE
+    private var isAppending = false
+    private var appendJob: Job? = null
 
     private val categoryMap = mapOf(
         "All" to 0,
@@ -84,7 +88,8 @@ class FamousPlaceViewModel @Inject constructor(
                     state.copy(
                         favoriteIds = ids,
                         featuredPlace = state.featuredPlace?.copy(isFavorite = ids.contains(state.featuredPlace.id)),
-                        trendingPlaces = state.trendingPlaces.map { it.copy(isFavorite = ids.contains(it.id)) }
+                        trendingPlaces = state.trendingPlaces.map { it.copy(isFavorite = ids.contains(it.id)) },
+                        isReset = false
                     )
                 }
             }
@@ -119,6 +124,7 @@ class FamousPlaceViewModel @Inject constructor(
     }
 
     private fun fetchPlacesByCategory(category: String) {
+        cancelPendingAppend()
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             val typeId = categoryMap[category] ?: 0
@@ -149,6 +155,7 @@ class FamousPlaceViewModel @Inject constructor(
     }
 
     private suspend fun performSearch(query: String) {
+        cancelPendingAppend()
         _uiState.update { it.copy(isLoading = true, error = null) }
         when (val result = repository.getAllFamousPlaces()) {
             is ExploreResult.Success -> {
@@ -167,18 +174,37 @@ class FamousPlaceViewModel @Inject constructor(
     }
 
     private fun resetPagination() {
-        visibleCount = pageSize
-        updatePaginatedList()
+        cancelPendingAppend()
+        visibleCount = INITIAL_PAGE_SIZE
+        updatePaginatedList(isReset = true)
     }
 
     fun loadMore() {
-        if (_uiState.value.isLoading || !_uiState.value.hasMore) return
+        if (_uiState.value.isLoading || isAppending || !_uiState.value.hasMore || fullFilteredList.isEmpty()) return
 
-        visibleCount += pageSize
-        updatePaginatedList()
+        isAppending = true
+        appendJob = viewModelScope.launch {
+            try {
+                delay(LOAD_MORE_DELAY_MS)
+
+                if (_uiState.value.hasMore && fullFilteredList.isNotEmpty()) {
+                    visibleCount = (visibleCount + LOAD_MORE_PAGE_SIZE)
+                        .coerceAtMost(fullFilteredList.size)
+                    updatePaginatedList(isReset = false)
+                }
+            } finally {
+                isAppending = false
+            }
+        }
     }
 
-    private fun updatePaginatedList() {
+    private fun cancelPendingAppend() {
+        appendJob?.cancel()
+        appendJob = null
+        isAppending = false
+    }
+
+    private fun updatePaginatedList(isReset: Boolean) {
         val visibleList = fullFilteredList.take(visibleCount)
         val hasMore = fullFilteredList.size > visibleCount
         val favoriteIds = _uiState.value.favoriteIds
@@ -195,8 +221,10 @@ class FamousPlaceViewModel @Inject constructor(
             featuredPlace = featured,
             trendingPlaces = trending,
             isLoading = false,
-            hasMore = hasMore
+            hasMore = hasMore,
+            isReset = isReset
         ) }
+        isAppending = false
     }
 
     fun onSearchQueryChanged(query: String) {
@@ -217,5 +245,11 @@ class FamousPlaceViewModel @Inject constructor(
 
     suspend fun getPhotoUri(metadata: PhotoMetadata): String? {
         return repository.getResolvedPhotoUri(metadata)
+    }
+
+    companion object {
+        private const val INITIAL_PAGE_SIZE = 10
+        private const val LOAD_MORE_PAGE_SIZE = 5
+        private const val LOAD_MORE_DELAY_MS = 250L
     }
 }

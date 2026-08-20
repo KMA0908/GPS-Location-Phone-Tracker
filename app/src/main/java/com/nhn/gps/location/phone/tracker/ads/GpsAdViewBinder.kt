@@ -1,5 +1,6 @@
 package com.nhn.gps.location.phone.tracker.ads
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,6 +10,7 @@ import com.leansoft.ads.view.NativeAdViewContainer
 import com.nhn.gps.location.phone.tracker.R
 
 object GpsAdViewBinder {
+    private const val TAG = "GpsAdViewBinder"
     enum class NativeFormat { SMALL, MEDIUM, BIG }
 
     fun bindNative(host: ViewGroup, placement: String, format: NativeFormat) {
@@ -62,8 +64,19 @@ object GpsAdViewBinder {
         host.visibility = View.GONE
     }
 
-    private fun isEnabled(placement: String): Boolean =
-        runCatching { AdManager.instance.adEnablePlacement(placement) }.getOrDefault(false)
+    private fun isEnabled(placement: String): Boolean {
+        if (!GpsAdConfig.ADS_ENABLED) {
+            Log.d(TAG, "Ads globally disabled. Skipping: $placement")
+            return false
+        }
+        return runCatching {
+            val enabled = AdManager.instance.adEnablePlacement(placement)
+            if (!enabled) Log.d(TAG, "Placement disabled by config: $placement")
+            enabled
+        }.onFailure {
+            Log.e(TAG, "Failed to check enablement for: $placement", it)
+        }.getOrDefault(false)
+    }
 
     private enum class AdKind { NATIVE, BANNER }
 

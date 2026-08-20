@@ -101,6 +101,12 @@ class MainViewModel @Inject constructor(
         initialValue = ""
     )
 
+    val localAvatarPath: StateFlow<String?> = preferences.localAvatarPath.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = null
+    )
+
     val userName: StateFlow<String> = preferences.userName.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
@@ -123,6 +129,12 @@ class MainViewModel @Inject constructor(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = true
+    )
+
+    val isNotificationEnabled: StateFlow<Boolean> = preferences.isNotificationEnabled.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = false
     )
 
     val selectedLanguage: StateFlow<String> = preferences.selectedLanguage.stateIn(
@@ -261,6 +273,12 @@ class MainViewModel @Inject constructor(
     fun setLocationSharingEnabled(enabled: Boolean) {
         viewModelScope.launch {
             preferences.setLocationSharingEnabled(enabled)
+        }
+    }
+
+    fun setNotificationEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            preferences.setNotificationEnabled(enabled)
         }
     }
 

@@ -33,46 +33,81 @@ class EditProfileViewModel @Inject constructor(
     private val _currentName = MutableStateFlow("")
     val currentName: StateFlow<String> = _currentName.asStateFlow()
 
+    private val _initialAvatarKey = MutableStateFlow("")
+    private val _currentAvatarKey = MutableStateFlow("")
+    val currentAvatarKey: StateFlow<String> = _currentAvatarKey.asStateFlow()
+
     val isChanged: MutableStateFlow<Boolean> = MutableStateFlow(false)
 
     init {
         viewModelScope.launch {
             val name = appPreferences.userName.first()
+            val avatarKey = appPreferences.userAvatarKey.first()
+            
             _initialName.value = name
             _currentName.value = name
+            
+            _initialAvatarKey.value = avatarKey
+            _currentAvatarKey.value = avatarKey
         }
     }
 
     fun onNameChanged(newName: String) {
         _currentName.value = newName
-        isChanged.value = newName.trim() != _initialName.value.trim() && newName.isNotBlank()
+        checkChanges()
+    }
+
+    fun onAvatarChanged(newKey: String) {
+        _currentAvatarKey.value = newKey
+        checkChanges()
+    }
+
+    fun selectPresetAvatar(avatarKey: String) {
+        viewModelScope.launch {
+            appPreferences.setUserAvatarKey(avatarKey)
+            appPreferences.setLocalAvatarPath(null)
+            _initialAvatarKey.value = avatarKey
+            _currentAvatarKey.value = avatarKey
+            checkChanges()
+        }
+    }
+
+    private fun checkChanges() {
+        val nameChanged = _currentName.value.trim() != _initialName.value.trim() && _currentName.value.isNotBlank()
+        val avatarChanged = _currentAvatarKey.value != _initialAvatarKey.value
+        isChanged.value = nameChanged || avatarChanged
     }
 
     fun saveChanges() {
         val newName = _currentName.value.trim()
+        val newAvatarKey = _currentAvatarKey.value
         if (newName.isBlank() || !isChanged.value) return
 
         launchCatching {
             _uiState.value = EditProfileUiState.Loading
             val uid = appPreferences.userId.first() ?: return@launchCatching
-            
-            // Get current full profile to avoid losing other fields
-            val existingUser = userRepository.findUserByPhone(appPreferences.userPhone.first())
-            
+
             val updatedProfile = UserProfile(
                 uid = uid,
                 name = newName,
                 phone = appPreferences.userPhone.first(),
                 avatarUrl = appPreferences.userAvatar.first(),
-                avatarKey = appPreferences.userAvatarKey.first()
+                avatarKey = newAvatarKey
             )
 
+            // Update Firebase
             userRepository.saveUserProfile(uid, updatedProfile)
-            appPreferences.setUserName(newName)
             
-            _uiState.value = EditProfileUiState.Success
+            // Update Local Preferences
+            appPreferences.setUserName(newName)
+            appPreferences.setUserAvatarKey(newAvatarKey)
+            
+            // Update Initial State
             _initialName.value = newName
+            _initialAvatarKey.value = newAvatarKey
+            
             isChanged.value = false
+            _uiState.value = EditProfileUiState.Success
         }
     }
 

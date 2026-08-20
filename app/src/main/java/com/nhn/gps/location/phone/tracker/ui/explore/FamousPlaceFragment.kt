@@ -73,6 +73,22 @@ class FamousPlaceFragment : BaseFragment<FragmentFamousPlaceListBinding, FamousP
         rvFamousPlaces.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = placesAdapter
+            addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    if (dy <= 0) return
+                    val layoutManager = recyclerView.layoutManager as? LinearLayoutManager ?: return
+                    val totalItemCount = layoutManager.itemCount
+                    val lastVisibleItem = layoutManager.findLastVisibleItemPosition()
+
+                    if (
+                        totalItemCount > 0 &&
+                        lastVisibleItem != RecyclerView.NO_POSITION &&
+                        lastVisibleItem >= totalItemCount - 1
+                    ) {
+                        viewModel.loadMore()
+                    }
+                }
+            })
         }
 
         btnSeeAll.setOnClickListener {
@@ -114,7 +130,11 @@ class FamousPlaceFragment : BaseFragment<FragmentFamousPlaceListBinding, FamousP
         state.featuredPlace?.let { renderFeaturedPlace(it) }
 
         trendingHeader.visibility = if (state.trendingPlaces.isNotEmpty()) View.VISIBLE else View.GONE
-        placesAdapter.submitList(state.trendingPlaces)
+        placesAdapter.submitList(state.trendingPlaces) {
+            if (state.isReset) {
+                rvFamousPlaces.scrollToPosition(0)
+            }
+        }
     }
 
     private fun renderFeaturedPlace(place: FamousPlaceModel) = with(binding.featuredItem) {

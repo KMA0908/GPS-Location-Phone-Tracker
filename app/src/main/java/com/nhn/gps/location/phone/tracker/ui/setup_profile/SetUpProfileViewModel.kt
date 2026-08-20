@@ -92,7 +92,12 @@ class SetUpProfileViewModel @Inject constructor(
             }
 
             // 2. Nếu chưa tồn tại: Thực hiện tạo user mới (Sử dụng anonymous auth)
-            val uid = userRepository.signInAnonymously()
+            val uid = try {
+                userRepository.signInAnonymously()
+            } catch (e: Exception) {
+                _uiState.value = SetUpProfileUiState.Error(e.message ?: "Authentication failed")
+                return@launchCatching
+            }
 
             val profile = UserProfile(
                 uid = uid,

@@ -21,6 +21,7 @@ import com.nhn.gps.location.phone.tracker.ui.main.MainViewModel
 import com.nhn.gps.location.phone.tracker.util.loadAvatar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -53,6 +54,22 @@ class EditProfileFragment : BaseFragment<FragmentEditProfileBinding, EditProfile
 
         cardShareProfile.setOnClickListener {
             shareProfile()
+        }
+
+        btnChangeAvatar.setOnClickListener {
+            com.nhn.gps.location.phone.tracker.ui.setup_profile.AvatarSelectorBottomSheet
+                .newInstance(viewModel.currentAvatarKey.value)
+                .show(parentFragmentManager, com.nhn.gps.location.phone.tracker.ui.setup_profile.AvatarSelectorBottomSheet.TAG)
+        }
+
+        parentFragmentManager.setFragmentResultListener(
+            com.nhn.gps.location.phone.tracker.ui.setup_profile.AvatarSelectorBottomSheet.REQUEST_KEY,
+            viewLifecycleOwner
+        ) { _, bundle ->
+            val avatarKey = bundle.getString(com.nhn.gps.location.phone.tracker.ui.setup_profile.AvatarSelectorBottomSheet.RESULT_AVATAR_KEY)
+            if (avatarKey != null) {
+                viewModel.selectPresetAvatar(avatarKey)
+            }
         }
 
         btnSave.setOnClickListener {
@@ -96,11 +113,18 @@ class EditProfileFragment : BaseFragment<FragmentEditProfileBinding, EditProfile
                     }
                 }
                 launch {
-                    mainViewModel.userAvatar.collectLatest { avatar ->
+                    combine(
+                        mainViewModel.userAvatar,
+                        viewModel.currentAvatarKey,
+                        mainViewModel.localAvatarPath
+                    ) { remoteUrl, key, localPath ->
+                        Triple(remoteUrl, key, localPath)
+                    }.collectLatest { (remoteUrl, key, localPath) ->
                         binding.imgAvatar.loadAvatar(
-                            mainViewModel.userAvatarKey.value,
-                            avatar,
-                            fallbackRes = R.drawable.ic_profile
+                            avatarKey = key,
+                            avatarUrl = remoteUrl,
+                            localPath = localPath,
+                            fallbackRes = R.drawable.ic_avt
                         )
                     }
                 }

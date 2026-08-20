@@ -104,4 +104,6 @@
     <string name="phone_number">Số điện thoại</string>
     <string name="save_changes">Lưu thay đổi</string>
     <string name="share_profile">Chia sẻ hồ sơ</string>
+    <string name="turn_off_notification_title">Tắt thông báo?</string>
+    <string name="turn_off_notification_msg">Bạn có thể bỏ lỡ các cảnh báo quan trọng về bạn bè và khu vực nếu tắt thông báo.</string>
 </resources>

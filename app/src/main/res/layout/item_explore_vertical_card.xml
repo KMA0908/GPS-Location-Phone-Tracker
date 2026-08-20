@@ -28,8 +28,7 @@
         android:ellipsize="end"
         android:fontFamily="@font/plus_jakarta_sans_semibold"
         android:maxLines="2"
-        android:textColor="#FFFFFF"
         android:textSize="12sp"
-        tools:text="Eiffel Tower" />
+        tools:text="Universal Studios Hollywood" />
 
 </androidx.appcompat.widget.LinearLayoutCompat>

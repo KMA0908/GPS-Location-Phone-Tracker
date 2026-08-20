@@ -355,6 +355,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     }
 
     private fun initializeGoogleMap() {
+        Log.d(TAG, "initializeGoogleMap: Searching for map fragment")
         val mapFragment = childFragmentManager.findFragmentById(R.id.mapFragment)
                 as? SupportMapFragment ?: run {
             Log.e(TAG, "SupportMapFragment was not found in fragment_location")
@@ -362,17 +363,21 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         }
 
         try {
+            Log.d(TAG, "initializeGoogleMap: Initializing Maps SDK")
             MapsInitializer.initialize(
                 requireContext(),
                 MapsInitializer.Renderer.LATEST,
-            ) {
+            ) { renderer ->
+                Log.d(TAG, "initializeGoogleMap: Maps SDK initialized with renderer: $renderer")
                 if (isAdded && !isRemoving) {
+                    Log.d(TAG, "initializeGoogleMap: Requesting map async")
                     mapFragment.getMapAsync(this@LocationFragment)
                 }
             }
         } catch (error: Exception) {
             // Fall back to the default renderer on devices with older Play services.
             Log.e(TAG, "Unable to initialize Google Maps renderer", error)
+            Log.d(TAG, "initializeGoogleMap: Requesting map async (fallback)")
             mapFragment.getMapAsync(this@LocationFragment)
         }
     }
@@ -909,6 +914,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
 
     @SuppressLint("PotentialBehaviorOverride")
     override fun onMapReady(map: GoogleMap) {
+        Log.d(TAG, "onMapReady: Map is ready")
         googleMap = map
         lastDataPackage?.let { data ->
             updateMarkersWithAvatars(data.self, data.friends, data.avatar, data.name)

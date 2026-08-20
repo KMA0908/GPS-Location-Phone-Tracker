@@ -230,4 +230,23 @@
     <string name="my_friend_code">My Friend Code</string>
     <string name="share_code_guide">Share your code with friends</string>
     <string name="show_qr">Show QR</string>
+
+    <!-- Place Details -->
+    <string name="distance_unavailable">Distance unavailable</string>
+    <string name="hours_unavailable">Hours unavailable</string>
+    <string name="info_unavailable">Info unavailable</string>
+    <string name="elevation_unavailable">Elevation unavailable</string>
+    <string name="not_rated">Not rated</string>
+    <string name="location_unavailable">Location unavailable</string>
+    <string name="closed">Closed</string>
+    <string name="visit_time">Visit time</string>
+    <string name="height">Height</string>
+    <string name="rating">Rating</string>
+    <string name="reviews_count">%1$d reviews</string>
+    <string name="rating_with_reviews">%1$.1f (%2$s)</string>
+    <string name="visit_minutes">%1$d min</string>
+
+    <!-- Notification Warning -->
+    <string name="turn_off_notification_title">Turn off notifications?</string>
+    <string name="turn_off_notification_msg">You might miss important alerts about your friends and zones if you turn off notifications.</string>
 </resources>

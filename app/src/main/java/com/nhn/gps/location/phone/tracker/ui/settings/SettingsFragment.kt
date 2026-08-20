@@ -2,6 +2,8 @@ package com.nhn.gps.location.phone.tracker.ui.settings
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -22,6 +24,7 @@ import com.nhn.gps.location.phone.tracker.ui.main.MainViewModel
 import com.nhn.gps.location.phone.tracker.util.loadAvatar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -55,7 +58,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding, MainViewModel>() 
 
     private fun setupMenuItems() = with(binding) {
         itemLanguage.apply {
-            ivIcon.setImageResource(R.drawable.ic_language_setting)
+            ivIcon.setImageResource(R.drawable.ic_language)
             tvTitle.text = getString(R.string.language_selected)
             tvValue.visibility = View.VISIBLE
             tvValue.text = "English" // TODO: Get from preferences
@@ -63,25 +66,20 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding, MainViewModel>() 
         }
 
         itemNotification.apply {
-            ivIcon.setImageResource(R.drawable.ic_notification)
+            ivIcon.setImageResource(R.drawable.ic_notification_home)
             tvTitle.text = getString(R.string.notification_title)
-            root.setOnClickListener {
-                // TODO: Show notification settings
+            ivChevron.visibility = View.GONE
+            swMenu.visibility = View.VISIBLE
+            
+            swMenu.setOnCheckedChangeListener { _, isChecked ->
+                if (!isChecked && viewModel.isNotificationEnabled.value) {
+                    swMenu.isChecked = true
+                    showTurnOffNotificationDialog()
+                } else if (isChecked && !viewModel.isNotificationEnabled.value) {
+                    viewModel.setNotificationEnabled(true)
+                }
             }
-        }
-
-        itemPermission.apply {
-            ivIcon.setImageResource(R.drawable.ic_permission)
-            tvTitle.text = getString(R.string.permission_menu)
-            root.setOnClickListener { navigationManager.navigateTo(AppDestination.Permission) }
-        }
-
-        itemSubscription.apply {
-            ivIcon.setImageResource(R.drawable.ic_crown_home)
-            tvTitle.text = getString(R.string.manage_subscription)
-            root.setOnClickListener {
-                // TODO: Manage subscription
-            }
+            root.setOnClickListener { swMenu.toggle() }
         }
 
         itemRate.apply {
@@ -101,6 +99,27 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding, MainViewModel>() 
             tvTitle.text = getString(R.string.privacy_policy)
             root.setOnClickListener { openUrl(PRIVACY_POLICY_URL) }
         }
+    }
+
+    private fun showTurnOffNotificationDialog() {
+        val dialogBinding = DialogTurnOffLocationSharingBinding.inflate(layoutInflater)
+        val dialog = AlertDialog.Builder(requireContext(), R.style.CustomAlertDialog)
+            .setView(dialogBinding.root)
+            .setCancelable(true)
+            .create()
+
+        dialogBinding.ivIcon.setImageResource(R.drawable.ic_notification_home) // Use notification icon
+        dialogBinding.tvTitle.text = getString(R.string.turn_off_notification_title)
+        dialogBinding.tvMsg.text = getString(R.string.turn_off_notification_msg)
+        
+        dialogBinding.btnClose.setOnClickListener { dialog.dismiss() }
+        dialogBinding.btnKeepOn.setOnClickListener { dialog.dismiss() }
+        dialogBinding.btnTurnOff.setOnClickListener {
+            viewModel.setNotificationEnabled(false)
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     private fun showTurnOffLocationDialog() {
@@ -140,17 +159,29 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding, MainViewModel>() 
                     }
                 }
                 launch {
-                    viewModel.userAvatar.collectLatest { avatar ->
+                    combine(
+                        viewModel.userAvatar,
+                        viewModel.userAvatarKey,
+                        viewModel.localAvatarPath
+                    ) { avatar, key, localPath ->
+                        Triple(avatar, key, localPath)
+                    }.collectLatest { (avatar, key, localPath) ->
                         binding.imgAvatar.loadAvatar(
-                            viewModel.userAvatarKey.value,
+                            key,
                             avatar,
-                            fallbackRes = R.drawable.ic_profile
+                            localPath,
+                            fallbackRes = R.drawable.ic_avt
                         )
                     }
                 }
                 launch {
                     viewModel.isLocationSharingEnabled.collectLatest { enabled ->
                         binding.switchLocationSharing.isChecked = enabled
+                    }
+                }
+                launch {
+                    viewModel.isNotificationEnabled.collectLatest { enabled ->
+                        binding.itemNotification.swMenu.isChecked = enabled
                     }
                 }
             }

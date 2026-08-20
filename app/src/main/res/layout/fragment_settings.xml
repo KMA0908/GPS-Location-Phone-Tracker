@@ -105,7 +105,7 @@
                             android:layout_marginTop="2dp"
                             android:fontFamily="@font/plus_jakarta_sans_medium"
                             android:textColor="#6F6F6F"
-                            android:textSize="1sp"
+                            android:textSize="12sp"
                             tools:text="+84 000000" />
                     </LinearLayout>
 
@@ -236,8 +236,8 @@
                         android:id="@+id/switchLocationSharing"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        app:thumbTint="@color/white"
-                        app:trackTint="#27B64D" />
+                        app:thumbTint="@color/selector_switch_thumb"
+                        app:trackTint="@color/selector_switch_track" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -268,20 +268,6 @@
                     <!-- Notification -->
                     <include
                         android:id="@+id/itemNotification"
-                        layout="@layout/item_settings_menu" />
-
-                    <View style="@style/SettingsDivider" />
-
-                    <!-- Permission -->
-                    <include
-                        android:id="@+id/itemPermission"
-                        layout="@layout/item_settings_menu" />
-
-                    <View style="@style/SettingsDivider" />
-
-                    <!-- Manage Subscription -->
-                    <include
-                        android:id="@+id/itemSubscription"
                         layout="@layout/item_settings_menu" />
 
                     <View style="@style/SettingsDivider" />

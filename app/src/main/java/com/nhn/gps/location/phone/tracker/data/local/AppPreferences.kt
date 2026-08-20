@@ -29,7 +29,7 @@ private val Context.appDataStore: DataStore<Preferences> by preferencesDataStore
 
 @Singleton
 class AppPreferences @Inject constructor(
-    @param:ApplicationContext private val context: Context,
+    @param:ApplicationContext val context: Context,
 ) {
 
     val friendSearchHistoryFlow: Flow<List<FriendSearchHistoryEntry>> = context.appDataStore.safeData.map { preferences ->
@@ -226,6 +226,17 @@ class AppPreferences @Inject constructor(
         }
     }
 
+    val localAvatarPath: Flow<String?> = context.appDataStore.safeData.map { preferences ->
+        preferences[LOCAL_AVATAR_PATH]
+    }
+
+    suspend fun setLocalAvatarPath(path: String?) {
+        context.appDataStore.edit { preferences ->
+            if (path == null) preferences.remove(LOCAL_AVATAR_PATH)
+            else preferences[LOCAL_AVATAR_PATH] = path
+        }
+    }
+
     val userId: Flow<String?> = context.appDataStore.safeData.map { preferences ->
         preferences[USER_ID]
     }
@@ -308,6 +319,7 @@ class AppPreferences @Inject constructor(
         val ZONE_STATES_JSON = androidx.datastore.preferences.core.stringPreferencesKey("zone_states_json")
         val FAVORITE_PLACES_JSON = stringPreferencesKey("favorite_places_json")
         val FRIEND_SEARCH_HISTORY_JSON = stringPreferencesKey("friend_search_history_json")
+        val LOCAL_AVATAR_PATH = stringPreferencesKey("local_avatar_path")
 
         fun parseFriendSearchHistory(json: String): List<FriendSearchHistoryEntry> = try {
             val array = JSONArray(json)

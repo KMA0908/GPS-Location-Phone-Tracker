@@ -8,8 +8,20 @@ import com.nhn.gps.location.phone.tracker.R
 fun ImageView.loadAvatar(
     avatarKey: String?,
     avatarUrl: String?,
+    localPath: String? = null,
     @DrawableRes fallbackRes: Int = R.drawable.ic_avt
 ) {
+    if (!localPath.isNullOrBlank()) {
+        Glide.with(this).clear(this)
+        Glide.with(this)
+            .load(localPath)
+            .circleCrop()
+            .placeholder(fallbackRes)
+            .error(fallbackRes)
+            .into(this)
+        return
+    }
+
     val localRes = AvatarHelper.getDrawableRes(avatarKey)
 
     if (localRes != null) {

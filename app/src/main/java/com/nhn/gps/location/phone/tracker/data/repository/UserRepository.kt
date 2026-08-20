@@ -57,11 +57,17 @@ class UserRepositoryImpl @Inject constructor(
             val result = auth.signInAnonymously().await()
             result.user?.uid ?: throw Exception("Auth succeeded but UID is null")
         } catch (e: Exception) {
+            android.util.Log.e("UserRepository", "Anonymous sign-in failed", e)
             val errorMsg = e.localizedMessage ?: "Unknown error"
-            if (errorMsg.contains("CONFIGURATION_NOT_FOUND", true)) {
-                throw Exception("Firebase Auth Error: Please check if 'Anonymous' provider is ENABLED in Firebase Console AND your Package Name matches in google-services.json")
+            
+            val friendlyMessage = when {
+                errorMsg.contains("CONFIGURATION_NOT_FOUND", true) -> 
+                    "Firebase Auth Error: Please check if 'Anonymous' provider is ENABLED in Firebase Console AND your Package Name matches in google-services.json"
+                errorMsg.contains("app-not-authorized", true) || errorMsg.contains("Play Integrity", true) ->
+                    "Unable to verify this device. Please update Google Play services and try again."
+                else -> "Sign-in failed: $errorMsg"
             }
-            throw Exception("Sign-in failed: $errorMsg")
+            throw Exception(friendlyMessage, e)
         }
     }
 
