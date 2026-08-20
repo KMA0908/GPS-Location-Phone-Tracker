@@ -23,6 +23,7 @@ val mapsApiKey = providers.gradleProperty("MAPS_API_KEY").orElse(bundledMapsApiK
 val routesApiKey = providers.gradleProperty("ROUTES_API_KEY")
     .orElse(localProperties.getProperty("ROUTES_API_KEY") ?: mapsApiKey)
     .get()
+val sharedDebugKeystore = rootProject.file("config/debug.keystore")
 
 android {
     namespace = "com.nhn.gps.location.phone.tracker"
@@ -57,10 +58,25 @@ android {
         }
     }
 
+    signingConfigs {
+        getByName("debug") {
+            check(sharedDebugKeystore.isFile) {
+                "Missing shared debug keystore: ${sharedDebugKeystore.absolutePath}"
+            }
+            storeFile = sharedDebugKeystore
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         debug {
             versionNameSuffix = "-debug"
             isDebuggable = true
+            signingConfig = signingConfigs.getByName("debug")
+            // Keep local/test builds fully isolated from the production AdMob app.
+            manifestPlaceholders["admobAppId"] = "ca-app-pub-3940256099942544~3347511713"
         }
         release {
             isMinifyEnabled = true

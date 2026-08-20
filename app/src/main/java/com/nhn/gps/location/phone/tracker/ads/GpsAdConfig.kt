@@ -9,6 +9,11 @@ import javax.inject.Singleton
 
 @Singleton
 class GpsAdConfig @Inject constructor() : AdConfig() {
+    override fun adEnablePlacement(placement: String): Boolean =
+        ADS_ENABLED &&
+            placement in GpsAdPlacement.all &&
+            (BuildConfig.DEBUG || super.adEnablePlacement(placement))
+
     override fun adUnitPlacement(placement: String): List<String> = when (placement) {
         in GpsAdPlacement.appOpen -> listOf(TEST_APP_OPEN_ID)
         in GpsAdPlacement.banners -> listOf(TEST_BANNER_ID)
@@ -22,8 +27,8 @@ class GpsAdConfig @Inject constructor() : AdConfig() {
     override fun blockRootedDevice(): Boolean = !BuildConfig.DEBUG && super.blockRootedDevice()
 
     companion object {
-        // Keep the ad SDK wired for later re-enable, but match comment_ads by
-        // disabling every placement in the current develop build.
+        // Debug builds use Google's official test units below. Release builds
+        // still obey the server-side placement switches from Remote Config.
         const val ADS_ENABLED = true
         const val TEST_APP_OPEN_ID = "ca-app-pub-3940256099942544/9257395921"
         const val TEST_BANNER_ID = "ca-app-pub-3940256099942544/6300978111"
