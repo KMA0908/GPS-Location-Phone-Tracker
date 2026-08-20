@@ -13,6 +13,6 @@
             <View android:layout_width="190dp" android:layout_height="12dp" android:background="@drawable/bg_ad_shimmer" />
             <View android:layout_width="132dp" android:layout_height="10dp" android:layout_marginTop="8dp" android:background="@drawable/bg_ad_shimmer" />
         </LinearLayout>
-        <View android:layout_width="92dp" android:layout_height="36dp" android:background="@drawable/bg_welcome_continue" />
+        <View android:layout_width="92dp" android:layout_height="36dp" android:background="@drawable/bg_native_cta_gradient" />
     </LinearLayout>
 </com.facebook.shimmer.ShimmerFrameLayout>
