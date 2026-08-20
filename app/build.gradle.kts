@@ -60,13 +60,17 @@ android {
 
     signingConfigs {
         getByName("debug") {
-            check(sharedDebugKeystore.isFile) {
-                "Missing shared debug keystore: ${sharedDebugKeystore.absolutePath}"
+            if (sharedDebugKeystore.isFile) {
+                storeFile = sharedDebugKeystore
+                storePassword = "android"
+                keyAlias = "androiddebugkey"
+                keyPassword = "android"
+            } else {
+                logger.warn(
+                    "Shared debug keystore not found at ${sharedDebugKeystore.absolutePath}; " +
+                        "using this machine's standard Android debug keystore.",
+                )
             }
-            storeFile = sharedDebugKeystore
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
         }
     }
 
