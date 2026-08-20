@@ -1,5 +1,3 @@
-import java.util.Properties
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -9,20 +7,7 @@ plugins {
     id("kotlin-parcelize")
 }
 
-// Build-time properties take precedence, followed by local.properties. The
-// bundled value keeps a checkout buildable until a dedicated Maps key is set.
-val localProperties = Properties().apply {
-    val localPropertiesFile = rootProject.file("local.properties")
-    if (localPropertiesFile.isFile) {
-        localPropertiesFile.inputStream().use { load(it) }
-    }
-}
-val bundledMapsApiKey = localProperties.getProperty("MAPS_API_KEY")
-    ?: "AIzaSyB943YDZBr0Bofd7aOQVaiAAmfQ7QCro4U"
-val mapsApiKey = providers.gradleProperty("MAPS_API_KEY").orElse(bundledMapsApiKey).get()
-val routesApiKey = providers.gradleProperty("ROUTES_API_KEY")
-    .orElse(localProperties.getProperty("ROUTES_API_KEY") ?: mapsApiKey)
-    .get()
+val googleMapApiKey = "AIzaSyB943YDZBr0Bofd7aOQVaiAAmfQ7QCro4U"
 
 android {
     namespace = "com.nhn.gps.location.phone.tracker"
@@ -37,9 +22,9 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["appName"] = "GPS Location Phone Tracker"
-        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
-        resValue("string", "maps_api_key", mapsApiKey)
-        resValue("string", "routes_api_key", routesApiKey)
+        manifestPlaceholders["MAPS_API_KEY"] = googleMapApiKey
+        resValue("string", "maps_api_key", googleMapApiKey)
+        resValue("string", "routes_api_key", googleMapApiKey)
         manifestPlaceholders["admobAppId"] = "ca-app-pub-5889155949011891~7746138357"
     }
 
