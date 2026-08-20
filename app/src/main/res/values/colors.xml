@@ -50,8 +50,12 @@
     <color name="neutral04">#63677E</color>
     <color name="neutral05">#7C8098</color>
     <color name="neutral08">#D1D3DB</color>
+    <color name="neutral09">#EEEFF2</color>
     <color name="primary01">#1A97FE</color>
     <color name="primary02">#017EE5</color>
+    <color name="native_cta_gradient_start">#20B953</color>
+    <color name="native_cta_gradient_center">#35C759</color>
+    <color name="native_cta_gradient_end">#36DF70</color>
     <color name="home_gradient_start">#2563EB</color>
     <color name="home_gradient_center">#4F46E5</color>
     <color name="home_gradient_end">#7C3AED</color>
