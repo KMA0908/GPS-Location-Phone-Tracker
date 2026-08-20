@@ -17,9 +17,6 @@ class GpsAdConfig @Inject constructor() : AdConfig() {
         else -> emptyList()
     }
 
-    override fun adEnablePlacement(placement: String): Boolean =
-        ADS_ENABLED && placement in GpsAdPlacement.all && super.adEnablePlacement(placement)
-
     override fun getLayoutLoading(): Int = R.layout.dialog_loading_ad
     override fun nativeAdChoicesPosition(): Int = NativeAdOptions.ADCHOICES_TOP_LEFT
     override fun blockRootedDevice(): Boolean = !BuildConfig.DEBUG && super.blockRootedDevice()

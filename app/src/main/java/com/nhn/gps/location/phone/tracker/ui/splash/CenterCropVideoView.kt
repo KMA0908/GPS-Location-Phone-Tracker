@@ -22,6 +22,8 @@ class CenterCropVideoView @JvmOverloads constructor(
     private var videoWidth = 0
     private var videoHeight = 0
     private var playbackErrorListener: (() -> Unit)? = null
+    private var firstFrameRenderedListener: (() -> Unit)? = null
+    private var hasRenderedFirstFrame = false
 
     init {
         surfaceTextureListener = this
@@ -34,6 +36,10 @@ class CenterCropVideoView @JvmOverloads constructor(
 
     fun setOnPlaybackErrorListener(listener: (() -> Unit)?) {
         playbackErrorListener = listener
+    }
+
+    fun setOnFirstFrameRenderedListener(listener: (() -> Unit)?) {
+        firstFrameRenderedListener = listener
     }
 
     fun stopPlayback() {
@@ -53,7 +59,12 @@ class CenterCropVideoView @JvmOverloads constructor(
         return true
     }
 
-    override fun onSurfaceTextureUpdated(surfaceTexture: SurfaceTexture) = Unit
+    override fun onSurfaceTextureUpdated(surfaceTexture: SurfaceTexture) {
+        if (!hasRenderedFirstFrame) {
+            hasRenderedFirstFrame = true
+            firstFrameRenderedListener?.invoke()
+        }
+    }
 
     override fun onDetachedFromWindow() {
         releasePlayer()
@@ -64,6 +75,7 @@ class CenterCropVideoView @JvmOverloads constructor(
         val uri = videoUri ?: return
         val texture = surfaceTexture ?: return
         releasePlayer()
+        hasRenderedFirstFrame = false
         val surface = Surface(texture)
         val player = MediaPlayer()
         mediaPlayer = player
@@ -82,6 +94,15 @@ class CenterCropVideoView @JvmOverloads constructor(
                 videoWidth = width
                 videoHeight = height
                 applyCenterCrop()
+            }
+            player.setOnInfoListener { _, what, _ ->
+                if (what == MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START) {
+                    if (!hasRenderedFirstFrame) {
+                        hasRenderedFirstFrame = true
+                        firstFrameRenderedListener?.invoke()
+                    }
+                }
+                false
             }
             player.setOnPreparedListener {
                 videoWidth = it.videoWidth
@@ -124,6 +145,7 @@ class CenterCropVideoView @JvmOverloads constructor(
         mediaPlayer?.runCatching {
             setOnPreparedListener(null)
             setOnVideoSizeChangedListener(null)
+            setOnInfoListener(null)
             setOnErrorListener(null)
             if (isPlaying) stop()
             reset()

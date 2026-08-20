@@ -35,7 +35,7 @@ class GpsTrackerApp : AdsApplication() {
         }
     }
 
-    private val activityCallbacks = object : Application.ActivityLifecycleCallbacks {
+    private val activityCallbacks = object : ActivityLifecycleCallbacks {
         override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
             currentActivityRef = WeakReference(activity)
         }

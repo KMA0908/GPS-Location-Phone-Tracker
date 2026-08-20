@@ -40,7 +40,7 @@ android {
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
         resValue("string", "maps_api_key", mapsApiKey)
         resValue("string", "routes_api_key", routesApiKey)
-        manifestPlaceholders["admobAppId"] = "ca-app-pub-3940256099942544~3347511713"
+        manifestPlaceholders["admobAppId"] = "ca-app-pub-5889155949011891~7746138357"
     }
 
     flavorDimensions += "environment"
