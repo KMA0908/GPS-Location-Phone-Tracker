@@ -7,7 +7,7 @@ plugins {
     id("kotlin-parcelize")
 }
 
-val googleMapApiKey = "AIzaSyB943YDZBr0Bofd7aOQVaiAAmfQ7QCro4U"
+val googleMapApiKey = "AIzaSyCi8JkPlv9NBtE0WpcVNYqVlFY2FSfCpWs"
 
 android {
     namespace = "com.nhn.gps.location.phone.tracker"
