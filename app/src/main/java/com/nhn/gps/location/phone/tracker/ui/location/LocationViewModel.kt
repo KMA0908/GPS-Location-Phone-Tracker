@@ -14,6 +14,7 @@ import com.nhn.gps.location.phone.tracker.data.local.AppPreferences
 import com.nhn.gps.location.phone.tracker.data.model.FriendLocation
 import com.nhn.gps.location.phone.tracker.data.model.UserLocation
 import com.nhn.gps.location.phone.tracker.data.repository.FriendRepository
+import com.nhn.gps.location.phone.tracker.data.repository.GoogleRouteTravelMode
 import com.nhn.gps.location.phone.tracker.data.repository.LocationRepository
 import com.nhn.gps.location.phone.tracker.data.repository.ZoneRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -26,10 +27,13 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-enum class DirectionTravelMode(val googleMapsValue: String) {
-    CAR("driving"),
-    MOTORCYCLE("two-wheeler"),
-    WALKING("walking"),
+enum class DirectionTravelMode(
+    val googleMapsValue: String,
+    val routeApiMode: GoogleRouteTravelMode,
+) {
+    CAR("driving", GoogleRouteTravelMode.DRIVE),
+    MOTORCYCLE("two-wheeler", GoogleRouteTravelMode.TWO_WHEELER),
+    WALKING("walking", GoogleRouteTravelMode.WALK),
 }
 
 @HiltViewModel

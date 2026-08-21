@@ -1,19 +1,27 @@
 package com.nhn.gps.location.phone.tracker.ui.main
 
 import androidx.lifecycle.viewModelScope
+import android.util.Log
+import com.google.android.gms.maps.model.LatLngBounds
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.api.model.RectangularBounds
+import com.google.android.libraries.places.api.net.FetchPlaceRequest
+import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
+import com.google.android.libraries.places.api.net.PlacesClient
 import com.nhn.gps.location.phone.tracker.base.BaseViewModel
 import com.nhn.gps.location.phone.tracker.data.local.AppPreferences
 import com.nhn.gps.location.phone.tracker.data.model.FamousPlaceModel
 import com.nhn.gps.location.phone.tracker.data.repository.ExploreRepository
 import com.nhn.gps.location.phone.tracker.data.repository.ExploreResult
 import com.nhn.gps.location.phone.tracker.data.repository.GeocodedLocation
-import com.nhn.gps.location.phone.tracker.data.repository.PhoneLocatorRepository
 import com.nhn.gps.location.phone.tracker.navigation.AppDestination
 import com.nhn.gps.location.phone.tracker.navigation.NavigationManager
 import com.nhn.gps.location.phone.tracker.ui.location.MapRouteRequest
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -22,11 +30,22 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+
+data class ZonePlacePrediction(
+    val placeId: String,
+    val primaryText: String,
+    val secondaryText: String,
+) {
+    val displayText: String
+        get() = listOf(primaryText, secondaryText).filter { it.isNotBlank() }.joinToString(", ")
+}
 
 sealed interface ZoneAddressSearchState {
     data object Idle : ZoneAddressSearchState
     data object Loading : ZoneAddressSearchState
-    data class Success(val location: GeocodedLocation) : ZoneAddressSearchState
+    data class Predictions(val items: List<ZonePlacePrediction>) : ZoneAddressSearchState
+    data class Success(val location: GeocodedLocation, val displayName: String?) : ZoneAddressSearchState
     data object NotFound : ZoneAddressSearchState
     data class Error(val messageRes: Int) : ZoneAddressSearchState
 }
@@ -36,14 +55,14 @@ class MainViewModel @Inject constructor(
     private val preferences: AppPreferences,
     private val navigationManager: NavigationManager,
     private val exploreRepository: ExploreRepository,
-    private val phoneLocatorRepository: PhoneLocatorRepository
+    private val placesClient: PlacesClient,
 ) : BaseViewModel() {
 
     private val _zoneAddressSearchState = MutableStateFlow<ZoneAddressSearchState>(ZoneAddressSearchState.Idle)
     val zoneAddressSearchState = _zoneAddressSearchState.asStateFlow()
     private var zoneAddressSearchJob: Job? = null
 
-    fun searchZoneAddress(query: String) {
+    fun searchZoneAddress(query: String, visibleBounds: LatLngBounds? = null, debounce: Boolean = true) {
         val trimmed = query.trim()
         if (trimmed.isEmpty()) {
             _zoneAddressSearchState.value = ZoneAddressSearchState.Error(com.nhn.gps.location.phone.tracker.R.string.search_address_empty)
@@ -54,21 +73,103 @@ class MainViewModel @Inject constructor(
         _zoneAddressSearchState.value = ZoneAddressSearchState.Loading
 
         zoneAddressSearchJob = viewModelScope.launch {
-            val result = phoneLocatorRepository.getLocationFromAddress(trimmed)
-            result.onSuccess { loc ->
-                if (loc != null) {
-                    _zoneAddressSearchState.value = ZoneAddressSearchState.Success(loc)
-                } else {
-                    _zoneAddressSearchState.value = ZoneAddressSearchState.NotFound
+            try {
+                if (debounce) delay(ZONE_SEARCH_DEBOUNCE_MS)
+                Log.d(TAG, "zone_places_query_started queryLength=${trimmed.length}")
+                val builder = FindAutocompletePredictionsRequest.builder().setQuery(trimmed)
+                visibleBounds?.let { bounds ->
+                    runCatching {
+                        builder.setLocationBias(
+                            RectangularBounds.newInstance(bounds.southwest, bounds.northeast)
+                        )
+                    }
                 }
-            }.onFailure {
+                val response = placesClient.findAutocompletePredictions(builder.build()).await()
+                val predictions = response.autocompletePredictions.map { prediction ->
+                    ZonePlacePrediction(
+                        placeId = prediction.placeId,
+                        primaryText = prediction.getPrimaryText(null).toString(),
+                        secondaryText = prediction.getSecondaryText(null).toString(),
+                    )
+                }
+                Log.d(TAG, "zone_places_predictions_received count=${predictions.size}")
+                _zoneAddressSearchState.value = if (predictions.isEmpty()) {
+                    ZoneAddressSearchState.NotFound
+                } else {
+                    ZoneAddressSearchState.Predictions(predictions)
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                Log.e(TAG, "zone_places_query_failed type=${error.javaClass.simpleName}", error)
                 _zoneAddressSearchState.value = ZoneAddressSearchState.Error(com.nhn.gps.location.phone.tracker.R.string.search_location_error)
+            }
+        }
+    }
+
+    fun selectZoneAddressPrediction(prediction: ZonePlacePrediction) {
+        zoneAddressSearchJob?.cancel()
+        _zoneAddressSearchState.value = ZoneAddressSearchState.Loading
+        zoneAddressSearchJob = viewModelScope.launch {
+            try {
+                Log.d(TAG, "zone_place_fetch_started placeId=${maskPlaceId(prediction.placeId)}")
+                val fields = listOf(
+                    Place.Field.ID,
+                    Place.Field.DISPLAY_NAME,
+                    Place.Field.FORMATTED_ADDRESS,
+                    Place.Field.LOCATION,
+                )
+                val place = placesClient.fetchPlace(
+                    FetchPlaceRequest.newInstance(prediction.placeId, fields)
+                ).await().place
+                val location = place.location
+                if (location == null) {
+                    _zoneAddressSearchState.value = ZoneAddressSearchState.NotFound
+                    return@launch
+                }
+                val formattedAddress = place.formattedAddress
+                    ?.takeIf { it.isNotBlank() }
+                    ?: prediction.displayText
+                Log.d(TAG, "zone_place_selected placeId=${maskPlaceId(place.id)}")
+                _zoneAddressSearchState.value = ZoneAddressSearchState.Success(
+                    location = GeocodedLocation(
+                        latitude = location.latitude,
+                        longitude = location.longitude,
+                        formattedAddress = formattedAddress,
+                        placeId = place.id ?: prediction.placeId,
+                    ),
+                    displayName = place.displayName?.takeIf { it.isNotBlank() }
+                        ?: prediction.primaryText,
+                )
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                Log.e(TAG, "zone_place_fetch_failed type=${error.javaClass.simpleName}", error)
+                _zoneAddressSearchState.value = ZoneAddressSearchState.Error(
+                    com.nhn.gps.location.phone.tracker.R.string.search_location_error
+                )
             }
         }
     }
 
     fun consumeZoneAddressSearchResult() {
         _zoneAddressSearchState.value = ZoneAddressSearchState.Idle
+    }
+
+    fun cancelZoneAddressSearch() {
+        zoneAddressSearchJob?.cancel()
+        zoneAddressSearchJob = null
+        _zoneAddressSearchState.value = ZoneAddressSearchState.Idle
+    }
+
+    private fun maskPlaceId(placeId: String?): String = placeId
+        ?.takeLast(4)
+        ?.padStart(7, '*')
+        ?: "missing"
+
+    private companion object {
+        const val TAG = "MainViewModel"
+        const val ZONE_SEARCH_DEBOUNCE_MS = 300L
     }
 
     private val _isLocationPermanentlyEnabled = MutableStateFlow(false)

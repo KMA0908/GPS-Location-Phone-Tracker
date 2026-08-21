@@ -19,7 +19,8 @@ interface PhoneLocatorRepository {
 data class GeocodedLocation(
     val latitude: Double,
     val longitude: Double,
-    val formattedAddress: String
+    val formattedAddress: String,
+    val placeId: String? = null,
 )
 
 @Singleton

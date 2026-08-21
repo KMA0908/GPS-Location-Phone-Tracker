@@ -147,14 +147,15 @@ class PlaceDetailFragment : BaseFragment<FragmentPlaceDetailBinding, PlaceDetail
             resources.getIdentifier(it, "string", requireContext().packageName)
         } ?: 0
 
-        tvDescription.text = if (resId != 0) {
-            getString(resId)
-        } else {
-            place.address ?: place.location.takeIf { it.isNotBlank() } ?: ""
-        }
+        tvDescription.text = place.description?.takeIf { it.isNotBlank() }
+            ?: (if (resId != 0) getString(resId) else null)
+            ?: place.address
+            ?: place.location.takeIf { it.isNotBlank() }
+            ?: getString(R.string.info_unavailable)
 
-        // Hero Attribution (not applicable for local assets)
-        tvHeroAttribution.visibility = View.GONE
+        // Local Creative Commons assets retain their required attribution.
+        tvHeroAttribution.text = place.imageAttribution.orEmpty()
+        tvHeroAttribution.visibility = if (place.imageAttribution.isNullOrBlank()) View.GONE else View.VISIBLE
 
         ivHero.loadFamousPlaceImage(place)
 

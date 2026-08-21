@@ -55,11 +55,15 @@ class FamousPlaceAdapter(
             ivThumbnail.setImageResource(item.imageRes.takeIf { it != 0 } ?: R.drawable.ic_paris)
             onBindPhoto(item, ivThumbnail)
 
-            tvAttribution.text = item.photoMetadata?.attributions ?: ""
+            tvAttribution.text = item.imageAttribution ?: item.photoMetadata?.attributions.orEmpty()
             tvAttribution.visibility = if (tvAttribution.text.isNotEmpty()) android.view.View.VISIBLE else android.view.View.GONE
 
-            tvReviewCount.text = "(${item.reviewCount} reviews)"
-            tvDistance.text = String.format(java.util.Locale.getDefault(), "%.1f km away", item.distanceKm)
+            tvReviewCount.text = if (item.reviewCount > 0) {
+                root.context.getString(R.string.reviews_count, item.reviewCount)
+            } else {
+                root.context.getString(R.string.not_rated)
+            }
+            tvDistance.text = formatFamousPlaceDistance(root.context, item.distanceKm)
 
             val iconRes = if (item.isFavorite) R.drawable.ic_love_fill else R.drawable.ic_love
             ivFavorite.animateFavoriteChange(iconRes, false)

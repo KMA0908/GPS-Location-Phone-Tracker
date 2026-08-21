@@ -72,7 +72,8 @@
                 android:layout_height="48dp"
                 android:layout_gravity="center"
                 android:layout_marginBottom="24dp"
-                android:src="@drawable/ic_location_permission" />
+                android:src="@drawable/ic_location_permission"
+                android:visibility="gone" />
 
             <!-- Search Box Overlay -->
             <androidx.cardview.widget.CardView
@@ -125,6 +126,19 @@
                     </FrameLayout>
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
+
+            <ListView
+                android:id="@+id/listSearchSuggestions"
+                android:layout_width="match_parent"
+                android:layout_height="180dp"
+                android:layout_gravity="top"
+                android:layout_marginHorizontal="@dimen/zone_search_margin"
+                android:layout_marginTop="64dp"
+                android:background="@color/white"
+                android:divider="@color/color_bdbdbd"
+                android:dividerHeight="1dp"
+                android:elevation="8dp"
+                android:visibility="gone" />
         </FrameLayout>
     </com.google.android.material.card.MaterialCardView>
 

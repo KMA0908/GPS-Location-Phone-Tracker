@@ -9,7 +9,7 @@ data class FamousPlaceModel(
     val imageRes: Int,
     val rating: Float,
     val reviewCount: Int,
-    val distanceKm: Double,
+    val distanceKm: Double? = null,
     val category: String,
     val isFavorite: Boolean = false,
     val latitude: Double = 0.0,
@@ -26,5 +26,7 @@ data class FamousPlaceModel(
     val previewPhotos: List<String> = emptyList(),
     val elevationMeters: Double? = null,
     val estimatedVisitMinutes: Int? = null,
-    val reviewCountLong: Long? = null
+    val reviewCountLong: Long? = null,
+    val description: String? = null,
+    val imageAttribution: String? = null
 )

@@ -1,6 +1,7 @@
 package com.nhn.gps.location.phone.tracker.ui.explore
 
 import androidx.lifecycle.viewModelScope
+import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.model.PhotoMetadata
 import com.nhn.gps.location.phone.tracker.base.BaseViewModel
 import com.nhn.gps.location.phone.tracker.data.model.FamousPlaceModel
@@ -56,6 +57,7 @@ class FamousPlaceViewModel @Inject constructor(
     private var visibleCount = INITIAL_PAGE_SIZE
     private var isAppending = false
     private var appendJob: Job? = null
+    private var userLocation: LatLng? = null
 
     private val categoryMap = mapOf(
         "All" to 0,
@@ -132,11 +134,8 @@ class FamousPlaceViewModel @Inject constructor(
             when (val result = repository.getAllFamousPlaces()) {
                 is ExploreResult.Success -> {
                     val allPlaces = result.data
-                    fullFilteredList = if (typeId == 0) {
-                        allPlaces
-                    } else {
-                        allPlaces.filter { it.idPlaceType == typeId }
-                    }
+                    fullFilteredList = filterFamousPlaces(allPlaces, typeId = typeId)
+                        .withCurrentDistances()
 
                     resetPagination()
                 }
@@ -160,7 +159,8 @@ class FamousPlaceViewModel @Inject constructor(
         when (val result = repository.getAllFamousPlaces()) {
             is ExploreResult.Success -> {
                 val allPlaces = result.data
-                fullFilteredList = allPlaces.filter { it.name.contains(query, ignoreCase = true) }
+                fullFilteredList = filterFamousPlaces(allPlaces, query = query)
+                    .withCurrentDistances()
                 resetPagination()
             }
             is ExploreResult.Empty -> {
@@ -205,23 +205,20 @@ class FamousPlaceViewModel @Inject constructor(
     }
 
     private fun updatePaginatedList(isReset: Boolean) {
-        val visibleList = fullFilteredList.take(visibleCount)
-        val hasMore = fullFilteredList.size > visibleCount
+        val page = paginateFamousPlaces(fullFilteredList, visibleCount)
         val favoriteIds = _uiState.value.favoriteIds
 
-        val featured = visibleList.firstOrNull()?.let {
+        val featured = page.featured?.let {
             it.copy(isFavorite = favoriteIds.contains(it.id))
         }
 
-        val trending = if (visibleList.size > 1) {
-            visibleList.drop(1).map { it.copy(isFavorite = favoriteIds.contains(it.id)) }
-        } else emptyList()
+        val trending = page.trending.map { it.copy(isFavorite = favoriteIds.contains(it.id)) }
 
         _uiState.update { it.copy(
             featuredPlace = featured,
             trendingPlaces = trending,
             isLoading = false,
-            hasMore = hasMore,
+            hasMore = page.hasMore,
             isReset = isReset
         ) }
         isAppending = false
@@ -229,6 +226,32 @@ class FamousPlaceViewModel @Inject constructor(
 
     fun onSearchQueryChanged(query: String) {
         searchQueryFlow.value = query
+    }
+
+    fun updateUserLocation(location: LatLng?) {
+        val previous = userLocation
+        if (previous == location) return
+        if (previous != null && location != null &&
+            com.google.maps.android.SphericalUtil.computeDistanceBetween(previous, location) < LOCATION_UPDATE_THRESHOLD_METERS
+        ) {
+            return
+        }
+
+        userLocation = location
+        if (fullFilteredList.isNotEmpty()) {
+            fullFilteredList = fullFilteredList.withCurrentDistances()
+            updatePaginatedList(isReset = false)
+        }
+    }
+
+    private fun List<FamousPlaceModel>.withCurrentDistances(): List<FamousPlaceModel> = map { place ->
+        place.copy(
+            distanceKm = calculateFamousPlaceDistanceKm(
+                userLocation = userLocation,
+                placeLatitude = place.latitude,
+                placeLongitude = place.longitude,
+            ),
+        )
     }
 
     fun onPlaceClicked(place: FamousPlaceModel) {
@@ -251,5 +274,6 @@ class FamousPlaceViewModel @Inject constructor(
         private const val INITIAL_PAGE_SIZE = 10
         private const val LOAD_MORE_PAGE_SIZE = 5
         private const val LOAD_MORE_DELAY_MS = 250L
+        private const val LOCATION_UPDATE_THRESHOLD_METERS = 25.0
     }
 }
