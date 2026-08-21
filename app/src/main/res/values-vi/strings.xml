@@ -106,4 +106,45 @@
     <string name="share_profile">Chia sẻ hồ sơ</string>
     <string name="turn_off_notification_title">Tắt thông báo?</string>
     <string name="turn_off_notification_msg">Bạn có thể bỏ lỡ các cảnh báo quan trọng về bạn bè và khu vực nếu tắt thông báo.</string>
+
+    <!-- Supported app languages -->
+    <string name="text_language">Ngôn ngữ</string>
+    <string name="language_english">Tiếng Anh</string>
+    <string name="language_native_english">Tiếng Anh</string>
+    <string name="language_vietnamese">Tiếng Việt</string>
+    <string name="language_native_vietnamese">Tiếng Việt</string>
+    <string name="language_french">Tiếng Pháp</string>
+    <string name="language_native_french">Français</string>
+    <string name="language_marathi">Tiếng Marathi</string>
+    <string name="language_native_marathi">मराठी (Ấn Độ)</string>
+    <string name="language_spanish">Tiếng Tây Ban Nha</string>
+    <string name="language_native_spanish">Español</string>
+    <string name="language_chinese">Tiếng Trung</string>
+    <string name="language_native_chinese">中文</string>
+    <string name="language_portuguese_portugal">Tiếng Bồ Đào Nha (Bồ Đào Nha)</string>
+    <string name="language_native_portuguese_portugal">Português (Bồ Đào Nha)</string>
+    <string name="language_russian">tiếng Nga</string>
+    <string name="language_native_russian">Русский</string>
+    <string name="language_indonesian">tiếng Indonesia</string>
+    <string name="language_native_indonesian">Bahasa Indonesia</string>
+    <string name="language_philippines">Filipino</string>
+    <string name="language_native_philippines">Filipino</string>
+    <string name="language_bangla">Bangla</string>
+    <string name="language_native_bangla">বাংলা</string>
+    <string name="language_portuguese_brazil">Tiếng Bồ Đào Nha (Brazil)</string>
+    <string name="language_native_portuguese_brazil">Bồ Đào Nha (Brazil)</string>
+    <string name="language_afrikaans">tiếng Afrikaans</string>
+    <string name="language_native_afrikaans">tiếng Afrikaans</string>
+    <string name="language_german">Tiếng Đức</string>
+    <string name="language_native_german">Deutsch</string>
+    <string name="language_canada">Tiếng Anh (Canada)</string>
+    <string name="language_native_canada">Tiếng Anh (Canada)</string>
+    <string name="language_english_uk">Tiếng Anh (Vương quốc Anh)</string>
+    <string name="language_native_english_uk">Tiếng Anh (Vương quốc Anh)</string>
+    <string name="language_korean">Tiếng Hàn</string>
+    <string name="language_native_korean">한국어</string>
+    <string name="language_dutch">tiếng Hà Lan</string>
+    <string name="language_native_dutch">Nederlands</string>
+    <string name="language_arabic">tiếng Ả Rập</string>
+    <string name="language_native_arabic">عربية</string>
 </resources>

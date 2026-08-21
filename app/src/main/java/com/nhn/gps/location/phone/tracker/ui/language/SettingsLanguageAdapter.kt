@@ -14,6 +14,10 @@ class SettingsLanguageAdapter(
 ) : RecyclerView.Adapter<SettingsLanguageAdapter.Holder>() {
     private var selectedIndex = items.indexOfFirst { it.isSelected }
 
+    init {
+        setHasStableIds(true)
+    }
+
     class Holder(val binding: ItemSettingsLanguageBinding) : RecyclerView.ViewHolder(binding.root)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = Holder(
@@ -43,16 +47,28 @@ class SettingsLanguageAdapter(
             if (selected) R.drawable.bg_settings_language_radio_selected else R.drawable.bg_settings_language_radio,
         )
         ivSelected.setImageResource(if (selected) R.drawable.ic_check_white else 0)
-        cardRoot.setOnClickListener { onClick(holder.bindingAdapterPosition) }
+        cardRoot.contentDescription = "${item.name}, ${item.nativeName}"
+        cardRoot.setOnClickListener {
+            val adapterPosition = holder.bindingAdapterPosition
+            if (adapterPosition != RecyclerView.NO_POSITION) onClick(adapterPosition)
+        }
     }
 
     override fun getItemCount() = items.size
 
+    override fun getItemId(position: Int): Long = items[position].languageCode.hashCode().toLong()
+
     fun select(index: Int) {
         if (index !in items.indices) return
         val previous = selectedIndex
+        if (previous == index) {
+            notifyItemChanged(index)
+            return
+        }
+        if (previous in items.indices) items[previous].isSelected = false
+        items[index].isSelected = true
         selectedIndex = index
-        if (previous >= 0) notifyItemChanged(previous)
+        if (previous in items.indices) notifyItemChanged(previous)
         notifyItemChanged(index)
     }
 }

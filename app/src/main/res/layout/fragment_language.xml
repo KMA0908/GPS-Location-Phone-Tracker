@@ -13,10 +13,11 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="20dp"
         android:layout_marginTop="36dp"
-        android:text="@string/txt_select_language"
+        android:ellipsize="end"
         android:fontFamily="@font/plus_jakarta_sans_semibold"
         android:includeFontPadding="false"
         android:maxLines="1"
+        android:text="@string/txt_select_language"
         android:textColor="@color/neutral01"
         android:textSize="22sp"
         android:textStyle="bold"
@@ -24,14 +25,15 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <ImageView
+    <androidx.appcompat.widget.AppCompatImageView
         android:id="@+id/btnNext"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="10dp"
         android:padding="12dp"
         android:src="@drawable/ic_tick_language"
-        android:contentDescription="@string/text_confirm_selection"
+        android:contentDescription="@null"
+        android:visibility="invisible"
         app:layout_constraintBottom_toBottomOf="@id/tvTitle"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@id/tvTitle" />
@@ -41,11 +43,13 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginHorizontal="20dp"
-        android:layout_marginTop="18dp"
+        android:layout_marginTop="20dp"
         android:layout_marginBottom="8dp"
         android:clipChildren="false"
         android:clipToPadding="false"
+        android:nestedScrollingEnabled="true"
         android:overScrollMode="never"
+        android:scrollbars="none"
         app:layout_constraintBottom_toTopOf="@id/nativeAdViewContainer"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -53,9 +57,11 @@
 
     <com.leansoft.ads.view.NativeAdViewContainer
         android:id="@+id/nativeAdViewContainer"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         app:ads_layout_loaded="@layout/layout_ad_native_media_big"
         app:ads_layout_loading="@layout/layout_ad_native_loading_media_big"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>

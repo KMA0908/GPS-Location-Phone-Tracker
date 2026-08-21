@@ -18,15 +18,20 @@ class GpsLanguageImpl : LeansoftLanguageInterface {
     private var selectListener: ((String) -> Unit)? = null
     private var applyListener: ((String) -> Unit)? = null
     private var selectedCode = ""
+    private var showCheckButtonRunnable: Runnable? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        cancelDelayedCheckButton()
         binding = FragmentLanguageBinding.inflate(inflater, container, false)
-        return requireNotNull(binding).root
+        return requireNotNull(binding).also {
+            it.btnNext.visibility = View.INVISIBLE
+            it.btnNext.isEnabled = false
+        }.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?, languageCodeSelected: String?) {
         val currentBinding = binding ?: return
-        val items = LanguageHelper.languages()
+        val items = LanguageHelper.getListLanguage(view.context)
         selectedCode = languageCodeSelected.orEmpty()
         adapter = LanguageAdapter(items, showClickGuide = languageCodeSelected.isNullOrBlank()) { index ->
             val item = items.getOrNull(index) ?: return@LanguageAdapter
@@ -35,20 +40,22 @@ class GpsLanguageImpl : LeansoftLanguageInterface {
             } else {
                 selectedCode = item.languageCode
                 adapter?.select(index)
-                currentBinding.btnNext.visibility = View.VISIBLE
+                updateCheckButtonVisibility(selectedCode)
             }
         }
         currentBinding.recyclerView.layoutManager = LinearLayoutManager(view.context)
         currentBinding.recyclerView.adapter = adapter
         if (languageCodeSelected.isNullOrBlank()) {
             currentBinding.btnNext.visibility = View.INVISIBLE
+            currentBinding.btnNext.isEnabled = false
+            currentBinding.btnNext.setOnClickListener(null)
         } else {
             val index = LanguageHelper.languageIndexFromCode(languageCodeSelected)
             adapter?.select(index)
-            currentBinding.btnNext.visibility = View.VISIBLE
-        }
-        currentBinding.btnNext.setOnClickListener {
-            selectedCode.takeIf(String::isNotBlank)?.let { applyListener?.invoke(it) }
+            updateCheckButtonVisibility(languageCodeSelected)
+            currentBinding.btnNext.setOnClickListener {
+                selectedCode.takeIf(String::isNotBlank)?.let { applyListener?.invoke(it) }
+            }
         }
     }
 
@@ -61,5 +68,37 @@ class GpsLanguageImpl : LeansoftLanguageInterface {
         binding?.nativeAdViewContainer?.let {
             it.visibility = if (it.adStatus == AdStatus.LOADING || it.adStatus == AdStatus.LOADED) View.VISIBLE else View.GONE
         }
+    }
+
+    private fun updateCheckButtonVisibility(languageCode: String?) {
+        cancelDelayedCheckButton()
+        if (languageCode.isNullOrBlank()) {
+            binding?.btnNext?.visibility = View.INVISIBLE
+            binding?.btnNext?.isEnabled = false
+            return
+        }
+
+        val delayMillis = GpsRemoteConfig.languageNextButtonDelayMillis()
+        if (delayMillis <= 0L) {
+            binding?.btnNext?.visibility = View.VISIBLE
+            binding?.btnNext?.isEnabled = true
+            return
+        }
+
+        binding?.btnNext?.visibility = View.INVISIBLE
+        binding?.btnNext?.isEnabled = false
+        val runnable = Runnable {
+            binding?.btnNext?.visibility = View.VISIBLE
+            binding?.btnNext?.isEnabled = true
+            showCheckButtonRunnable = null
+        }
+        showCheckButtonRunnable = runnable
+        binding?.btnNext?.postDelayed(runnable, delayMillis)
+    }
+
+    private fun cancelDelayedCheckButton() {
+        val runnable = showCheckButtonRunnable ?: return
+        binding?.btnNext?.removeCallbacks(runnable)
+        showCheckButtonRunnable = null
     }
 }

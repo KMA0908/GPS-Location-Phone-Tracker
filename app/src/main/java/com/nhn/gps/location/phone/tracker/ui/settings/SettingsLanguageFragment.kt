@@ -7,12 +7,14 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.nhn.gps.location.phone.tracker.R
 import com.nhn.gps.location.phone.tracker.data.local.AppPreferences
 import com.nhn.gps.location.phone.tracker.databinding.FragmentSettingsLanguageBinding
 import com.nhn.gps.location.phone.tracker.ui.language.SettingsLanguageAdapter
 import com.nhn.gps.location.phone.tracker.ui.main.MainActivity
 import com.nhn.gps.location.phone.tracker.util.LanguageHelper
 import dagger.hilt.android.AndroidEntryPoint
+import java.util.Locale
 import javax.inject.Inject
 import kotlinx.coroutines.launch
 
@@ -28,15 +30,25 @@ class SettingsLanguageFragment : Fragment() {
         FragmentSettingsLanguageBinding.inflate(inflater, container, false).also { _binding = it }.root
 
     override fun onViewCreated(view: android.view.View, savedInstanceState: Bundle?) {
-        val items = LanguageHelper.languages()
+        binding.tvTitle.text = LanguageHelper.getLocalizedString(
+            requireContext(),
+            R.string.text_language,
+            Locale.ENGLISH.language,
+        )
+        val items = LanguageHelper.getSettingsLanguageList(requireContext())
         val selected = LanguageHelper.languageIndexFromCode(LanguageHelper.currentLanguageCode(requireContext()))
-        selectedCode = items[selected].languageCode
+        selectedCode = items.getOrNull(selected)?.languageCode ?: Locale.ENGLISH.language
         adapter = SettingsLanguageAdapter(items) { index ->
             selectedCode = items[index].languageCode
             adapter.select(index)
         }
-        binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
-        binding.recyclerView.adapter = adapter
+        binding.recyclerView.apply {
+            layoutManager = LinearLayoutManager(requireContext())
+            adapter = this@SettingsLanguageFragment.adapter
+            itemAnimator = null
+            setHasFixedSize(true)
+            post { scrollToPosition(selected.coerceAtLeast(0)) }
+        }
         adapter.select(selected)
         binding.btnConfirm.setOnClickListener { applyLanguage() }
     }
@@ -54,6 +66,7 @@ class SettingsLanguageFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        binding.recyclerView.adapter = null
         _binding = null
         super.onDestroyView()
     }

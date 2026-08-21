@@ -21,6 +21,7 @@ import com.nhn.gps.location.phone.tracker.databinding.FragmentSettingsBinding
 import com.nhn.gps.location.phone.tracker.databinding.ItemSettingsMenuBinding
 import com.nhn.gps.location.phone.tracker.navigation.AppDestination
 import com.nhn.gps.location.phone.tracker.ui.main.MainViewModel
+import com.nhn.gps.location.phone.tracker.util.LanguageHelper
 import com.nhn.gps.location.phone.tracker.util.loadAvatar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
@@ -155,7 +156,8 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding, MainViewModel>() 
                 launch {
                     viewModel.selectedLanguage.collectLatest { lang ->
                         binding.itemLanguage.tvValue.visibility = View.VISIBLE
-                        binding.itemLanguage.tvValue.text = if (lang == "vi") "Tiếng Việt" else "English"
+                        binding.itemLanguage.tvValue.text =
+                            LanguageHelper.languageDisplayName(requireContext(), lang)
                     }
                 }
                 launch {

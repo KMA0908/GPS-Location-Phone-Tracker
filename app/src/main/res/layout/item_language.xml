@@ -18,15 +18,20 @@
         app:cardElevation="0dp"
         app:strokeColor="@android:color/transparent"
         app:strokeWidth="0dp">
+
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:clipChildren="false"
+            android:clipToPadding="false"
             android:paddingStart="14dp"
             android:paddingEnd="14dp">
-            <ImageView
+
+            <androidx.appcompat.widget.AppCompatImageView
                 android:id="@+id/ivLanguageFlag"
                 android:layout_width="26dp"
                 android:layout_height="26dp"
+                android:contentDescription="@null"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
@@ -69,18 +74,20 @@
                 android:id="@+id/ivSelected"
                 android:layout_width="18dp"
                 android:layout_height="18dp"
+                android:contentDescription="@null"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
         </androidx.constraintlayout.widget.ConstraintLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <ImageView
+    <androidx.appcompat.widget.AppCompatImageView
         android:id="@+id/ivClickLanguageGuide"
         android:layout_width="120dp"
         android:layout_height="120dp"
         android:layout_gravity="end|top"
         android:clickable="false"
+        android:contentDescription="@null"
         android:elevation="8dp"
         android:focusable="false"
         android:rotation="-32"

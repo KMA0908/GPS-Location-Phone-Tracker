@@ -249,4 +249,45 @@
     <!-- Notification Warning -->
     <string name="turn_off_notification_title">Turn off notifications?</string>
     <string name="turn_off_notification_msg">You might miss important alerts about your friends and zones if you turn off notifications.</string>
+
+    <!-- Supported app languages -->
+    <string name="text_language">Language</string>
+    <string name="language_english">English</string>
+    <string name="language_native_english">English</string>
+    <string name="language_vietnamese">Vietnamese</string>
+    <string name="language_native_vietnamese">Tiếng Việt</string>
+    <string name="language_french">French</string>
+    <string name="language_native_french">Français</string>
+    <string name="language_marathi">Marathi</string>
+    <string name="language_native_marathi">मराठी (India)</string>
+    <string name="language_spanish">Spanish</string>
+    <string name="language_native_spanish">Español</string>
+    <string name="language_chinese">Chinese</string>
+    <string name="language_native_chinese">中文</string>
+    <string name="language_portuguese_portugal">Portuguese (Portugal)</string>
+    <string name="language_native_portuguese_portugal">Português (Portugal)</string>
+    <string name="language_russian">Russian</string>
+    <string name="language_native_russian">Русский</string>
+    <string name="language_indonesian">Indonesian</string>
+    <string name="language_native_indonesian">Bahasa Indonesia</string>
+    <string name="language_philippines">Filipino</string>
+    <string name="language_native_philippines">Filipino</string>
+    <string name="language_bangla">Bangla</string>
+    <string name="language_native_bangla">বাংলা</string>
+    <string name="language_portuguese_brazil">Portuguese (Brazil)</string>
+    <string name="language_native_portuguese_brazil">Português (Brazil)</string>
+    <string name="language_afrikaans">Afrikaans</string>
+    <string name="language_native_afrikaans">Afrikaans</string>
+    <string name="language_german">German</string>
+    <string name="language_native_german">Deutsch</string>
+    <string name="language_canada">English (Canada)</string>
+    <string name="language_native_canada">English (Canada)</string>
+    <string name="language_english_uk">English (United Kingdom)</string>
+    <string name="language_native_english_uk">English (United Kingdom)</string>
+    <string name="language_korean">Korean</string>
+    <string name="language_native_korean">한국어</string>
+    <string name="language_dutch">Dutch</string>
+    <string name="language_native_dutch">Nederlands</string>
+    <string name="language_arabic">Arabic</string>
+    <string name="language_native_arabic">العربية</string>
 </resources>
