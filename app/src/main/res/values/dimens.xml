@@ -52,7 +52,7 @@
     <dimen name="famous_marker_dot_size">8dp</dimen>
     <dimen name="famous_marker_gap">4dp</dimen>
 
-    <dimen name="zone_map_height">320dp</dimen>
+    <dimen name="zone_map_height">340dp</dimen>
     <dimen name="zone_map_horizontal_margin">16dp</dimen>
     <dimen name="zone_map_corner_radius">24dp</dimen>
     <dimen name="zone_search_margin">12dp</dimen>

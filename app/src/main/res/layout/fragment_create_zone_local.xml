@@ -4,6 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:clickable="true"
+    android:focusable="true"
     android:background="@color/app_background">
 
     <!-- Header Toolbar -->
@@ -141,8 +143,11 @@
         app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
 
         <LinearLayout
+            android:id="@+id/layoutBottomSheetContent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:clickable="true"
+            android:focusable="true"
             android:orientation="vertical"
             android:paddingHorizontal="20dp"
             android:paddingBottom="32dp">
@@ -199,6 +204,8 @@
                     android:layout_height="match_parent"
                     android:background="@null"
                     android:hint="Enter zone name"
+                    android:imeOptions="actionDone"
+                    android:inputType="textCapSentences"
                     android:paddingHorizontal="20dp"
                     android:singleLine="true"
                     android:textColor="@color/text_primary"
