@@ -30,6 +30,7 @@ class SettingsLanguageFragment : Fragment() {
         FragmentSettingsLanguageBinding.inflate(inflater, container, false).also { _binding = it }.root
 
     override fun onViewCreated(view: android.view.View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         binding.tvTitle.text = LanguageHelper.getLocalizedString(
             requireContext(),
             R.string.text_language,
@@ -54,14 +55,23 @@ class SettingsLanguageFragment : Fragment() {
     }
 
     private fun applyLanguage() {
+        val languageCode = selectedCode
+        val currentLanguageCode = LanguageHelper.currentLanguageCode(requireContext())
+        if (languageCode == currentLanguageCode) {
+            parentFragmentManager.popBackStack()
+            return
+        }
+
+        val hostActivity = activity ?: return
         viewLifecycleOwner.lifecycleScope.launch {
-            preferences.saveSelectedLanguage(selectedCode)
-            LanguageHelper.setAppLanguage(requireContext().applicationContext, selectedCode)
-            startActivity(Intent(requireContext(), MainActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                putExtra("TARGET_DESTINATION", "home")
+            preferences.saveSelectedLanguage(languageCode)
+            LanguageHelper.setAppLanguage(hostActivity.applicationContext, languageCode)
+            if (!isAdded || parentFragmentManager.isStateSaved) return@launch
+
+            startActivity(Intent(hostActivity, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             })
-            requireActivity().finish()
+            hostActivity.finish()
         }
     }
 

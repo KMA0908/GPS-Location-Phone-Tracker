@@ -62,7 +62,10 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding, MainViewModel>() 
             ivIcon.setImageResource(R.drawable.ic_language)
             tvTitle.text = getString(R.string.language_selected)
             tvValue.visibility = View.VISIBLE
-            tvValue.text = "English" // TODO: Get from preferences
+            tvValue.text = LanguageHelper.languageDisplayName(
+                requireContext(),
+                LanguageHelper.currentLanguageCode(requireContext()),
+            )
             root.setOnClickListener { viewModel.openSettingsLanguage() }
         }
 
