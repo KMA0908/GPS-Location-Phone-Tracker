@@ -169,12 +169,12 @@
                         android:textColorHint="#80FFFFFF"
                         android:textSize="14sp" />
 
-                    <ImageView
-                        android:id="@+id/ivMicroPlaceholder"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:src="@drawable/ic_mic_famous"
-                        app:tint="#B0B3B8" />
+<!--                    <ImageView-->
+<!--                        android:id="@+id/ivMicroPlaceholder"-->
+<!--                        android:layout_width="wrap_content"-->
+<!--                        android:layout_height="wrap_content"-->
+<!--                        android:src="@drawable/ic_mic_famous"-->
+<!--                        app:tint="#B0B3B8" />-->
 
                     <ImageView
                         android:id="@+id/ivClear"

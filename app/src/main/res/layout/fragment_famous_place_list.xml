@@ -63,20 +63,20 @@
                         android:maxLines="1"
                         android:textSize="14sp" />
 
-                    <ImageView
-                        android:id="@+id/btnFilter"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="8dp"
-                        android:padding="2dp"
-                        android:src="@drawable/ic_sw_famous" />
+<!--                    <ImageView-->
+<!--                        android:id="@+id/btnFilter"-->
+<!--                        android:layout_width="wrap_content"-->
+<!--                        android:layout_height="wrap_content"-->
+<!--                        android:layout_marginEnd="8dp"-->
+<!--                        android:padding="2dp"-->
+<!--                        android:src="@drawable/ic_sw_famous" />-->
 
-                    <ImageView
-                        android:id="@+id/btnMicro"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:padding="2dp"
-                        android:src="@drawable/ic_mic_famous" />
+<!--                    <ImageView-->
+<!--                        android:id="@+id/btnMicro"-->
+<!--                        android:layout_width="wrap_content"-->
+<!--                        android:layout_height="wrap_content"-->
+<!--                        android:padding="2dp"-->
+<!--                        android:src="@drawable/ic_mic_famous" />-->
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
