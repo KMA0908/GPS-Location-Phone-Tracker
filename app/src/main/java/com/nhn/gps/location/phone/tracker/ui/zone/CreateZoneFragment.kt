@@ -10,9 +10,7 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
-import android.widget.ArrayAdapter
 import androidx.core.content.ContextCompat
-import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -37,9 +35,9 @@ import com.nhn.gps.location.phone.tracker.data.notification.ZoneMonitoringServic
 import com.nhn.gps.location.phone.tracker.databinding.FragmentCreateZoneLocalBinding
 import com.nhn.gps.location.phone.tracker.ui.main.MainViewModel
 import com.nhn.gps.location.phone.tracker.ui.main.ZoneAddressSearchState
-import com.nhn.gps.location.phone.tracker.ui.main.ZonePlacePrediction
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -54,9 +52,6 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
     private var selectedFormattedAddress: String? = null
     private var selectedPlaceId: String? = null
     private var selectedMapMarker: Marker? = null
-    private var isApplyingSearchResult = false
-    private var currentPredictions: List<ZonePlacePrediction> = emptyList()
-    private lateinit var searchSuggestionAdapter: ArrayAdapter<String>
     private var editing: Zone? = null
     private var hasAppliedInitialLocation = false
     private val radius get() = binding.sliderRadius.value.toInt()
@@ -71,16 +66,6 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
             selectedZoneLocation = null
             selectedFormattedAddress = null
             selectedPlaceId = null
-
-            searchSuggestionAdapter = ArrayAdapter(
-                requireContext(),
-                android.R.layout.simple_list_item_1,
-                mutableListOf(),
-            )
-            listSearchSuggestions.adapter = searchSuggestionAdapter
-            listSearchSuggestions.setOnItemClickListener { _, _, position, _ ->
-                currentPredictions.getOrNull(position)?.let(viewModel::selectZoneAddressPrediction)
-            }
 
             val mapFragment = childFragmentManager.findFragmentById(R.id.zoneMap) as? SupportMapFragment
             mapFragment?.getMapAsync(this@CreateZoneFragment)
@@ -103,17 +88,6 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
 
             // Search logic
             btnSearchLocation.setOnClickListener { submitAddressSearch() }
-            edtSearchLocation.doAfterTextChanged { editable ->
-                if (isApplyingSearchResult) return@doAfterTextChanged
-                val query = editable?.toString()?.trim().orEmpty()
-                if (query.length < MIN_SEARCH_QUERY_LENGTH) {
-                    currentPredictions = emptyList()
-                    listSearchSuggestions.visibility = View.GONE
-                    viewModel.cancelZoneAddressSearch()
-                } else {
-                    viewModel.searchZoneAddress(query, currentVisibleMapBounds())
-                }
-            }
             edtSearchLocation.setOnEditorActionListener { _, actionId, _ ->
                 if (actionId == EditorInfo.IME_ACTION_SEARCH) {
                     submitAddressSearch()
@@ -170,15 +144,7 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
             return
         }
         hideKeyboard()
-        currentPredictions.firstOrNull()?.let {
-            viewModel.selectZoneAddressPrediction(it)
-        } ?: viewModel.searchZoneAddress(query, currentVisibleMapBounds(), debounce = false)
-    }
-
-    private fun currentVisibleMapBounds() = if (selectedZoneLocation == null) {
-        null
-    } else {
-        runCatching { map?.projection?.visibleRegion?.latLngBounds }.getOrNull()
+        viewModel.searchZoneAddress(query)
     }
 
     private fun hideKeyboard() {
@@ -201,22 +167,10 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
             is ZoneAddressSearchState.Idle -> {
                 progressSearchLocation.visibility = android.view.View.GONE
                 btnSearchLocation.visibility = android.view.View.VISIBLE
-                listSearchSuggestions.visibility = View.GONE
             }
             is ZoneAddressSearchState.Loading -> {
                 progressSearchLocation.visibility = android.view.View.VISIBLE
                 btnSearchLocation.visibility = android.view.View.GONE
-                currentPredictions = emptyList()
-                listSearchSuggestions.visibility = View.GONE
-            }
-            is ZoneAddressSearchState.Predictions -> {
-                progressSearchLocation.visibility = View.GONE
-                btnSearchLocation.visibility = View.VISIBLE
-                currentPredictions = state.items
-                searchSuggestionAdapter.clear()
-                searchSuggestionAdapter.addAll(state.items.map { it.displayText })
-                searchSuggestionAdapter.notifyDataSetChanged()
-                listSearchSuggestions.visibility = if (state.items.isEmpty()) View.GONE else View.VISIBLE
             }
             is ZoneAddressSearchState.Success -> {
                 progressSearchLocation.visibility = android.view.View.GONE
@@ -235,28 +189,20 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
                     placeId = state.location.placeId,
                     animateCamera = true,
                 )
-                isApplyingSearchResult = true
-                edtSearchLocation.setText(state.displayName ?: state.location.formattedAddress)
+                edtSearchLocation.setText(state.location.formattedAddress)
                 edtSearchLocation.setSelection(edtSearchLocation.text?.length ?: 0)
-                isApplyingSearchResult = false
-                currentPredictions = emptyList()
-                listSearchSuggestions.visibility = View.GONE
-                Log.d(TAG, "zone_marker_pinned placeId=${maskPlaceId(selectedPlaceId)}")
+                Log.d(TAG, "zone_location_selected source=geocoder")
                 viewModel.consumeZoneAddressSearchResult()
             }
             is ZoneAddressSearchState.NotFound -> {
                 progressSearchLocation.visibility = android.view.View.GONE
                 btnSearchLocation.visibility = android.view.View.VISIBLE
-                listSearchSuggestions.visibility = View.GONE
-                currentPredictions = emptyList()
                 Toast.makeText(requireContext(), R.string.search_location_not_found, Toast.LENGTH_SHORT).show()
                 viewModel.consumeZoneAddressSearchResult()
             }
             is ZoneAddressSearchState.Error -> {
                 progressSearchLocation.visibility = android.view.View.GONE
                 btnSearchLocation.visibility = android.view.View.VISIBLE
-                listSearchSuggestions.visibility = View.GONE
-                currentPredictions = emptyList()
                 Toast.makeText(requireContext(), state.messageRes, Toast.LENGTH_SHORT).show()
                 viewModel.consumeZoneAddressSearchResult()
             }
@@ -345,6 +291,7 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
         selectedMapMarker = googleMap.addMarker(
             MarkerOptions().position(location).title(selectedFormattedAddress)
         )
+        Log.d(TAG, "zone_marker_pinned")
     }
 
     private fun drawCircle() {
@@ -354,6 +301,7 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
         val fill = if (binding.radioDangerous.isChecked) 0x44F44336 else 0x4435C759
         val stroke = if (binding.radioDangerous.isChecked) 0xFFF44336.toInt() else 0xFF35C759.toInt()
         circle = map.addCircle(CircleOptions().center(location).radius(radius.toDouble()).fillColor(fill).strokeColor(stroke).strokeWidth(2f))
+        Log.d(TAG, "zone_circle_drawn radius=$radius")
     }
 
     private fun saveZone() {
@@ -386,12 +334,21 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
             createdAt = editing?.createdAt ?: System.currentTimeMillis()
         )
         viewLifecycleOwner.lifecycleScope.launch {
-            zoneRepository.upsert(zone)
-            Log.d(TAG, "zone_saved_from_search_result hasPlaceId=${selectedPlaceId != null}")
-            ZoneMonitoringService.start(requireContext())
-            ZoneEditorState.selectedZoneId = null
-            Toast.makeText(requireContext(), "Zone saved", Toast.LENGTH_SHORT).show()
-            navigationManager.navigateBack()
+            binding.btnSave.isEnabled = false
+            try {
+                zoneRepository.upsert(zone)
+                Log.d(TAG, "zone_saved_from_pinned_location")
+                ZoneMonitoringService.start(requireContext())
+                ZoneEditorState.selectedZoneId = null
+                Toast.makeText(requireContext(), R.string.zone_saved, Toast.LENGTH_SHORT).show()
+                navigationManager.navigateBack()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                Log.e(TAG, "zone_save_failed type=${error.javaClass.simpleName}", error)
+                Toast.makeText(requireContext(), R.string.zone_save_error, Toast.LENGTH_SHORT).show()
+                binding.btnSave.isEnabled = true
+            }
         }
     }
 
@@ -434,18 +391,12 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
         return true
     }
 
-    private fun maskPlaceId(placeId: String?): String = placeId
-        ?.takeLast(4)
-        ?.padStart(7, '*')
-        ?: "none"
-
     companion object {
         private const val ARG_LAT = "arg_lat"
         private const val ARG_LNG = "arg_lng"
         private const val ARG_ADDRESS = "arg_address"
         private const val ARG_PLACE_NAME = "arg_place_name"
         private const val TAG = "CreateZoneFragment"
-        private const val MIN_SEARCH_QUERY_LENGTH = 2
         private const val STATE_SELECTED_LAT = "state_selected_lat"
         private const val STATE_SELECTED_LNG = "state_selected_lng"
         private const val STATE_SELECTED_ADDRESS = "state_selected_address"

@@ -1,68 +1,70 @@
 <?xml version="1.0" encoding="utf-8"?>
-
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-
-    android:layout_width="match_parent"
-
-    android:layout_height="match_parent"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clipToPadding="false"
+    android:fillViewport="true"
+    android:overScrollMode="ifContentScrolls">
 
-    android:gravity="center_horizontal"
-
-    android:paddingHorizontal="16dp"
-
-    android:orientation="vertical">
-
-    <ImageView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:src="@drawable/ic_qr_scan"/>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Scan your friend's\nQR code"
-        android:gravity="center"
-        android:textStyle="bold"
-        android:textSize="20sp"/>
-
-    <TextView
-        android:layout_width="250dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:gravity="center"
-        android:text="Place the QR inside the frame to add them instantly."/>
-
-    <Space
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"/>
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnOpenCamera"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:icon="@drawable/ic_open_camera"
-        app:iconGravity="textStart"
-        android:textSize="16sp"
-        android:backgroundTint="#35C759"
-        app:cornerRadius="100dp"
-        android:padding="16dp"
-        android:text="Open camera"/>
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="20dp"
+        android:paddingBottom="24dp">
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnMyQR"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:icon="@drawable/ic_qr_code"
-        app:iconGravity="textStart"
-        android:textSize="16dp"
-        app:cornerRadius="100dp"
-        android:padding="16dp"
-        android:layout_marginTop="12dp"
-        android:layout_marginBottom="30dp"
-        android:backgroundTint="#D4E8D1"
-        app:iconTint="#000000"
-        android:textColor="#000000"
-        android:text="My QR"/>
-</LinearLayout>
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_qr_scan" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center"
+            android:text="Scan your friend's\nQR code"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="250dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center"
+            android:text="Place the QR inside the frame to add them instantly." />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnOpenCamera"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:backgroundTint="#35C759"
+            android:padding="16dp"
+            android:text="Open camera"
+            android:textSize="16sp"
+            app:cornerRadius="100dp"
+            app:icon="@drawable/ic_open_camera"
+            app:iconGravity="textStart" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnMyQR"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:backgroundTint="#D4E8D1"
+            android:padding="16dp"
+            android:text="My QR"
+            android:textColor="#000000"
+            android:textSize="16sp"
+            app:cornerRadius="100dp"
+            app:icon="@drawable/ic_qr_code"
+            app:iconGravity="textStart"
+            app:iconTint="#000000" />
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

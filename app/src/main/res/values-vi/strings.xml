@@ -73,6 +73,8 @@
     <string name="search_location_error">Không thể tìm kiếm địa chỉ. Vui lòng thử lại.</string>
     <string name="search_location_unavailable">Thiết bị không hỗ trợ tìm kiếm địa chỉ</string>
     <string name="zone_location_required">Hãy tìm kiếm và chọn một vị trí hợp lệ trước</string>
+    <string name="zone_saved">Đã lưu vùng</string>
+    <string name="zone_save_error">Không thể lưu vùng. Vui lòng thử lại.</string>
     <string name="place_location_unavailable">Không có dữ liệu vị trí cho địa điểm này</string>
     <string name="add_to_favorites">Thêm vào yêu thích</string>
     <string name="remove_from_favorites">Xóa khỏi yêu thích</string>
