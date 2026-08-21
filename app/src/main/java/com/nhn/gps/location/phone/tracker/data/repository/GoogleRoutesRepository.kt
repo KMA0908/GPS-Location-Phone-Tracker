@@ -18,18 +18,33 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 
-data class DrivingRoute(
+enum class GoogleRouteTravelMode(val apiValue: String, val supportsTrafficAware: Boolean) {
+    DRIVE("DRIVE", true),
+    TWO_WHEELER("TWO_WHEELER", true),
+    WALK("WALK", false),
+}
+
+data class GoogleRoute(
     val points: List<LatLng>,
     val distanceMeters: Int,
     val durationSeconds: Long,
 )
+
+class GoogleRoutesException(
+    val httpCode: Int,
+    message: String,
+) : IOException(message)
 
 @Singleton
 class GoogleRoutesRepository @Inject constructor(
     @param:ApplicationContext private val context: Context,
 ) {
 
-    suspend fun computeDrivingRoute(origin: LatLng, destination: LatLng): DrivingRoute =
+    suspend fun computeRoute(
+        origin: LatLng,
+        destination: LatLng,
+        travelMode: GoogleRouteTravelMode,
+    ): GoogleRoute =
         withContext(Dispatchers.IO) {
             val connection = (URL(COMPUTE_ROUTES_URL).openConnection() as HttpURLConnection)
             try {
@@ -49,7 +64,7 @@ class GoogleRoutesRepository @Inject constructor(
                 }
 
                 connection.outputStream.bufferedWriter(Charsets.UTF_8).use { writer ->
-                    writer.write(createRequestBody(origin, destination).toString())
+                    writer.write(GoogleRoutesCodec.createRequestBody(origin, destination, travelMode).toString())
                 }
 
                 val responseCode = connection.responseCode
@@ -60,70 +75,17 @@ class GoogleRoutesRepository @Inject constructor(
                 })?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
 
                 if (responseCode !in 200..299) {
-                    throw IOException(readErrorMessage(responseBody, responseCode))
+                    throw GoogleRoutesException(
+                        responseCode,
+                        readErrorMessage(responseBody, responseCode),
+                    )
                 }
 
-                parseRoute(responseBody)
+                GoogleRoutesCodec.parseRoute(responseBody)
             } finally {
                 connection.disconnect()
             }
         }
-
-    private fun createRequestBody(origin: LatLng, destination: LatLng): JSONObject =
-        JSONObject().apply {
-            put("origin", waypoint(origin))
-            put("destination", waypoint(destination))
-            put("travelMode", "DRIVE")
-            put("routingPreference", "TRAFFIC_AWARE")
-            put("polylineQuality", "HIGH_QUALITY")
-            put("computeAlternativeRoutes", false)
-            put("languageCode", Locale.getDefault().toLanguageTag())
-            put("units", "METRIC")
-        }
-
-    private fun waypoint(point: LatLng): JSONObject = JSONObject().apply {
-        put(
-            "location",
-            JSONObject().put(
-                "latLng",
-                JSONObject()
-                    .put("latitude", point.latitude)
-                    .put("longitude", point.longitude),
-            ),
-        )
-    }
-
-    private fun parseRoute(responseBody: String): DrivingRoute {
-        val route = JSONObject(responseBody)
-            .optJSONArray("routes")
-            ?.optJSONObject(0)
-            ?: throw IOException("No driving route was returned")
-        val encodedPolyline = route
-            .optJSONObject("polyline")
-            ?.optString("encodedPolyline")
-            .orEmpty()
-        if (encodedPolyline.isBlank()) {
-            throw IOException("The route response did not contain a polyline")
-        }
-
-        val points = PolyUtil.decode(encodedPolyline)
-        if (points.size < 2) {
-            throw IOException("The route polyline is empty")
-        }
-
-        return DrivingRoute(
-            points = points,
-            distanceMeters = route.optInt("distanceMeters").coerceAtLeast(0),
-            durationSeconds = parseDurationSeconds(route.optString("duration")),
-        )
-    }
-
-    private fun parseDurationSeconds(value: String): Long = value
-        .removeSuffix("s")
-        .toDoubleOrNull()
-        ?.toLong()
-        ?.coerceAtLeast(0L)
-        ?: 0L
 
     private fun readErrorMessage(responseBody: String, responseCode: Int): String {
         val message = runCatching {
@@ -157,4 +119,69 @@ class GoogleRoutesRepository @Inject constructor(
         const val CONNECT_TIMEOUT_MS = 15_000
         const val READ_TIMEOUT_MS = 20_000
     }
+}
+
+internal object GoogleRoutesCodec {
+    fun createRequestBody(
+        origin: LatLng,
+        destination: LatLng,
+        travelMode: GoogleRouteTravelMode,
+    ): JSONObject =
+        JSONObject().apply {
+            put("origin", waypoint(origin))
+            put("destination", waypoint(destination))
+            put("travelMode", travelMode.apiValue)
+            if (travelMode.supportsTrafficAware) {
+                put("routingPreference", "TRAFFIC_AWARE")
+            }
+            put("polylineQuality", "HIGH_QUALITY")
+            put("computeAlternativeRoutes", false)
+            put("languageCode", Locale.getDefault().toLanguageTag())
+            put("units", "METRIC")
+        }
+
+    private fun waypoint(point: LatLng): JSONObject = JSONObject().apply {
+        put(
+            "location",
+            JSONObject().put(
+                "latLng",
+                JSONObject()
+                    .put("latitude", point.latitude)
+                    .put("longitude", point.longitude),
+            ),
+        )
+    }
+
+    fun parseRoute(responseBody: String): GoogleRoute {
+        val route = JSONObject(responseBody)
+            .optJSONArray("routes")
+            ?.optJSONObject(0)
+            ?: throw IOException("No route was returned")
+        val encodedPolyline = route
+            .optJSONObject("polyline")
+            ?.optString("encodedPolyline")
+            .orEmpty()
+        if (encodedPolyline.isBlank()) {
+            throw IOException("The route response did not contain a polyline")
+        }
+
+        val points = PolyUtil.decode(encodedPolyline)
+        if (points.size < 2) {
+            throw IOException("The route polyline is empty")
+        }
+
+        return GoogleRoute(
+            points = points,
+            distanceMeters = route.optInt("distanceMeters").coerceAtLeast(0),
+            durationSeconds = parseDurationSeconds(route.optString("duration")),
+        )
+    }
+
+    fun parseDurationSeconds(value: String): Long = value
+        .removeSuffix("s")
+        .toDoubleOrNull()
+        ?.toLong()
+        ?.coerceAtLeast(0L)
+        ?: 0L
+
 }

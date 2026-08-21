@@ -191,6 +191,11 @@
     <string name="route_calculating_description">Calculating a route that follows the road</string>
     <string name="route_not_found">Route unavailable</string>
     <string name="route_not_found_description">Could not calculate this route. Check your connection and Routes API configuration.</string>
+    <string name="route_unavailable_short">Unavailable</string>
+    <string name="route_unavailable_description">Google Routes did not return a route for this travel mode.</string>
+    <string name="route_tap_to_calculate">Tap to calculate</string>
+    <string name="route_motorcycle_description">Motorcycle route provided by Google Routes</string>
+    <string name="route_walking_description">Walking route provided by Google Routes</string>
     <string name="route_destination_unavailable">This friend has not shared a valid location yet.</string>
     <string name="route_approximate_description">Showing a direct-line estimate. Tap Start Navigation for road directions in Google Maps.</string>
     <string name="route_fastest_driving">Fastest driving route</string>
@@ -207,6 +212,9 @@
     <string name="search_location_not_found">Location not found</string>
     <string name="search_location_error">Unable to search location. Please try again.</string>
     <string name="search_location_unavailable">Device does not support location search</string>
+    <string name="zone_location_required">Search for and select a valid location first</string>
+    <string name="zone_saved">Zone saved</string>
+    <string name="zone_save_error">Unable to save zone. Please try again.</string>
     <string name="place_location_unavailable">Place location data unavailable for this place</string>
     <string name="unable_to_open_maps">Unable to open Google Maps</string>
     <string name="add_to_favorites">Add to favorites</string>

@@ -6,6 +6,8 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.StringRes
 import androidx.core.widget.addTextChangedListener
+import androidx.core.widget.NestedScrollView
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -19,6 +21,7 @@ import com.nhn.gps.location.phone.tracker.databinding.FragmentFamousPlaceListBin
 import com.nhn.gps.location.phone.tracker.databinding.ItemCategoryFilterBinding
 import com.nhn.gps.location.phone.tracker.navigation.AppDestination
 import com.nhn.gps.location.phone.tracker.ui.main.MainViewModel
+import com.nhn.gps.location.phone.tracker.ui.location.LocationViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -28,6 +31,7 @@ class FamousPlaceFragment : BaseFragment<FragmentFamousPlaceListBinding, FamousP
 
     override val viewModel: FamousPlaceViewModel by viewModels()
     private val mainViewModel: MainViewModel by viewModels({ requireActivity() })
+    private val locationViewModel: LocationViewModel by activityViewModels()
 
     private val categoryAdapter = FamousCategoryAdapter { category ->
         viewModel.onCategorySelected(category.filterName)
@@ -73,23 +77,18 @@ class FamousPlaceFragment : BaseFragment<FragmentFamousPlaceListBinding, FamousP
         rvFamousPlaces.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = placesAdapter
-            addOnScrollListener(object : RecyclerView.OnScrollListener() {
-                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                    if (dy <= 0) return
-                    val layoutManager = recyclerView.layoutManager as? LinearLayoutManager ?: return
-                    val totalItemCount = layoutManager.itemCount
-                    val lastVisibleItem = layoutManager.findLastVisibleItemPosition()
-
-                    if (
-                        totalItemCount > 0 &&
-                        lastVisibleItem != RecyclerView.NO_POSITION &&
-                        lastVisibleItem >= totalItemCount - 1
-                    ) {
-                        viewModel.loadMore()
-                    }
-                }
-            })
         }
+
+        contentScroll.setOnScrollChangeListener(
+            NestedScrollView.OnScrollChangeListener { scrollView, _, scrollY, _, oldScrollY ->
+                if (scrollY <= oldScrollY) return@OnScrollChangeListener
+                val content = scrollView.getChildAt(0) ?: return@OnScrollChangeListener
+                val remaining = content.measuredHeight - scrollView.measuredHeight - scrollY
+                if (remaining <= scrollView.measuredHeight) {
+                    viewModel.loadMore()
+                }
+            },
+        )
 
         btnSeeAll.setOnClickListener {
             etSearch.text?.clear()
@@ -106,6 +105,9 @@ class FamousPlaceFragment : BaseFragment<FragmentFamousPlaceListBinding, FamousP
                     viewModel.uiState.collectLatest { state ->
                         handleUiState(state)
                     }
+                }
+                launch {
+                    locationViewModel.selfLocation.collectLatest(viewModel::updateUserLocation)
                 }
                 launch {
                     viewModel.effect.collectLatest { effect ->
@@ -141,7 +143,7 @@ class FamousPlaceFragment : BaseFragment<FragmentFamousPlaceListBinding, FamousP
         tvFeaturedName.text = place.name
         tvFeaturedLocation.text = place.location
         tvFeaturedRating.text = String.format(java.util.Locale.getDefault(), "%.1f", place.rating)
-        tvKm.text = String.format(java.util.Locale.getDefault(), "%.1f km", place.distanceKm)
+        tvKm.text = formatFamousPlaceDistance(requireContext(), place.distanceKm)
         
         ivFeatured.loadFamousPlaceImage(place)
 
@@ -153,6 +155,9 @@ class FamousPlaceFragment : BaseFragment<FragmentFamousPlaceListBinding, FamousP
     }
 
     override fun onDestroyView() {
+        binding.contentScroll.setOnScrollChangeListener(
+            null as NestedScrollView.OnScrollChangeListener?,
+        )
         binding.rvCategories.adapter = null
         binding.rvFamousPlaces.adapter = null
         super.onDestroyView()

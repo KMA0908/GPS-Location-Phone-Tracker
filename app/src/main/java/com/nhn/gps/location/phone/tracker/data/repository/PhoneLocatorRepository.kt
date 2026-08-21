@@ -19,8 +19,11 @@ interface PhoneLocatorRepository {
 data class GeocodedLocation(
     val latitude: Double,
     val longitude: Double,
-    val formattedAddress: String
+    val formattedAddress: String,
+    val placeId: String? = null,
 )
+
+class GeocoderUnavailableException : Exception("Geocoder not available")
 
 @Singleton
 class PhoneLocatorRepositoryImpl @Inject constructor(
@@ -95,7 +98,7 @@ class PhoneLocatorRepositoryImpl @Inject constructor(
         if (trimmedQuery.isEmpty()) return@withContext Result.failure(Exception("Empty query"))
 
         if (!android.location.Geocoder.isPresent()) {
-            return@withContext Result.failure(Exception("Geocoder not available"))
+            return@withContext Result.failure(GeocoderUnavailableException())
         }
 
         try {
@@ -111,7 +114,9 @@ class PhoneLocatorRepositoryImpl @Inject constructor(
                 geocoder.getFromLocationName(trimmedQuery, 1)
             }
 
-            val address = addresses?.firstOrNull()
+            val address = addresses?.firstOrNull {
+                isValidCoordinate(it.latitude, it.longitude)
+            }
             if (address != null) {
                 val loc = GeocodedLocation(
                     latitude = address.latitude,
@@ -123,6 +128,7 @@ class PhoneLocatorRepositoryImpl @Inject constructor(
                 Result.success(null)
             }
         } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
             Result.failure(e)
         }
     }
@@ -140,7 +146,9 @@ class PhoneLocatorRepositoryImpl @Inject constructor(
     }
 
     private fun isValidCoordinate(lat: Double, lng: Double): Boolean {
-        return lat in -90.0..90.0 && lng in -180.0..180.0 && lat != 0.0 && lng != 0.0
+        return lat.isFinite() && lng.isFinite() &&
+            lat in -90.0..90.0 && lng in -180.0..180.0 &&
+            !(lat == 0.0 && lng == 0.0)
     }
 
     private fun formatAddress(address: android.location.Address?): String? {

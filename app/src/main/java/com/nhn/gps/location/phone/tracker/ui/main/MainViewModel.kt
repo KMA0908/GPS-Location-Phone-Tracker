@@ -1,12 +1,14 @@
 package com.nhn.gps.location.phone.tracker.ui.main
 
 import androidx.lifecycle.viewModelScope
+import android.util.Log
 import com.nhn.gps.location.phone.tracker.base.BaseViewModel
 import com.nhn.gps.location.phone.tracker.data.local.AppPreferences
 import com.nhn.gps.location.phone.tracker.data.model.FamousPlaceModel
 import com.nhn.gps.location.phone.tracker.data.repository.ExploreRepository
 import com.nhn.gps.location.phone.tracker.data.repository.ExploreResult
 import com.nhn.gps.location.phone.tracker.data.repository.GeocodedLocation
+import com.nhn.gps.location.phone.tracker.data.repository.GeocoderUnavailableException
 import com.nhn.gps.location.phone.tracker.data.repository.PhoneLocatorRepository
 import com.nhn.gps.location.phone.tracker.navigation.AppDestination
 import com.nhn.gps.location.phone.tracker.navigation.NavigationManager
@@ -14,6 +16,7 @@ import com.nhn.gps.location.phone.tracker.ui.location.MapRouteRequest
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -36,7 +39,7 @@ class MainViewModel @Inject constructor(
     private val preferences: AppPreferences,
     private val navigationManager: NavigationManager,
     private val exploreRepository: ExploreRepository,
-    private val phoneLocatorRepository: PhoneLocatorRepository
+    private val phoneLocatorRepository: PhoneLocatorRepository,
 ) : BaseViewModel() {
 
     private val _zoneAddressSearchState = MutableStateFlow<ZoneAddressSearchState>(ZoneAddressSearchState.Idle)
@@ -54,14 +57,33 @@ class MainViewModel @Inject constructor(
         _zoneAddressSearchState.value = ZoneAddressSearchState.Loading
 
         zoneAddressSearchJob = viewModelScope.launch {
-            val result = phoneLocatorRepository.getLocationFromAddress(trimmed)
-            result.onSuccess { loc ->
-                if (loc != null) {
-                    _zoneAddressSearchState.value = ZoneAddressSearchState.Success(loc)
-                } else {
-                    _zoneAddressSearchState.value = ZoneAddressSearchState.NotFound
-                }
-            }.onFailure {
+            try {
+                Log.d(TAG, "zone_geocoder_search_started queryLength=${trimmed.length}")
+                phoneLocatorRepository.getLocationFromAddress(trimmed)
+                    .onSuccess { location ->
+                        if (location == null) {
+                            Log.d(TAG, "zone_geocoder_search_not_found")
+                            _zoneAddressSearchState.value = ZoneAddressSearchState.NotFound
+                        } else {
+                            Log.d(TAG, "zone_geocoder_search_success")
+                            _zoneAddressSearchState.value = ZoneAddressSearchState.Success(location)
+                        }
+                    }
+                    .onFailure { error ->
+                        if (error is CancellationException) throw error
+                        Log.e(TAG, "zone_geocoder_search_failed type=${error.javaClass.simpleName}", error)
+                        _zoneAddressSearchState.value = ZoneAddressSearchState.Error(
+                            if (error is GeocoderUnavailableException) {
+                                com.nhn.gps.location.phone.tracker.R.string.search_location_unavailable
+                            } else {
+                                com.nhn.gps.location.phone.tracker.R.string.search_location_error
+                            }
+                        )
+                    }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                Log.e(TAG, "zone_geocoder_search_failed type=${error.javaClass.simpleName}", error)
                 _zoneAddressSearchState.value = ZoneAddressSearchState.Error(com.nhn.gps.location.phone.tracker.R.string.search_location_error)
             }
         }
@@ -69,6 +91,16 @@ class MainViewModel @Inject constructor(
 
     fun consumeZoneAddressSearchResult() {
         _zoneAddressSearchState.value = ZoneAddressSearchState.Idle
+    }
+
+    fun cancelZoneAddressSearch() {
+        zoneAddressSearchJob?.cancel()
+        zoneAddressSearchJob = null
+        _zoneAddressSearchState.value = ZoneAddressSearchState.Idle
+    }
+
+    private companion object {
+        const val TAG = "MainViewModel"
     }
 
     private val _isLocationPermanentlyEnabled = MutableStateFlow(false)

@@ -47,8 +47,9 @@ import com.nhn.gps.location.phone.tracker.ads.GpsAdPlacement
 import com.nhn.gps.location.phone.tracker.ads.ResumeAdGuard
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
 import com.nhn.gps.location.phone.tracker.data.model.FriendLocation
-import com.nhn.gps.location.phone.tracker.data.repository.DrivingRoute
+import com.nhn.gps.location.phone.tracker.data.repository.GoogleRoute
 import com.nhn.gps.location.phone.tracker.data.repository.GoogleRoutesRepository
+import com.nhn.gps.location.phone.tracker.data.repository.GoogleRoutesException
 import com.nhn.gps.location.phone.tracker.databinding.FragmentLocationBinding
 import com.nhn.gps.location.phone.tracker.navigation.AppDestination
 import com.nhn.gps.location.phone.tracker.ui.friend.FriendAdapter
@@ -112,7 +113,9 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     private var activeRouteFriendId: String? = null
     private var selectedFriendMarkerId: String? = null
     private var pendingMapRouteRequest: MapRouteRequest? = null
-    private var routeJob: Job? = null
+    private val routeJobs = mutableMapOf<DirectionTravelMode, Job>()
+    private val routeModeStates = PerModeResultStore<DirectionTravelMode, RouteModeState>()
+    private val routeRequestGeneration = RouteRequestGeneration()
     private var lastRouteOrigin: LatLng? = null
     private var lastRouteDestination: LatLng? = null
     private var lastRouteRequestAt = 0L
@@ -401,7 +404,11 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         modes.forEachIndexed { index, (mode, icon) ->
             val item = options.getChildAt(index)
             item.findViewById<android.widget.ImageView>(R.id.ivMode)?.setImageResource(icon)
-            item.setOnClickListener { viewModel.selectTravelMode(mode) }
+            item.setOnClickListener {
+                Log.d(TAG, "route_mode_selected mode=${mode.name}")
+                viewModel.selectTravelMode(mode)
+                selectOrRequestRouteMode(mode)
+            }
         }
         travelModeViewsConfigured = true
         renderSelectedTravelMode(viewModel.selectedTravelMode.value)
@@ -562,7 +569,10 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                     }
                 }
                 launch {
-                    viewModel.selectedTravelMode.collectLatest { renderSelectedTravelMode(it) }
+                    viewModel.selectedTravelMode.collectLatest {
+                        renderSelectedTravelMode(it)
+                        renderSelectedRouteMode(it)
+                    }
                 }
         launch {
             combine(
@@ -1003,8 +1013,9 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
             }
         }
         searchBottomSheetCallback = null
-        routeJob?.cancel()
-        routeJob = null
+        routeJobs.values.forEach(Job::cancel)
+        routeJobs.clear()
+        routeModeStates.clear()
         bottomSheetCallback?.let {
             if (::bottomSheetBehavior.isInitialized) {
                 bottomSheetBehavior.removeBottomSheetCallback(it)
@@ -1096,6 +1107,9 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         activeRoutePosition = destination
         activeRouteFriendId = friendId
         viewModel.selectTravelMode(DirectionTravelMode.CAR)
+        routeJobs.values.forEach(Job::cancel)
+        routeJobs.clear()
+        routeModeStates.clear()
         selectedFriendMarkerId = friendId
         selectedDestinationMarker?.remove()
         selectedDestinationMarker = googleMap?.addMarker(
@@ -1109,7 +1123,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         applyMarkerSelection()
 
         showDirectionLoading()
-        requestRoute(origin, destination, fitBounds = true, force = true)
+        requestAllRouteModes(origin, destination, fitBounds = true)
         bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
         return true
     }
@@ -1126,84 +1140,115 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         if (originMoved >= ROUTE_REFRESH_DISTANCE_METERS ||
             destinationMoved >= ROUTE_REFRESH_DISTANCE_METERS
         ) {
-            requestRoute(origin, destination, fitBounds = false, force = false)
+            val requestGeneration = routeRequestGeneration.next()
+            val selectedMode = viewModel.selectedTravelMode.value
+            DirectionTravelMode.entries
+                .filter { it != selectedMode }
+                .forEach { routeModeStates[it] = RouteModeState.Idle }
+            renderAllRouteOptionLabels()
+            requestRouteMode(
+                origin,
+                destination,
+                selectedMode,
+                fitBounds = false,
+                requestGeneration = requestGeneration,
+            )
         }
     }
 
-    private fun requestRoute(
+    private fun requestAllRouteModes(
         origin: LatLng,
         destination: LatLng,
         fitBounds: Boolean,
-        force: Boolean,
     ) {
-        if (!force && activeRoutePosition == null) return
+        val requestGeneration = routeRequestGeneration.next()
+        DirectionTravelMode.entries.forEach { mode ->
+            requestRouteMode(
+                origin = origin,
+                destination = destination,
+                mode = mode,
+                fitBounds = fitBounds && mode == viewModel.selectedTravelMode.value,
+                requestGeneration = requestGeneration,
+            )
+        }
+    }
+
+    private fun requestRouteMode(
+        origin: LatLng,
+        destination: LatLng,
+        mode: DirectionTravelMode,
+        fitBounds: Boolean,
+        requestGeneration: Long = routeRequestGeneration.current(),
+    ) {
+        if (activeRoutePosition == null) return
         lastRouteOrigin = origin
         lastRouteDestination = destination
         lastRouteRequestAt = android.os.SystemClock.elapsedRealtime()
-        routeJob?.cancel()
-        routeJob = viewLifecycleOwner.lifecycleScope.launch {
+        routeJobs.remove(mode)?.cancel()
+        routeModeStates[mode] = RouteModeState.Loading
+        renderRouteOptionLabel(mode)
+        if (viewModel.selectedTravelMode.value == mode) renderSelectedRouteMode(mode)
+        routeJobs[mode] = viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val route = routesRepository.computeDrivingRoute(origin, destination)
+                Log.d(TAG, "route_request_started mode=${mode.name}")
+                val route = routesRepository.computeRoute(origin, destination, mode.routeApiMode)
                 val currentDestination = activeRoutePosition ?: return@launch
-                if (SphericalUtil.computeDistanceBetween(currentDestination, destination) >
+                if (!routeRequestGeneration.isCurrent(requestGeneration) ||
+                    SphericalUtil.computeDistanceBetween(currentDestination, destination) >
                     ROUTE_RESPONSE_STALE_DISTANCE_METERS
                 ) {
+                    Log.d(TAG, "route_response_ignored_stale mode=${mode.name}")
                     return@launch
                 }
-                drawRouteLine(route, fitBounds)
-                showDirectionPanels(route.distanceMeters, route.durationSeconds)
+                routeModeStates[mode] = RouteModeState.Success(route, origin, destination)
+                Log.d(
+                    TAG,
+                    "route_request_success mode=${mode.name} distanceMeters=${route.distanceMeters} durationSeconds=${route.durationSeconds}",
+                )
+                renderRouteOptionLabel(mode)
+                if (viewModel.selectedTravelMode.value == mode) {
+                    drawRouteLine(route, fitBounds)
+                    showDirectionPanels(mode, route.distanceMeters, route.durationSeconds)
+                }
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
-                Log.e(TAG, "Unable to compute driving route", error)
+                if (!routeRequestGeneration.isCurrent(requestGeneration)) {
+                    Log.d(TAG, "route_response_ignored_stale mode=${mode.name}")
+                    return@launch
+                }
+                routeModeStates[mode] = RouteModeState.Unavailable
+                val httpCode = (error as? GoogleRoutesException)?.httpCode
+                Log.e(
+                    TAG,
+                    "route_request_failed mode=${mode.name} httpCode=${httpCode ?: "n/a"} errorType=${error.javaClass.simpleName}",
+                    error,
+                )
                 val currentDestination = activeRoutePosition
                 if (currentDestination != null &&
                     SphericalUtil.computeDistanceBetween(currentDestination, destination) <=
                     ROUTE_RESPONSE_STALE_DISTANCE_METERS
                 ) {
-                    // Routes API can be unavailable while a project is being configured or
-                    // when the device is offline. Keep the friend direction usable by drawing
-                    // a direct fallback line and opening Google Maps for turn-by-turn navigation.
-                    // This is deliberately labelled as an estimate so it is never mistaken for
-                    // a road-following route.
-                    val fallbackDistance = SphericalUtil
-                        .computeDistanceBetween(origin, destination)
-                        .toInt()
-                        .coerceAtLeast(1)
-                    val fallbackDuration = (fallbackDistance / ESTIMATED_DRIVING_METERS_PER_SECOND)
-                        .toLong()
-                        .coerceAtLeast(60L)
-                    drawFallbackRoute(origin, destination, fitBounds)
-                    showApproximateDirectionPanels(fallbackDistance, fallbackDuration)
+                    renderRouteOptionLabel(mode)
+                    if (viewModel.selectedTravelMode.value == mode) showRouteUnavailable()
                 }
             }
         }
     }
 
-    private fun drawFallbackRoute(origin: LatLng, destination: LatLng, fitBounds: Boolean) {
-        drawRouteLine(
-            DrivingRoute(
-                points = listOf(origin, destination),
-                distanceMeters = SphericalUtil.computeDistanceBetween(origin, destination)
-                    .toInt()
-                    .coerceAtLeast(1),
-                durationSeconds = 0L,
-            ),
-            fitBounds,
-        )
-    }
-
-    private fun showApproximateDirectionPanels(distanceMeters: Int, durationSeconds: Long) =
-        with(binding) {
-            val distanceText = formatDistance(distanceMeters)
-            val durationText = formatDuration(durationSeconds)
-            directionBottomPanel.tvRouteTime.text =
-                getString(R.string.route_duration_and_distance, durationText, distanceText)
-            directionBottomPanel.tvTraffic.text = getString(R.string.route_approximate_description)
-            directionBottomPanel.btnStartNavigation.isEnabled = true
-            directionBottomPanel.btnStartNavigation.alpha = 1f
-            updateRouteOptionLabels(durationText, distanceText)
+    private fun selectOrRequestRouteMode(mode: DirectionTravelMode) {
+        val origin = viewModel.selfLocation.value?.takeIf(::isValidRoutePoint) ?: return
+        val destination = activeRoutePosition?.takeIf(::isValidRoutePoint) ?: return
+        val state = routeModeStates[mode]
+        if (state is RouteModeState.Success &&
+            SphericalUtil.computeDistanceBetween(state.origin, origin) < ROUTE_REFRESH_DISTANCE_METERS &&
+            SphericalUtil.computeDistanceBetween(state.destination, destination) < ROUTE_RESPONSE_STALE_DISTANCE_METERS
+        ) {
+            renderSelectedRouteMode(mode)
+        } else if (state !is RouteModeState.Loading) {
+            requestRouteMode(origin, destination, mode, fitBounds = false)
         }
+    }
 
     private fun isValidRoutePoint(point: LatLng): Boolean =
         point.latitude.isFinite() &&
@@ -1212,7 +1257,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                 point.longitude in -180.0..180.0 &&
                 !(point.latitude == 0.0 && point.longitude == 0.0)
 
-    private fun drawRouteLine(route: DrivingRoute, fitBounds: Boolean) {
+    private fun drawRouteLine(route: GoogleRoute, fitBounds: Boolean) {
         val map = googleMap ?: return
         routeOutline?.remove()
         routeLine?.remove()
@@ -1265,7 +1310,8 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         directionBottomPanel.tvTraffic.text = getString(R.string.route_calculating_description)
         directionBottomPanel.btnStartNavigation.isEnabled = false
         directionBottomPanel.btnStartNavigation.alpha = 0.55f
-        updateRouteOptionLabels(getString(R.string.route_calculating_short), "")
+        DirectionTravelMode.entries.forEach { routeModeStates[it] = RouteModeState.Loading }
+        renderAllRouteOptionLabels()
         directionTopPanel.root.visibility = View.VISIBLE
         directionBottomPanel.root.visibility = View.VISIBLE
 
@@ -1274,25 +1320,85 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         txtTitle.text = getString(R.string.directions)
     }
 
-    private fun showDirectionPanels(distanceMeters: Int, durationSeconds: Long) = with(binding) {
+    private fun showDirectionPanels(
+        mode: DirectionTravelMode,
+        distanceMeters: Int,
+        durationSeconds: Long,
+    ) = with(binding) {
         val distanceText = formatDistance(distanceMeters)
         val durationText = formatDuration(durationSeconds)
         directionBottomPanel.tvRouteTime.text =
             getString(R.string.route_duration_and_distance, durationText, distanceText)
-        directionBottomPanel.tvTraffic.text = getString(R.string.route_fastest_driving)
+        directionBottomPanel.tvTraffic.text = getString(
+            when (mode) {
+                DirectionTravelMode.CAR -> R.string.route_fastest_driving
+                DirectionTravelMode.MOTORCYCLE -> R.string.route_motorcycle_description
+                DirectionTravelMode.WALKING -> R.string.route_walking_description
+            }
+        )
         directionBottomPanel.btnStartNavigation.isEnabled = true
         directionBottomPanel.btnStartNavigation.alpha = 1f
-        updateRouteOptionLabels(durationText, distanceText)
     }
 
-    private fun updateRouteOptionLabels(durationText: String, distanceText: String) {
+    private fun renderAllRouteOptionLabels() {
+        DirectionTravelMode.entries.forEach(::renderRouteOptionLabel)
+    }
+
+    private fun renderRouteOptionLabel(mode: DirectionTravelMode) {
         val routeOptions = binding.directionTopPanel.layoutRoutes
-        for (index in 0 until routeOptions.childCount) {
-            routeOptions.getChildAt(index).apply {
-                findViewById<TextView>(R.id.tvDuration)?.text = durationText
-                findViewById<TextView>(R.id.tvDistance)?.text = distanceText
+        val item = routeOptions.getChildAt(mode.ordinal) ?: return
+        when (val state = routeModeStates[mode] ?: RouteModeState.Idle) {
+            RouteModeState.Idle -> {
+                item.findViewById<TextView>(R.id.tvDuration)?.text = getString(R.string.route_tap_to_calculate)
+                item.findViewById<TextView>(R.id.tvDistance)?.text = ""
+            }
+            RouteModeState.Loading -> {
+                item.findViewById<TextView>(R.id.tvDuration)?.text = getString(R.string.route_calculating_short)
+                item.findViewById<TextView>(R.id.tvDistance)?.text = ""
+            }
+            is RouteModeState.Success -> {
+                item.findViewById<TextView>(R.id.tvDuration)?.text = formatDuration(state.route.durationSeconds)
+                item.findViewById<TextView>(R.id.tvDistance)?.text = formatDistance(state.route.distanceMeters)
+            }
+            RouteModeState.Unavailable -> {
+                item.findViewById<TextView>(R.id.tvDuration)?.text = getString(R.string.route_unavailable_short)
+                item.findViewById<TextView>(R.id.tvDistance)?.text = ""
             }
         }
+    }
+
+    private fun renderSelectedRouteMode(mode: DirectionTravelMode) {
+        when (val state = routeModeStates[mode] ?: return) {
+            RouteModeState.Idle -> selectOrRequestRouteMode(mode)
+            RouteModeState.Loading -> showSelectedModeLoading()
+            is RouteModeState.Success -> {
+                drawRouteLine(state.route, fitBounds = false)
+                showDirectionPanels(mode, state.route.distanceMeters, state.route.durationSeconds)
+            }
+            RouteModeState.Unavailable -> showRouteUnavailable()
+        }
+    }
+
+    private fun showSelectedModeLoading() = with(binding) {
+        routeOutline?.remove()
+        routeOutline = null
+        routeLine?.remove()
+        routeLine = null
+        directionBottomPanel.tvRouteTime.text = getString(R.string.route_calculating)
+        directionBottomPanel.tvTraffic.text = getString(R.string.route_calculating_description)
+        directionBottomPanel.btnStartNavigation.isEnabled = false
+        directionBottomPanel.btnStartNavigation.alpha = 0.55f
+    }
+
+    private fun showRouteUnavailable() = with(binding) {
+        routeOutline?.remove()
+        routeOutline = null
+        routeLine?.remove()
+        routeLine = null
+        directionBottomPanel.tvRouteTime.text = getString(R.string.route_unavailable_short)
+        directionBottomPanel.tvTraffic.text = getString(R.string.route_unavailable_description)
+        directionBottomPanel.btnStartNavigation.isEnabled = true
+        directionBottomPanel.btnStartNavigation.alpha = 1f
     }
 
     private fun formatDistance(distanceMeters: Int): String {
@@ -1323,8 +1429,9 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     }
 
     private fun clearRoute() = with(binding) {
-        routeJob?.cancel()
-        routeJob = null
+        routeJobs.values.forEach(Job::cancel)
+        routeJobs.clear()
+        routeModeStates.clear()
         (activity as? MainActivity)?.showScreenBanner(GpsAdPlacement.BANNER_REALTIME_TRACKER)
         routeOutline?.remove()
         routeOutline = null
@@ -1380,6 +1487,17 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         }
     }
 
+    private sealed interface RouteModeState {
+        data object Idle : RouteModeState
+        data object Loading : RouteModeState
+        data class Success(
+            val route: GoogleRoute,
+            val origin: LatLng,
+            val destination: LatLng,
+        ) : RouteModeState
+        data object Unavailable : RouteModeState
+    }
+
     companion object {
         private const val TAG = "LocationFragment"
         private const val DEFAULT_ZOOM = 15f
@@ -1387,7 +1505,6 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         private const val ROUTE_REFRESH_INTERVAL_MS = 8_000L
         private const val ROUTE_REFRESH_DISTANCE_METERS = 40.0
         private const val ROUTE_RESPONSE_STALE_DISTANCE_METERS = 50.0
-        private const val ESTIMATED_DRIVING_METERS_PER_SECOND = 8.33
         private val ROUTE_START_COLOR = Color.rgb(62, 218, 105)
         private val ROUTE_END_COLOR = Color.rgb(65, 218, 221)
 

@@ -51,6 +51,11 @@
     <string name="route_calculating_description">Đang tính tuyến đường bám theo đường đi</string>
     <string name="route_not_found">Không tìm thấy tuyến đường</string>
     <string name="route_not_found_description">Không thể tính tuyến đường. Hãy kiểm tra kết nối và cấu hình Routes API.</string>
+    <string name="route_unavailable_short">Không khả dụng</string>
+    <string name="route_unavailable_description">Google Routes không trả về tuyến đường cho phương thức di chuyển này.</string>
+    <string name="route_tap_to_calculate">Chạm để tính</string>
+    <string name="route_motorcycle_description">Tuyến xe máy do Google Routes cung cấp</string>
+    <string name="route_walking_description">Tuyến đi bộ do Google Routes cung cấp</string>
     <string name="route_destination_unavailable">Bạn bè chưa gửi vị trí hợp lệ.</string>
     <string name="route_approximate_description">Đang hiển thị đường thẳng tham khảo. Nhấn Start Navigation để nhận chỉ đường theo đường phố.</string>
     <string name="route_fastest_driving">Tuyến lái xe nhanh nhất</string>
@@ -58,6 +63,7 @@
     <string name="route_distance_meters">%1$d m</string>
     <string name="route_distance_kilometers_decimal">%1$.1f km</string>
     <string name="route_distance_kilometers">%1$d km</string>
+    <string name="distance_unavailable">Chưa có khoảng cách</string>
     <string name="route_minutes">%1$d phút</string>
     <string name="route_hours">%1$d giờ</string>
     <string name="route_hours_minutes">%1$d giờ %2$d phút</string>
@@ -66,6 +72,9 @@
     <string name="search_location_not_found">Không tìm thấy địa chỉ</string>
     <string name="search_location_error">Không thể tìm kiếm địa chỉ. Vui lòng thử lại.</string>
     <string name="search_location_unavailable">Thiết bị không hỗ trợ tìm kiếm địa chỉ</string>
+    <string name="zone_location_required">Hãy tìm kiếm và chọn một vị trí hợp lệ trước</string>
+    <string name="zone_saved">Đã lưu vùng</string>
+    <string name="zone_save_error">Không thể lưu vùng. Vui lòng thử lại.</string>
     <string name="place_location_unavailable">Không có dữ liệu vị trí cho địa điểm này</string>
     <string name="add_to_favorites">Thêm vào yêu thích</string>
     <string name="remove_from_favorites">Xóa khỏi yêu thích</string>

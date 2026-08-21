@@ -72,7 +72,8 @@
                 android:layout_height="48dp"
                 android:layout_gravity="center"
                 android:layout_marginBottom="24dp"
-                android:src="@drawable/ic_location_permission" />
+                android:src="@drawable/ic_location_permission"
+                android:visibility="gone" />
 
             <!-- Search Box Overlay -->
             <androidx.cardview.widget.CardView
@@ -125,6 +126,7 @@
                     </FrameLayout>
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
+
         </FrameLayout>
     </com.google.android.material.card.MaterialCardView>
 

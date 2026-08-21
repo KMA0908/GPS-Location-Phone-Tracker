@@ -3,6 +3,8 @@ package com.nhn.gps.location.phone.tracker.ui.zone
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Bundle
+import android.util.Log
+import android.view.View
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
@@ -20,13 +22,14 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.Circle
 import com.google.android.gms.maps.model.CircleOptions
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
+import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.nhn.gps.location.phone.tracker.R
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
 import com.nhn.gps.location.phone.tracker.data.model.Zone
 import com.nhn.gps.location.phone.tracker.data.model.ZoneStatus
 import com.nhn.gps.location.phone.tracker.data.model.ZoneType
-import com.nhn.gps.location.phone.tracker.data.repository.PhoneLocatorRepository
 import com.nhn.gps.location.phone.tracker.data.repository.ZoneRepository
 import com.nhn.gps.location.phone.tracker.data.notification.ZoneMonitoringService
 import com.nhn.gps.location.phone.tracker.databinding.FragmentCreateZoneLocalBinding
@@ -34,6 +37,7 @@ import com.nhn.gps.location.phone.tracker.ui.main.MainViewModel
 import com.nhn.gps.location.phone.tracker.ui.main.ZoneAddressSearchState
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -41,10 +45,13 @@ import javax.inject.Inject
 class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainViewModel>(), OnMapReadyCallback {
     override val viewModel: MainViewModel by viewModels({ requireActivity() })
     @Inject lateinit var zoneRepository: ZoneRepository
-    @Inject lateinit var phoneLocatorRepository: PhoneLocatorRepository
     private var map: GoogleMap? = null
     private var circle: Circle? = null
     private var center = LatLng(21.0285, 105.8542)
+    private var selectedZoneLocation: LatLng? = null
+    private var selectedFormattedAddress: String? = null
+    private var selectedPlaceId: String? = null
+    private var selectedMapMarker: Marker? = null
     private var editing: Zone? = null
     private var hasAppliedInitialLocation = false
     private val radius get() = binding.sliderRadius.value.toInt()
@@ -56,6 +63,9 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
         with(binding) {
             editing = null
             hasAppliedInitialLocation = false
+            selectedZoneLocation = null
+            selectedFormattedAddress = null
+            selectedPlaceId = null
 
             val mapFragment = childFragmentManager.findFragmentById(R.id.zoneMap) as? SupportMapFragment
             mapFragment?.getMapAsync(this@CreateZoneFragment)
@@ -91,7 +101,8 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
             updateSwitchUi(switchEnter, switchEnter.isChecked)
             updateSwitchUi(switchLeave, switchLeave.isChecked)
 
-            ZoneEditorState.selectedZoneId?.let { id ->
+            val restoredSelection = restoreSelection(savedInstanceState)
+            ZoneEditorState.selectedZoneId?.takeUnless { restoredSelection }?.let { id ->
                 viewLifecycleOwner.lifecycleScope.launch {
                     editing = zoneRepository.zones.firstOrNullValue { it.id == id }
                     editing?.let {
@@ -102,13 +113,10 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
             }
 
             // If not editing, try to apply location from arguments
-            if (ZoneEditorState.selectedZoneId == null) {
+            if (ZoneEditorState.selectedZoneId == null && !restoredSelection) {
                 getInitialLocationFromArgs()?.let { argCenter ->
-                    center = argCenter
                     val argAddress = arguments?.getString(ARG_ADDRESS)
-                    if (!argAddress.isNullOrBlank()) {
-                        edtAddress.setText(argAddress)
-                    }
+                    selectLocation(argCenter, argAddress, null, animateCamera = false)
                     hasAppliedInitialLocation = true
                 }
             }
@@ -168,7 +176,22 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
                 progressSearchLocation.visibility = android.view.View.GONE
                 btnSearchLocation.visibility = android.view.View.VISIBLE
                 val target = LatLng(state.location.latitude, state.location.longitude)
-                map?.animateCamera(CameraUpdateFactory.newLatLngZoom(target, 15f))
+                if (!isValidCoordinate(target.latitude, target.longitude) ||
+                    (target.latitude == 0.0 && target.longitude == 0.0)
+                ) {
+                    Toast.makeText(requireContext(), R.string.search_location_not_found, Toast.LENGTH_SHORT).show()
+                    viewModel.consumeZoneAddressSearchResult()
+                    return@with
+                }
+                selectLocation(
+                    location = target,
+                    address = state.location.formattedAddress,
+                    placeId = state.location.placeId,
+                    animateCamera = true,
+                )
+                edtSearchLocation.setText(state.location.formattedAddress)
+                edtSearchLocation.setSelection(edtSearchLocation.text?.length ?: 0)
+                Log.d(TAG, "zone_location_selected source=geocoder")
                 viewModel.consumeZoneAddressSearchResult()
             }
             is ZoneAddressSearchState.NotFound -> {
@@ -187,7 +210,12 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
     }
 
     private fun bindZone(zone: Zone) = with(binding) {
-        center = LatLng(zone.latitude, zone.longitude)
+        selectLocation(
+            location = LatLng(zone.latitude, zone.longitude),
+            address = zone.address,
+            placeId = null,
+            animateCamera = false,
+        )
         map?.moveCamera(CameraUpdateFactory.newLatLngZoom(center, 15f))
         edtName.setText(zone.name)
         edtAddress.setText(zone.address)
@@ -230,39 +258,63 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
         googleMap.uiSettings.isZoomControlsEnabled = false
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(center, 15f))
         
-        // Initial address fetch if we don't have one from args or editing
-        if (binding.edtAddress.text.isNullOrBlank()) {
-            updateAddress()
-        }
+        selectedZoneLocation?.let { pinMarker(it) }
 
-        // Cập nhật center khi bản đồ di chuyển xong (khớp với UI Drag to center)
+        // Camera movement only changes the viewport. It must never change the selected zone.
         googleMap.setOnCameraIdleListener {
-            center = googleMap.cameraPosition.target
-            drawCircle()
-            updateAddress()
+            Log.v(TAG, "zone_camera_idle selectionPinned=${selectedZoneLocation != null}")
         }
 
         drawCircle()
     }
 
-    private fun updateAddress() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            val address = phoneLocatorRepository.getAddressFromLocation(center.latitude, center.longitude)
-            binding.edtAddress.setText(address ?: "Unknown location")
-        }
+    private fun selectLocation(
+        location: LatLng,
+        address: String?,
+        placeId: String?,
+        animateCamera: Boolean,
+    ) {
+        val selection = ZoneLocationSelectionPolicy.select(location, address, placeId) ?: return
+        selectedZoneLocation = selection.location
+        selectedFormattedAddress = selection.address?.takeIf { it.isNotBlank() }
+        selectedPlaceId = selection.placeId
+        center = selection.location
+        selectedFormattedAddress?.let(binding.edtAddress::setText)
+        pinMarker(location)
+        drawCircle()
+        if (animateCamera) map?.animateCamera(CameraUpdateFactory.newLatLngZoom(location, 15f))
+    }
+
+    private fun pinMarker(location: LatLng) {
+        val googleMap = map ?: return
+        selectedMapMarker?.remove()
+        selectedMapMarker = googleMap.addMarker(
+            MarkerOptions().position(location).title(selectedFormattedAddress)
+        )
+        Log.d(TAG, "zone_marker_pinned")
     }
 
     private fun drawCircle() {
         val map = map ?: return
         circle?.remove()
+        val location = selectedZoneLocation ?: return
         val fill = if (binding.radioDangerous.isChecked) 0x44F44336 else 0x4435C759
         val stroke = if (binding.radioDangerous.isChecked) 0xFFF44336.toInt() else 0xFF35C759.toInt()
-        circle = map.addCircle(CircleOptions().center(center).radius(radius.toDouble()).fillColor(fill).strokeColor(stroke).strokeWidth(2f))
+        circle = map.addCircle(CircleOptions().center(location).radius(radius.toDouble()).fillColor(fill).strokeColor(stroke).strokeWidth(2f))
+        Log.d(TAG, "zone_circle_drawn radius=$radius")
     }
 
     private fun saveZone() {
         val name = binding.edtName.text?.toString()?.trim().orEmpty()
         if (name.isBlank()) { binding.edtName.error = "Enter a zone name"; return }
+        val currentSelection = selectedZoneLocation?.let {
+            PinnedZoneLocation(it, selectedFormattedAddress, selectedPlaceId)
+        }
+        val location = ZoneLocationSelectionPolicy.resolveForSave(currentSelection)
+        if (location == null) {
+            Toast.makeText(requireContext(), R.string.zone_location_required, Toast.LENGTH_SHORT).show()
+            return
+        }
         
         val zoneType = when (binding.toggleZoneType.checkedButtonId) {
             R.id.btnTypeHome -> ZoneType.HOME
@@ -274,30 +326,69 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
         val existingId = editing?.id ?: System.currentTimeMillis()
         val zone = Zone(
             id = existingId, name = name,
-            address = binding.edtAddress.text?.toString()?.trim().orEmpty(),
-            latitude = center.latitude, longitude = center.longitude,
+            address = selectedFormattedAddress ?: binding.edtAddress.text?.toString()?.trim().orEmpty(),
+            latitude = location.latitude, longitude = location.longitude,
             type = zoneType, radiusMeters = radius,
             onEnter = binding.switchEnter.isChecked, onLeave = binding.switchLeave.isChecked,
             status = if (binding.radioDangerous.isChecked) ZoneStatus.DANGEROUS else ZoneStatus.SAFE,
             createdAt = editing?.createdAt ?: System.currentTimeMillis()
         )
         viewLifecycleOwner.lifecycleScope.launch {
-            zoneRepository.upsert(zone)
-            ZoneMonitoringService.start(requireContext())
-            ZoneEditorState.selectedZoneId = null
-            Toast.makeText(requireContext(), "Zone saved", Toast.LENGTH_SHORT).show()
-            navigationManager.navigateBack()
+            binding.btnSave.isEnabled = false
+            try {
+                zoneRepository.upsert(zone)
+                Log.d(TAG, "zone_saved_from_pinned_location")
+                ZoneMonitoringService.start(requireContext())
+                ZoneEditorState.selectedZoneId = null
+                Toast.makeText(requireContext(), R.string.zone_saved, Toast.LENGTH_SHORT).show()
+                navigationManager.navigateBack()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                Log.e(TAG, "zone_save_failed type=${error.javaClass.simpleName}", error)
+                Toast.makeText(requireContext(), R.string.zone_save_error, Toast.LENGTH_SHORT).show()
+                binding.btnSave.isEnabled = true
+            }
         }
     }
 
     override fun onDestroyView() {
+        viewModel.cancelZoneAddressSearch()
         map?.apply {
             setOnCameraIdleListener(null)
             clear()
         }
         map = null
         circle = null
+        selectedMapMarker = null
         super.onDestroyView()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        selectedZoneLocation?.let {
+            outState.putDouble(STATE_SELECTED_LAT, it.latitude)
+            outState.putDouble(STATE_SELECTED_LNG, it.longitude)
+            outState.putString(STATE_SELECTED_ADDRESS, selectedFormattedAddress)
+            outState.putString(STATE_SELECTED_PLACE_ID, selectedPlaceId)
+        }
+    }
+
+    private fun restoreSelection(savedInstanceState: Bundle?): Boolean {
+        val state = savedInstanceState ?: return false
+        if (!state.containsKey(STATE_SELECTED_LAT) || !state.containsKey(STATE_SELECTED_LNG)) return false
+        val location = LatLng(
+            state.getDouble(STATE_SELECTED_LAT),
+            state.getDouble(STATE_SELECTED_LNG),
+        )
+        if (!isValidCoordinate(location.latitude, location.longitude)) return false
+        selectLocation(
+            location,
+            state.getString(STATE_SELECTED_ADDRESS),
+            state.getString(STATE_SELECTED_PLACE_ID),
+            animateCamera = false,
+        )
+        return true
     }
 
     companion object {
@@ -305,6 +396,11 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
         private const val ARG_LNG = "arg_lng"
         private const val ARG_ADDRESS = "arg_address"
         private const val ARG_PLACE_NAME = "arg_place_name"
+        private const val TAG = "CreateZoneFragment"
+        private const val STATE_SELECTED_LAT = "state_selected_lat"
+        private const val STATE_SELECTED_LNG = "state_selected_lng"
+        private const val STATE_SELECTED_ADDRESS = "state_selected_address"
+        private const val STATE_SELECTED_PLACE_ID = "state_selected_place_id"
 
         fun newInstance(
             initialLatitude: Double? = null,

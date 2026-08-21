@@ -8,11 +8,12 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import android.view.ViewTreeObserver
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -69,6 +70,16 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
     ): FragmentAddFriendBinding = FragmentAddFriendBinding.inflate(inflater, container, false)
 
     override fun setupViews(savedInstanceState: Bundle?) = with(binding) {
+        setupImeInsets()
+        cameraContainer.addOnLayoutChangeListener { _, left, top, right, bottom,
+                                                    oldLeft, oldTop, oldRight, oldBottom ->
+            val sizeChanged = right - left != oldRight - oldLeft ||
+                bottom - top != oldBottom - oldTop
+            if (sizeChanged && cameraContainer.isVisible) {
+                cameraContainer.post(::updateCustomFramingRect)
+            }
+        }
+
         header.btnBack.setOnClickListener { 
             handleToolbarBack()
         }
@@ -84,7 +95,6 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
         layoutScanQR.btnOpenCamera.setOnClickListener {
             showAddFriendInterThen {
                 cameraContainer.isVisible = true
-                setupCustomFramingRect()
                 layoutCamera.barcodeScanner.decodeContinuous(barcodeCallback)
                 layoutCamera.barcodeScanner.resume()
                 checkFlashSupport()
@@ -92,6 +102,7 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
                     GpsAdPlacement.NATIVE_QR_CAMERA,
                     GpsAdViewBinder.NativeFormat.MEDIUM,
                 )
+                cameraContainer.post(::updateCustomFramingRect)
             }
         }
         
@@ -143,31 +154,41 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
         }
     }
 
-    private fun setupCustomFramingRect() {
+    private fun setupImeInsets() {
+        val content = binding.contentContainer
+        val initialBottomPadding = content.paddingBottom
+        ViewCompat.setOnApplyWindowInsetsListener(content) { view, insets ->
+            val imeBottom = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+            val systemBottom = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom
+            view.setPadding(
+                view.paddingLeft,
+                view.paddingTop,
+                view.paddingRight,
+                initialBottomPadding + (imeBottom - systemBottom).coerceAtLeast(0),
+            )
+            insets
+        }
+        ViewCompat.requestApplyInsets(content)
+    }
+
+    private fun updateCustomFramingRect() {
         val scanner = binding.layoutCamera.barcodeScanner
         val frame = binding.layoutCamera.imgQrFrame
+        if (!scanner.isLaidOut || !frame.isLaidOut) return
 
-        scanner.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
-            override fun onGlobalLayout() {
-                val rect = Rect()
-                frame.getGlobalVisibleRect(rect)
+        val frameRect = Rect()
+        val scannerRect = Rect()
+        if (!frame.getGlobalVisibleRect(frameRect) || !scanner.getGlobalVisibleRect(scannerRect)) return
 
-                val scannerRect = Rect()
-                scanner.getGlobalVisibleRect(scannerRect)
-
-                val localRect = Rect(
-                    rect.left - scannerRect.left,
-                    rect.top - scannerRect.top,
-                    rect.right - scannerRect.left,
-                    rect.bottom - scannerRect.top
-                )
-
-                // Step 6: Decoder chỉ nhận ảnh trong vùng này
-                scanner.setManualFramingRect(localRect)
-                
-                scanner.viewTreeObserver.removeOnGlobalLayoutListener(this)
-            }
-        })
+        val localRect = Rect(
+            frameRect.left - scannerRect.left,
+            frameRect.top - scannerRect.top,
+            frameRect.right - scannerRect.left,
+            frameRect.bottom - scannerRect.top,
+        )
+        if (localRect.width() > 0 && localRect.height() > 0) {
+            scanner.setManualFramingRect(localRect)
+        }
     }
 
     private fun scanQrFromUri(uri: Uri) {

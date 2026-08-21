@@ -50,18 +50,21 @@ class ExploreRepositoryImpl @Inject constructor(
                         imageRes = mapTypeToImage(type),
                         rating = obj.optDouble("rating", 0.0).toFloat(),
                         reviewCount = obj.optInt("reviewCount", 0),
-                        distanceKm = 0.0,
+                        distanceKm = null,
                         category = mapTypeToCategory(type),
                         latitude = lat,
                         longitude = lng,
                         idPlaceType = type,
                         descriptionResKey = obj.optString("descriptionResKey"),
                         previewPhotos = previewPhotos,
-                        address = obj.optString("address"),
+                        address = obj.optString("address").takeIf { it.isNotBlank() },
                         isOpen = if (obj.has("isOpen")) obj.getBoolean("isOpen") else null,
                         elevationMeters = if (obj.has("elevationMeters")) obj.getDouble("elevationMeters") else null,
                         estimatedVisitMinutes = if (obj.has("estimatedVisitMinutes")) obj.getInt("estimatedVisitMinutes") else null,
-                        reviewCountLong = obj.optLong("reviewCount")
+                        reviewCountLong = obj.optLong("reviewCount").takeIf { obj.has("reviewCount") },
+                        description = obj.optString("description").takeIf { it.isNotBlank() },
+                        imageAttribution = obj.optString("imageAttribution").takeIf { it.isNotBlank() },
+                        websiteUri = obj.optString("websiteUri").takeIf { it.isNotBlank() }
                     )
                 )
             }
