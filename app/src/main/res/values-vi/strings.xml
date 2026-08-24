@@ -53,6 +53,14 @@
     <string name="route_not_found_description">Không thể tính tuyến đường. Hãy kiểm tra kết nối và cấu hình Routes API.</string>
     <string name="route_unavailable_short">Không khả dụng</string>
     <string name="route_unavailable_description">Google Routes không trả về tuyến đường cho phương thức di chuyển này.</string>
+    <string name="route_network_error">Không thể kết nối Google Routes. Hãy kiểm tra mạng và thử lại.</string>
+    <string name="route_invalid_request">Yêu cầu tuyến đường chứa vị trí hoặc phương thức di chuyển không hợp lệ.</string>
+    <string name="route_api_not_configured">Routes API chưa được bật hoặc cấu hình cho dự án này.</string>
+    <string name="route_app_not_authorized">Ứng dụng không được phép dùng Routes API. Hãy kiểm tra API key, package và chứng chỉ ký.</string>
+    <string name="route_billing_required">Dự án chưa bật thanh toán cho Routes API.</string>
+    <string name="route_quota_exceeded">Đã vượt hạn mức Routes API. Vui lòng thử lại sau.</string>
+    <string name="route_service_unavailable">Google Routes đang tạm thời không khả dụng. Vui lòng thử lại.</string>
+    <string name="route_invalid_response">Google Routes trả về dữ liệu tuyến đường chưa đầy đủ.</string>
     <string name="route_tap_to_calculate">Chạm để tính</string>
     <string name="route_motorcycle_description">Tuyến xe máy do Google Routes cung cấp</string>
     <string name="route_walking_description">Tuyến đi bộ do Google Routes cung cấp</string>

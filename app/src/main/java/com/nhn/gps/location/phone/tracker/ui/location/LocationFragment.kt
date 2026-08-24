@@ -12,6 +12,7 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.StringRes
 import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
@@ -48,6 +49,8 @@ import com.nhn.gps.location.phone.tracker.ads.ResumeAdGuard
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
 import com.nhn.gps.location.phone.tracker.data.model.FriendLocation
 import com.nhn.gps.location.phone.tracker.data.repository.GoogleRoute
+import com.nhn.gps.location.phone.tracker.data.repository.GoogleRoutesInvalidResponseException
+import com.nhn.gps.location.phone.tracker.data.repository.GoogleRoutesNoRouteException
 import com.nhn.gps.location.phone.tracker.data.repository.GoogleRoutesRepository
 import com.nhn.gps.location.phone.tracker.data.repository.GoogleRoutesException
 import com.nhn.gps.location.phone.tracker.databinding.FragmentLocationBinding
@@ -63,6 +66,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.util.Locale
 import javax.inject.Inject
 import kotlin.math.pow
@@ -1217,11 +1222,18 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                     Log.d(TAG, "route_response_ignored_stale mode=${mode.name}")
                     return@launch
                 }
-                routeModeStates[mode] = RouteModeState.Unavailable
-                val httpCode = (error as? GoogleRoutesException)?.httpCode
+                val failureMessage = routeFailureMessage(error)
+                routeModeStates[mode] = RouteModeState.Failure(failureMessage)
+                val routesError = error as? GoogleRoutesException
                 Log.e(
                     TAG,
-                    "route_request_failed mode=${mode.name} httpCode=${httpCode ?: "n/a"} errorType=${error.javaClass.simpleName}",
+                    "route_request_failed mode=${mode.name} " +
+                        "httpCode=${routesError?.httpCode ?: "n/a"} " +
+                        "backendStatus=${routesError?.backendStatus ?: "n/a"} " +
+                        "backendMessage=${sanitizeRouteLogMessage(routesError?.backendMessage)} " +
+                        "errorType=${error.javaClass.simpleName} " +
+                        "package=${requireContext().packageName} " +
+                        "signingCertificateAvailable=${routesRepository.hasSigningCertificate()}",
                     error,
                 )
                 val currentDestination = activeRoutePosition
@@ -1230,7 +1242,9 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                     ROUTE_RESPONSE_STALE_DISTANCE_METERS
                 ) {
                     renderRouteOptionLabel(mode)
-                    if (viewModel.selectedTravelMode.value == mode) showRouteUnavailable()
+                    if (viewModel.selectedTravelMode.value == mode) {
+                        showRouteUnavailable(failureMessage)
+                    }
                 }
             }
         }
@@ -1360,7 +1374,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                 item.findViewById<TextView>(R.id.tvDuration)?.text = formatDuration(state.route.durationSeconds)
                 item.findViewById<TextView>(R.id.tvDistance)?.text = formatDistance(state.route.distanceMeters)
             }
-            RouteModeState.Unavailable -> {
+            is RouteModeState.Failure -> {
                 item.findViewById<TextView>(R.id.tvDuration)?.text = getString(R.string.route_unavailable_short)
                 item.findViewById<TextView>(R.id.tvDistance)?.text = ""
             }
@@ -1375,7 +1389,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                 drawRouteLine(state.route, fitBounds = false)
                 showDirectionPanels(mode, state.route.distanceMeters, state.route.durationSeconds)
             }
-            RouteModeState.Unavailable -> showRouteUnavailable()
+            is RouteModeState.Failure -> showRouteUnavailable(state.messageRes)
         }
     }
 
@@ -1390,15 +1404,64 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         directionBottomPanel.btnStartNavigation.alpha = 0.55f
     }
 
-    private fun showRouteUnavailable() = with(binding) {
+    private fun showRouteUnavailable(
+        @StringRes descriptionRes: Int = R.string.route_unavailable_description,
+    ) = with(binding) {
         routeOutline?.remove()
         routeOutline = null
         routeLine?.remove()
         routeLine = null
         directionBottomPanel.tvRouteTime.text = getString(R.string.route_unavailable_short)
-        directionBottomPanel.tvTraffic.text = getString(R.string.route_unavailable_description)
+        directionBottomPanel.tvTraffic.text = getString(descriptionRes)
         directionBottomPanel.btnStartNavigation.isEnabled = true
         directionBottomPanel.btnStartNavigation.alpha = 1f
+    }
+
+    @StringRes
+    private fun routeFailureMessage(error: Exception): Int {
+        if (error is UnknownHostException || error is SocketTimeoutException) {
+            return R.string.route_network_error
+        }
+        if (error is GoogleRoutesNoRouteException) {
+            return R.string.route_unavailable_description
+        }
+        if (error is GoogleRoutesInvalidResponseException) {
+            return R.string.route_invalid_response
+        }
+        val routesError = error as? GoogleRoutesException
+            ?: return R.string.route_not_found_description
+        val backendText = listOfNotNull(
+            routesError.backendStatus,
+            routesError.backendMessage,
+        ).joinToString(" ").lowercase(Locale.US)
+        return when {
+            routesError.httpCode == 400 || "invalid_argument" in backendText ->
+                R.string.route_invalid_request
+
+            routesError.httpCode == 429 ||
+                "resource_exhausted" in backendText ||
+                "quota" in backendText -> R.string.route_quota_exceeded
+
+            "billing" in backendText -> R.string.route_billing_required
+
+            "not enabled" in backendText ||
+                "has not been used" in backendText ||
+                "access_not_configured" in backendText -> R.string.route_api_not_configured
+
+            routesError.httpCode == 403 || "permission_denied" in backendText ->
+                R.string.route_app_not_authorized
+
+            routesError.httpCode in 500..599 -> R.string.route_service_unavailable
+            else -> R.string.route_not_found_description
+        }
+    }
+
+    private fun sanitizeRouteLogMessage(message: String?): String {
+        if (message.isNullOrBlank()) return "n/a"
+        return message
+            .replace(Regex("AIza[0-9A-Za-z_-]+"), "[redacted]")
+            .replace(Regex("(?i)(key=)[^&\\s]+"), "$1[redacted]")
+            .take(MAX_ROUTE_LOG_MESSAGE_LENGTH)
     }
 
     private fun formatDistance(distanceMeters: Int): String {
@@ -1495,7 +1558,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
             val origin: LatLng,
             val destination: LatLng,
         ) : RouteModeState
-        data object Unavailable : RouteModeState
+        data class Failure(@param:StringRes val messageRes: Int) : RouteModeState
     }
 
     companion object {
@@ -1505,6 +1568,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         private const val ROUTE_REFRESH_INTERVAL_MS = 8_000L
         private const val ROUTE_REFRESH_DISTANCE_METERS = 40.0
         private const val ROUTE_RESPONSE_STALE_DISTANCE_METERS = 50.0
+        private const val MAX_ROUTE_LOG_MESSAGE_LENGTH = 500
         private val ROUTE_START_COLOR = Color.rgb(62, 218, 105)
         private val ROUTE_END_COLOR = Color.rgb(65, 218, 221)
 

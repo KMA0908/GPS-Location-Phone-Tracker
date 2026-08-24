@@ -193,6 +193,14 @@
     <string name="route_not_found_description">Could not calculate this route. Check your connection and Routes API configuration.</string>
     <string name="route_unavailable_short">Unavailable</string>
     <string name="route_unavailable_description">Google Routes did not return a route for this travel mode.</string>
+    <string name="route_network_error">Could not connect to Google Routes. Check your internet connection and try again.</string>
+    <string name="route_invalid_request">The route request contains an invalid location or travel option.</string>
+    <string name="route_api_not_configured">Routes API is not enabled or configured for this project.</string>
+    <string name="route_app_not_authorized">This app is not authorized to use Routes API. Check the API key, package name, and signing certificate.</string>
+    <string name="route_billing_required">Routes API billing is not enabled for this project.</string>
+    <string name="route_quota_exceeded">The Routes API quota has been exceeded. Please try again later.</string>
+    <string name="route_service_unavailable">Google Routes is temporarily unavailable. Please try again.</string>
+    <string name="route_invalid_response">Google Routes returned an incomplete route response.</string>
     <string name="route_tap_to_calculate">Tap to calculate</string>
     <string name="route_motorcycle_description">Motorcycle route provided by Google Routes</string>
     <string name="route_walking_description">Walking route provided by Google Routes</string>

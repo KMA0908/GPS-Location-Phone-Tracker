@@ -1,8 +1,7 @@
 package com.nhn.gps.location.phone.tracker.data.repository
 
 import android.content.Context
-import android.content.pm.PackageManager
-import android.os.Build
+import androidx.core.content.pm.PackageInfoCompat
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.PolyUtil
 import com.nhn.gps.location.phone.tracker.R
@@ -32,13 +31,20 @@ data class GoogleRoute(
 
 class GoogleRoutesException(
     val httpCode: Int,
-    message: String,
-) : IOException(message)
+    val backendStatus: String?,
+    val backendMessage: String,
+) : IOException(backendMessage)
+
+class GoogleRoutesNoRouteException : IOException("No route was returned")
+
+class GoogleRoutesInvalidResponseException(message: String) : IOException(message)
 
 @Singleton
 class GoogleRoutesRepository @Inject constructor(
     @param:ApplicationContext private val context: Context,
 ) {
+
+    fun hasSigningCertificate(): Boolean = signingCertificateSha1() != null
 
     suspend fun computeRoute(
         origin: LatLng,
@@ -75,9 +81,11 @@ class GoogleRoutesRepository @Inject constructor(
                 })?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
 
                 if (responseCode !in 200..299) {
+                    val backendError = readBackendError(responseBody, responseCode)
                     throw GoogleRoutesException(
-                        responseCode,
-                        readErrorMessage(responseBody, responseCode),
+                        httpCode = responseCode,
+                        backendStatus = backendError.status,
+                        backendMessage = backendError.message,
                     )
                 }
 
@@ -87,29 +95,31 @@ class GoogleRoutesRepository @Inject constructor(
             }
         }
 
-    private fun readErrorMessage(responseBody: String, responseCode: Int): String {
-        val message = runCatching {
-            JSONObject(responseBody).optJSONObject("error")?.optString("message")
+    private fun readBackendError(responseBody: String, responseCode: Int): BackendError {
+        val errorObject = runCatching {
+            JSONObject(responseBody).optJSONObject("error")
         }.getOrNull()
-        return message?.takeIf { it.isNotBlank() }
-            ?: "Routes API request failed with HTTP $responseCode"
+        return BackendError(
+            status = errorObject?.optString("status")?.takeIf { it.isNotBlank() },
+            message = errorObject?.optString("message")?.takeIf { it.isNotBlank() }
+                ?: "Routes API request failed with HTTP $responseCode",
+        )
     }
 
-    @Suppress("DEPRECATION")
     private fun signingCertificateSha1(): String? = runCatching {
-        val packageInfo = context.packageManager.getPackageInfo(
+        val signature = PackageInfoCompat.getSignatures(
+            context.packageManager,
             context.packageName,
-            PackageManager.GET_SIGNING_CERTIFICATES,
-        )
-        val signature = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            packageInfo.signingInfo?.apkContentsSigners?.firstOrNull()
-        } else {
-            packageInfo.signatures?.firstOrNull()
-        } ?: return@runCatching null
+        ).firstOrNull() ?: return@runCatching null
         MessageDigest.getInstance("SHA-1")
             .digest(signature.toByteArray())
             .joinToString(separator = "") { byte -> "%02X".format(byte) }
     }.getOrNull()
+
+    private data class BackendError(
+        val status: String?,
+        val message: String,
+    )
 
     private companion object {
         const val COMPUTE_ROUTES_URL =
@@ -156,18 +166,20 @@ internal object GoogleRoutesCodec {
         val route = JSONObject(responseBody)
             .optJSONArray("routes")
             ?.optJSONObject(0)
-            ?: throw IOException("No route was returned")
+            ?: throw GoogleRoutesNoRouteException()
         val encodedPolyline = route
             .optJSONObject("polyline")
             ?.optString("encodedPolyline")
             .orEmpty()
         if (encodedPolyline.isBlank()) {
-            throw IOException("The route response did not contain a polyline")
+            throw GoogleRoutesInvalidResponseException(
+                "The route response did not contain a polyline",
+            )
         }
 
         val points = PolyUtil.decode(encodedPolyline)
         if (points.size < 2) {
-            throw IOException("The route polyline is empty")
+            throw GoogleRoutesInvalidResponseException("The route polyline is empty")
         }
 
         return GoogleRoute(

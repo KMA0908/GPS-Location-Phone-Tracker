@@ -190,11 +190,19 @@ class PlaceDetailFragment : BaseFragment<FragmentPlaceDetailBinding, PlaceDetail
 
         // Setup Intents
         btnDirections.root.setOnClickListener {
-            mainViewModel.openRouteOnMap(
-                destinationName = place.name,
-                latitude = place.latitude,
-                longitude = place.longitude,
-            )
+            if (isValidCoordinate(place.latitude, place.longitude)) {
+                mainViewModel.openRouteOnMap(
+                    destinationName = place.name,
+                    latitude = place.latitude,
+                    longitude = place.longitude,
+                )
+            } else {
+                Toast.makeText(
+                    requireContext(),
+                    R.string.place_location_unavailable,
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
         }
 
         btnStreetView.root.setOnClickListener {
@@ -221,7 +229,11 @@ class PlaceDetailFragment : BaseFragment<FragmentPlaceDetailBinding, PlaceDetail
     }
 
     private fun isValidCoordinate(lat: Double, lng: Double): Boolean {
-        return lat in -90.0..90.0 && lng in -180.0..180.0 && lat != 0.0 && lng != 0.0
+        return lat.isFinite() &&
+            lng.isFinite() &&
+            lat in -90.0..90.0 &&
+            lng in -180.0..180.0 &&
+            !(lat == 0.0 && lng == 0.0)
     }
 
     override fun onDestroyView() {
