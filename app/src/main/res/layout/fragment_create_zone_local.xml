@@ -22,7 +22,7 @@
             android:layout_width="44dp"
             android:layout_height="44dp"
             android:background="@drawable/bg_card"
-            android:contentDescription="Back"
+            android:contentDescription="@string/back_desc"
             android:padding="12dp"
             android:src="@drawable/ic_back"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -35,7 +35,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:elevation="4dp"
-            android:text="Create zone"
+            android:text="@string/create_zone"
             android:textColor="@color/text_primary"
             android:textSize="20sp"
             android:textStyle="bold"
@@ -166,7 +166,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="Radius: 100m"
+                android:text="@string/radius_meters"
                 android:textColor="@color/text_primary"
                 android:textSize="16sp"
                 android:textStyle="bold" />
@@ -186,7 +186,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:text="Zone name"
+                android:text="@string/zone_name"
                 android:textColor="@color/text_secondary"
                 android:textSize="14sp" />
 
@@ -203,7 +203,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:background="@null"
-                    android:hint="Enter zone name"
+                    android:hint="@string/enter_zone_name"
                     android:imeOptions="actionDone"
                     android:inputType="textCapSentences"
                     android:paddingHorizontal="20dp"
@@ -217,7 +217,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="Zone type"
+                android:text="@string/zone_type"
                 android:textColor="@color/text_secondary"
                 android:textSize="14sp" />
 
@@ -236,7 +236,7 @@
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:text="Home"
+                    android:text="@string/home"
                     android:textAllCaps="false"
                     android:textSize="12sp"
                     app:paddingStart="0dp"
@@ -249,7 +249,7 @@
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:text="School"
+                    android:text="@string/school"
                     android:textAllCaps="false"
                     android:textSize="12sp"
                     app:paddingStart="0dp"
@@ -262,7 +262,7 @@
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:text="Work"
+                    android:text="@string/work"
                     android:textAllCaps="false"
                     android:textSize="12sp"
                     app:paddingStart="0dp"
@@ -275,7 +275,7 @@
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:text="Other"
+                    android:text="@string/other_place"
                     android:textAllCaps="false"
                     android:textSize="12sp"
                     app:paddingStart="0dp"
@@ -289,7 +289,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="Status"
+                android:text="@string/status"
                 android:textColor="@color/text_secondary"
                 android:textSize="14sp" />
 
@@ -311,7 +311,7 @@
                     android:button="@null"
                     android:checked="true"
                     android:gravity="center"
-                    android:text="Safe"
+                    android:text="@string/safe"
                     android:textColor="@color/selector_segmented_text" />
 
                 <RadioButton
@@ -323,7 +323,7 @@
                     android:background="@drawable/bg_segmented_item_selector"
                     android:button="@null"
                     android:gravity="center"
-                    android:text="Dangerous"
+                    android:text="@string/dangerous"
                     android:textColor="@color/selector_segmented_text" />
             </RadioGroup>
 
@@ -332,7 +332,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
-                android:text="Alert trigger"
+                android:text="@string/alert_trigger"
                 android:textColor="@color/text_primary"
                 android:textSize="16sp"
                 android:textStyle="bold" />
@@ -348,7 +348,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="On enter"
+                    android:text="@string/on_enter"
                     android:textColor="@color/text_secondary"
                     android:textSize="14sp" />
 
@@ -372,7 +372,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="On leave"
+                    android:text="@string/on_leave"
                     android:textColor="@color/text_secondary"
                     android:textSize="14sp" />
 
@@ -488,7 +488,7 @@
                     android:layout_height="54dp"
                     android:layout_marginEnd="8dp"
                     android:layout_weight="1"
-                    android:text="Cancel"
+                    android:text="@string/cancel"
                     android:textAllCaps="false"
                     android:textColor="@color/bg_switch_permission"
                     app:backgroundTint="#F1F9F1"
@@ -504,7 +504,7 @@
                     android:layout_height="54dp"
                     android:layout_marginStart="8dp"
                     android:layout_weight="1.2"
-                    android:text="Create zone"
+                    android:text="@string/create_zone"
                     android:textAllCaps="false"
                     android:textColor="#FFFFFF"
                     app:backgroundTint="@color/bg_switch_permission"
@@ -625,7 +625,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="Allow background access"
+                    android:text="@string/allow_location_access"
                     android:textColor="@color/text_primary"
                     android:textSize="20sp"
                     android:textStyle="bold" />
@@ -636,7 +636,7 @@
                     android:layout_marginTop="12dp"
                     android:gravity="center"
                     android:lineSpacingExtra="2dp"
-                    android:text="To keep you and your friends safe, we need permission to run in the background"
+                    android:text="@string/realtime_tracker_needs_access_to_your_location_to_show_your_position_and_friends_around_you_in_real_time"
                     android:textColor="@color/text_secondary"
                     android:textSize="14sp" />
 
@@ -645,7 +645,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="58dp"
                     android:layout_marginTop="32dp"
-                    android:text="Allow"
+                    android:text="@string/dialog_yes"
                     android:textAllCaps="false"
                     android:textSize="16sp"
                     android:textStyle="bold"
@@ -658,7 +658,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="52dp"
                     android:layout_marginTop="8dp"
-                    android:text="Not now"
+                    android:text="@string/not_now"
                     android:textAllCaps="false"
                     android:textColor="@color/text_secondary"
                     android:textSize="15sp" />

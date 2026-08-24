@@ -21,7 +21,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="20dp"
-        android:text="Select country"
+        android:text="@string/select_country"
         android:textColor="#212121"
         android:textSize="20sp"
         android:textStyle="bold"
@@ -44,7 +44,7 @@
             android:id="@+id/edtSearch"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Search country"
+            android:hint="@string/search_country"
             android:inputType="text"
             android:paddingVertical="12dp" />
 

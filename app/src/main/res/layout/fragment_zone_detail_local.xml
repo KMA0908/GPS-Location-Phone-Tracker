@@ -20,7 +20,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@drawable/bg_card"
-            android:contentDescription="Back"
+            android:contentDescription="@string/back_desc"
             android:padding="12dp"
             android:src="@drawable/ic_back"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -32,7 +32,7 @@
             android:id="@+id/tvTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Zone details"
+            android:text="@string/zone_details"
             android:textColor="@color/text_primary"
             android:textSize="18sp"
             android:textStyle="bold"
@@ -46,7 +46,7 @@
             android:layout_width="44dp"
             android:layout_height="44dp"
             android:background="@drawable/bg_card"
-            android:contentDescription="More"
+            android:contentDescription="@string/more_desc"
             android:padding="12dp"
             android:src="@drawable/ic_more_choice"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -135,7 +135,7 @@
                         android:layout_width="36dp"
                         android:layout_height="36dp"
                         android:background="@drawable/bg_button_circle_border"
-                        android:contentDescription="Edit"
+                        android:contentDescription="@string/edit_desc"
                         android:padding="8dp"
                         android:src="@drawable/ic_edit"
                         app:layout_constraintBottom_toBottomOf="parent"
@@ -220,7 +220,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Radius"
+                        android:text="@string/radius"
                         android:textColor="@color/text_primary"
                         android:textSize="14sp"
                         android:textStyle="bold" />
@@ -230,7 +230,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="500 m"
+                        android:text="@string/radius_val"
                         android:textColor="@color/text_primary"
                         android:textSize="16sp" />
 
@@ -254,7 +254,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Created at"
+                        android:text="@string/created_at"
                         android:textColor="@color/text_primary"
                         android:textSize="14sp"
                         android:textStyle="bold" />
@@ -278,7 +278,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
                 android:gravity="end"
-                android:text="View all zones →"
+                android:text="@string/view_all_zones"
                 android:textColor="@color/bg_switch_permission"
                 android:textSize="14sp"
                 android:textStyle="bold" />
@@ -312,7 +312,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="10dp"
-                        android:text="Friend added successfully"
+                        android:text="@string/friend_added_success"
                         android:textColor="#222"
                         android:textStyle="bold" />
                 </LinearLayout>

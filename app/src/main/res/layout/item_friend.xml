@@ -57,6 +57,6 @@
         android:layout_height="wrap_content"
         android:padding="8dp"
         android:src="@drawable/ic_more_choice"
-        android:contentDescription="More options" />
+        android:contentDescription="@string/more_desc" />
 
 </LinearLayout>

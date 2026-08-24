@@ -81,15 +81,15 @@ class AlertDetailFragment : BaseFragment<FragmentAlertDetailLocalBinding, MainVi
         val zone = targetZone
         
         val action = if (alert.isEnter) "Entered" else "Left"
-        tvUserName.text = "${alert.userName} $action ${alert.zoneName}"
+        tvUserName.text = getString(R.string.alert_status_msg, alert.userName, action, alert.zoneName)
         
         zone?.let {
             tvZoneName.text = it.name
-            tvRadius.text = "${it.radiusMeters} m"
+            tvRadius.text = getString(R.string.radius_val, it.radiusMeters)
             tvAddress.text = it.address.ifBlank { "Lat: ${alert.latitude}, Lng: ${alert.longitude}" }
-            tvZoneType.text = "${it.type.label} (${it.status.label})"
+            tvZoneType.text = getString(R.string.zone_type_status, it.type.label, it.status.label)
         } ?: run {
-            tvRadius.text = "Zone no longer exists"
+            tvRadius.text = getString(R.string.zone_no_longer_exists)
         }
     }
 

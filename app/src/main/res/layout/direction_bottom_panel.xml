@@ -39,7 +39,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:text="6 min (2.1 km)"
+            android:text="@string/route_duration_and_distance"
             android:textSize="16sp"
             android:textStyle="bold"/>
 
@@ -49,7 +49,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:textSize="12sp"
-            android:text="Fastest route, light traffic"
+            android:text="@string/route_fastest_driving"
             android:textColor="#777777"/>
 
         <com.google.android.material.button.MaterialButton

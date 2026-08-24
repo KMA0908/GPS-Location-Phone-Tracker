@@ -29,7 +29,7 @@
         android:layout_height="match_parent"
         android:background="@android:color/transparent"
         android:textSize="16sp"
-        android:hint="Send messages to"
+        android:hint="@string/todo"
         android:paddingHorizontal="16dp"/>
 
         <!-- Đường gạch ngang -->

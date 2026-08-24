@@ -170,7 +170,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Download QR"
+                android:text="@string/qr_downloaded"
                 android:textStyle="bold"
                 android:textSize="15sp"/>
 
@@ -214,7 +214,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Share Profile"
+                android:text="@string/share_profile"
                 android:textStyle="bold"
                 android:textSize="15sp"/>
 

@@ -1,11 +1,11 @@
 package com.nhn.gps.location.phone.tracker.ui.splash
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.graphics.Color
 import androidx.core.view.WindowCompat
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.lifecycleScope
 import com.leansoft.ads.ui.activity.LeansoftSplashActivity
 import com.nhn.gps.location.phone.tracker.R
@@ -16,7 +16,6 @@ import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 
 @SuppressLint("CustomSplashScreen")
 @AndroidEntryPoint
@@ -33,6 +32,7 @@ class SplashActivity : LeansoftSplashActivity() {
             isAppearanceLightStatusBars = false
             isAppearanceLightNavigationBars = false
         }
+        synchronizeApplicationLocale()
         synchronizeInitialFlowState()
     }
 
@@ -57,14 +57,15 @@ class SplashActivity : LeansoftSplashActivity() {
     }
 
     override fun setLanguage(languageCode: String) {
-        runBlocking { preferences.saveSelectedLanguage(languageCode) }
-        LanguageHelper.setAppLanguage(this, languageCode)
+        val normalized = LanguageHelper.normalizeSupportedLanguageCode(languageCode)
+        lifecycleScope.launch { preferences.saveSelectedLanguage(normalized) }
+        LanguageHelper.setAppLanguage(normalized)
     }
 
     override fun getRemoteConfigDefault(): Int = R.xml.remote_config_defaults
 
     private fun synchronizeInitialFlowState() {
-        runBlocking {
+        lifecycleScope.launch {
             val hasProfile = !preferences.userId.first().isNullOrBlank()
             if (hasProfile) {
                 // Migrate users created before the app-owned onboarding flag existed.
@@ -75,7 +76,7 @@ class SplashActivity : LeansoftSplashActivity() {
                 // The SDK stores these flags in SharedPreferences. Reset them for an
                 // unfinished first run so Language and Onboarding cannot be skipped by
                 // stale/restored SDK preferences.
-                getSharedPreferences(LEANSOFT_PREFERENCES, Context.MODE_PRIVATE)
+                getSharedPreferences(LEANSOFT_PREFERENCES, MODE_PRIVATE)
                     .edit()
                     .putBoolean(KEY_LANGUAGE_ONBOARD, false)
                     .putBoolean(KEY_INTRO_SHOWN, false)
@@ -84,8 +85,12 @@ class SplashActivity : LeansoftSplashActivity() {
         }
     }
 
-    override fun attachBaseContext(newBase: Context) {
-        super.attachBaseContext(LanguageHelper.wrapContext(newBase))
+    private fun synchronizeApplicationLocale() {
+        if (!AppCompatDelegate.getApplicationLocales().isEmpty) return
+        lifecycleScope.launch {
+            val stored = LanguageHelper.normalizeSupportedLanguageCode(preferences.getSelectedLanguage())
+            LanguageHelper.setAppLanguage(stored)
+        }
     }
 
     private companion object {

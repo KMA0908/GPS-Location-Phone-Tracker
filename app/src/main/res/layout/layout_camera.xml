@@ -60,7 +60,7 @@
         android:id="@+id/tvDescription"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Point your camera at the QR code"
+        android:text="@string/point_camera_qr"
         android:textColor="@android:color/white"
         android:textSize="14sp"
 
@@ -90,7 +90,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=" Scan QR or upload image"
+            android:text="@string/scan_qr_upload"
             android:textColor="@android:color/white"
             android:textSize="13sp"/>
     </LinearLayout>
@@ -114,7 +114,7 @@
 
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="My QR code"
+            android:text="@string/my_qr_code"
             app:icon="@drawable/ic_qr_code"
 
             app:cornerRadius="60dp"
@@ -140,7 +140,7 @@
 
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Upload image"
+            android:text="@string/upload_image"
             app:icon="@drawable/ic_upload"
 
             app:cornerRadius="60dp"

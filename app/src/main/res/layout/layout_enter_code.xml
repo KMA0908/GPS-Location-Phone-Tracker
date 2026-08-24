@@ -30,7 +30,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
             android:gravity="center"
-            android:text="Enter your friend's code"
+            android:text="@string/enter_friend_code"
             android:textColor="#222222"
             android:textSize="22sp"
             android:textStyle="bold" />
@@ -42,7 +42,7 @@
             android:layout_marginHorizontal="20dp"
             android:layout_marginTop="10dp"
             android:gravity="center"
-            android:text="Ask your friend to share their profile code"
+            android:text="@string/ask_friend_share_code"
             android:textColor="#6E6E6E"
             android:textSize="14sp" />
 
@@ -88,7 +88,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
             android:padding="16dp"
-            android:text="Find friend"
+            android:text="@string/find_friend"
             android:textAllCaps="false"
             android:textSize="16sp"
             android:textStyle="bold"
@@ -104,7 +104,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:padding="16dp"
-            android:text="# My code"
+            android:text="@string/my_code_hash"
             android:textAllCaps="false"
             android:textColor="#444444"
             android:textSize="16sp"

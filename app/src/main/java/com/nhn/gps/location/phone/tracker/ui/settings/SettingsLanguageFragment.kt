@@ -1,6 +1,5 @@
 package com.nhn.gps.location.phone.tracker.ui.settings
 
-import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -11,10 +10,8 @@ import com.nhn.gps.location.phone.tracker.R
 import com.nhn.gps.location.phone.tracker.data.local.AppPreferences
 import com.nhn.gps.location.phone.tracker.databinding.FragmentSettingsLanguageBinding
 import com.nhn.gps.location.phone.tracker.ui.language.SettingsLanguageAdapter
-import com.nhn.gps.location.phone.tracker.ui.main.MainActivity
 import com.nhn.gps.location.phone.tracker.util.LanguageHelper
 import dagger.hilt.android.AndroidEntryPoint
-import java.util.Locale
 import javax.inject.Inject
 import kotlinx.coroutines.launch
 
@@ -34,11 +31,11 @@ class SettingsLanguageFragment : Fragment() {
         binding.tvTitle.text = LanguageHelper.getLocalizedString(
             requireContext(),
             R.string.text_language,
-            Locale.ENGLISH.language,
+            LanguageHelper.currentLanguageCode(requireContext()),
         )
         val items = LanguageHelper.getSettingsLanguageList(requireContext())
         val selected = LanguageHelper.languageIndexFromCode(LanguageHelper.currentLanguageCode(requireContext()))
-        selectedCode = items.getOrNull(selected)?.languageCode ?: Locale.ENGLISH.language
+        selectedCode = items.getOrNull(selected)?.languageCode ?: LanguageHelper.normalizeSupportedLanguageCode("en")
         adapter = SettingsLanguageAdapter(items) { index ->
             selectedCode = items[index].languageCode
             adapter.select(index)
@@ -65,13 +62,7 @@ class SettingsLanguageFragment : Fragment() {
         val hostActivity = activity ?: return
         viewLifecycleOwner.lifecycleScope.launch {
             preferences.saveSelectedLanguage(languageCode)
-            LanguageHelper.setAppLanguage(hostActivity.applicationContext, languageCode)
-            if (!isAdded || parentFragmentManager.isStateSaved) return@launch
-
-            startActivity(Intent(hostActivity, MainActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-            })
-            hostActivity.finish()
+            LanguageHelper.setAppLanguage(languageCode)
         }
     }
 

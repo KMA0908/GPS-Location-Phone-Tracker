@@ -20,7 +20,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@drawable/bg_card"
-            android:contentDescription="Back"
+            android:contentDescription="@string/back_desc"
             android:padding="12dp"
             android:src="@drawable/ic_back"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -32,7 +32,7 @@
             android:id="@+id/tvTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Zone alerts"
+            android:text="@string/zone_alerts"
             android:textColor="@color/text_primary"
             android:textSize="20sp"
             android:textStyle="bold"
@@ -46,7 +46,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:padding="8dp"
-            android:text="Clear"
+            android:text="@string/clear"
             android:textColor="@color/bg_switch_permission"
             android:textSize="15sp"
             android:textStyle="bold"
@@ -90,7 +90,7 @@
                 android:layout_marginStart="12dp"
                 android:layout_marginEnd="8dp"
                 android:background="@null"
-                android:hint="Search zone"
+                android:hint="@string/search_place"
                 android:imeOptions="actionSearch"
                 android:inputType="text"
                 android:maxLines="1"
@@ -146,7 +146,7 @@
                 android:id="@+id/btnAll"
                 style="@style/ZoneFilterChip"
                 android:background="@drawable/selector_filter_chip"
-                android:text="All"
+                android:text="@string/all"
                 android:textSize="@dimen/sp_14"
                 android:textColor="@color/selector_segmented_text" />
 
@@ -154,7 +154,7 @@
                 android:id="@+id/btnEntered"
                 style="@style/ZoneFilterChip"
                 android:background="@drawable/selector_filter_chip"
-                android:text="Enter zone"
+                android:text="@string/enter_zone"
                 android:textSize="@dimen/sp_14"
                 android:textColor="@color/selector_segmented_text" />
 
@@ -162,7 +162,7 @@
                 android:id="@+id/btnLeft"
                 style="@style/ZoneFilterChip"
                 android:background="@drawable/selector_filter_chip"
-                android:text="Leave zone"
+                android:text="@string/leave_zone"
                 android:textSize="@dimen/sp_14"
                 android:textColor="@color/selector_segmented_text" />
 
@@ -170,7 +170,7 @@
                 android:id="@+id/btnDangerous"
                 style="@style/ZoneFilterChip"
                 android:background="@drawable/selector_filter_chip"
-                android:text="Dangerous"
+                android:text="@string/dangerous"
                 android:textSize="@dimen/sp_14"
                 android:textColor="@color/selector_segmented_text" />
 
@@ -243,7 +243,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
-                android:text="No alerts"
+                android:text="@string/no_alerts"
                 android:textColor="@color/bg_botton_friend"
                 android:textSize="20sp"
                 android:textStyle="bold"
@@ -257,7 +257,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Zone events will appear here"
+                android:text="@string/zone_events_appear_here"
                 android:textColor="@color/text_secondary"
                 android:textSize="14sp"
                 app:layout_constraintBottom_toBottomOf="parent"

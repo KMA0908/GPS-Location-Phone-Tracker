@@ -27,7 +27,7 @@
         android:id="@+id/tvTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="My friend"
+        android:text="@string/my_friend"
         android:textStyle="bold"
         android:textSize="20sp"
         android:textColor="#222"
@@ -85,7 +85,7 @@
         android:id="@+id/tvUserId"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="ID : 00000000"
+        android:text="@string/user_id_prefix"
         android:textSize="14sp"
         android:textColor="#777"
         android:layout_marginTop="4dp"
@@ -157,7 +157,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Phone number"
+                android:text="@string/phone_number"
                 android:textColor="#222"
                 android:textStyle="bold"
                 android:textSize="14sp"/>
@@ -248,7 +248,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="Share Profile"
+                    android:text="@string/share_profile"
                     android:textStyle="bold"
                     android:textSize="16sp"/>
 

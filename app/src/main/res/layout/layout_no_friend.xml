@@ -24,7 +24,7 @@
         android:layout_margin="20dp"
         android:layout_marginStart="36dp"
         android:layout_marginTop="28dp"
-        android:text="Friends (0)"
+        android:text="@string/friends_count"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -51,7 +51,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:textColor="#35C759"
-            android:text="No friend yet"
+            android:text="@string/no_friend_yet"
             android:textSize="22sp"
             android:textStyle="bold" />
 
@@ -60,14 +60,14 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:gravity="center"
-            android:text="Add friends to see their locations\non the map in real-time" />
+            android:text="@string/add_friends_to_see_their_locations_on_the_map_in_real_time" />
     </LinearLayout>
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnAddFriend"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Add friend"
+        android:text="@string/add_friend"
         android:layout_marginBottom="20dp"
         android:textAllCaps="false"
         app:icon="@drawable/ic_add_friend"

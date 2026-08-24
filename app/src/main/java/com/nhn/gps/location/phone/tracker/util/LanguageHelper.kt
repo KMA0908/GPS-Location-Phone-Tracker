@@ -1,48 +1,35 @@
 package com.nhn.gps.location.phone.tracker.util
 
 import android.content.Context
-import android.content.res.Configuration
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import com.nhn.gps.location.phone.tracker.R
-import com.nhn.gps.location.phone.tracker.data.local.AppPreferences
 import com.nhn.gps.location.phone.tracker.data.model.LanguageModel
 import java.util.Locale
-import kotlinx.coroutines.runBlocking
 
 object LanguageHelper {
-    fun setAppLanguage(context: Context, languageCode: String) {
-        val locale = localeFromCode(normalizeSupportedLanguageCode(languageCode))
-        Locale.setDefault(locale)
-        val resources = context.resources
-        val configuration = Configuration(resources.configuration).apply { setLocale(locale) }
-        @Suppress("DEPRECATION")
-        resources.updateConfiguration(configuration, resources.displayMetrics)
+    fun setAppLanguage(languageCode: String) {
+        val normalized = normalizeSupportedLanguageCode(languageCode)
+        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(normalized))
     }
 
     fun wrapContext(context: Context): Context {
-        val locale = localeFromCode(currentLanguageCode(context))
-        Locale.setDefault(locale)
-        return context.createConfigurationContext(
-            Configuration(context.resources.configuration).apply { setLocale(locale) },
-        )
+        // AppCompat owns application locale configuration. Do not create a second
+        // manually localized context, which can diverge from Fragment/View contexts.
+        return context
     }
 
     fun currentLanguageCode(context: Context): String {
-        val selectedCode = runBlocking {
-            AppPreferences(context.applicationContext).getSelectedLanguage()
-        }
-        return selectedCode
-            .takeIf(String::isNotBlank)
-            ?.let(::normalizeSupportedLanguageCode)
+        val appLocales = AppCompatDelegate.getApplicationLocales()
+        val appTag = appLocales.get(0)?.toLanguageTag().orEmpty()
+        return appTag.takeIf(String::isNotBlank)?.let(::normalizeSupportedLanguageCode)
             ?: Locale.ENGLISH.language
     }
 
     fun getLocalizedString(context: Context, @StringRes resId: Int, languageCode: String): String {
-        val configuration = Configuration(context.resources.configuration).apply {
-            setLocale(localeFromCode(languageCode))
-        }
-        return context.createConfigurationContext(configuration).getString(resId)
+        return context.getString(resId)
     }
 
     fun languageIndexFromCode(languageCode: String): Int {
@@ -67,12 +54,8 @@ object LanguageHelper {
 
     fun getSettingsLanguageList(context: Context): MutableList<LanguageModel> = definitions.map { definition ->
         definition.toModel(
-            name = getLocalizedString(context, definition.nameRes, Locale.ENGLISH.language),
-            nativeName = getLocalizedString(
-                context,
-                definition.nativeNameRes,
-                Locale.ENGLISH.language,
-            ),
+            name = context.getString(definition.nameRes),
+            nativeName = context.getString(definition.nativeNameRes),
         )
     }.toMutableList()
 
@@ -91,7 +74,7 @@ object LanguageHelper {
         .replace("-r", "-")
         .ifBlank { Locale.ENGLISH.language }
 
-    private fun normalizeSupportedLanguageCode(languageCode: String): String =
+    fun normalizeSupportedLanguageCode(languageCode: String): String =
         definitions[languageIndexFromCode(languageCode)].languageCode
 
     private fun localeFromCode(languageCode: String): Locale =

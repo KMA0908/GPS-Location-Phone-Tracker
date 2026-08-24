@@ -109,7 +109,7 @@ class EditProfileFragment : BaseFragment<FragmentEditProfileBinding, EditProfile
                 }
                 launch {
                     mainViewModel.userId.collectLatest { id ->
-                        binding.tvUserId.text = "ID: ${id?.takeLast(8) ?: "00000000"}"
+                        binding.tvUserId.text = getString(R.string.user_id_prefix, id?.takeLast(8) ?: "00000000")
                     }
                 }
                 launch {

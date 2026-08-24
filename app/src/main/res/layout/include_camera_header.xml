@@ -36,7 +36,7 @@
         android:id="@+id/tvTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Add friend"
+        android:text="@string/add_friend"
         android:textColor="@android:color/white"
         android:textStyle="bold"
         android:textSize="20sp"
@@ -73,7 +73,7 @@
             android:id="@+id/tvFlash"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Flash"
+            android:text="@string/flash"
             android:textSize="14sp"
             android:textColor="@android:color/white"
             android:layout_marginStart="4dp"/>

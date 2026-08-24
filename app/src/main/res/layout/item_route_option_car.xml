@@ -36,14 +36,14 @@
                 android:id="@+id/tvDuration"
                 android:layout_height="wrap_content"
                 android:layout_width="wrap_content"
-                android:text="6 min"
+                android:text="@string/route_minutes"
                 android:textStyle="bold"/>
 
             <TextView
                 android:id="@+id/tvDistance"
                 android:layout_height="wrap_content"
                 android:layout_width="wrap_content"
-                android:text="2.1 km"
+                android:text="@string/route_distance_kilometers"
                 android:textSize="12sp"/>
 
         </LinearLayout>

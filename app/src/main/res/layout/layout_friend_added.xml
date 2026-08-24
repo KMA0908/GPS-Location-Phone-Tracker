@@ -101,7 +101,7 @@
                 android:paddingHorizontal="16dp">
 
                 <TextView
-                    android:text="Phone number"
+                    android:text="@string/phone_number"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textStyle="bold"
@@ -144,7 +144,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="10dp"
-                    android:text="Friend added successfully"
+                    android:text="@string/friend_added_success"
                     android:textStyle="bold"
                     android:textColor="#222"/>
 

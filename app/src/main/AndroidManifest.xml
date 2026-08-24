@@ -22,9 +22,16 @@
         android:icon="@drawable/ic_launcher"
         android:label="${appName}"
         android:roundIcon="@drawable/ic_launcher"
+        android:localeConfig="@xml/locale_config"
         android:supportsRtl="true"
         android:theme="@style/Theme.GpsTracker"
         tools:replace="android:allowBackup,android:label">
+        <meta-data
+            android:name="autoStoreLocales"
+            android:value="true" />
+        <meta-data
+            android:name="androidx.appcompat.app.AppCompatDelegate.application_locales"
+            android:value="true" />
         <uses-library
             android:name="org.apache.http.legacy"
             android:required="false" />

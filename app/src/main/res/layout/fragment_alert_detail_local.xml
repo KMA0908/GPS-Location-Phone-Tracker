@@ -26,7 +26,7 @@
             android:layout_width="44dp"
             android:layout_height="44dp"
             android:background="@drawable/bg_button_circle_border"
-            android:contentDescription="Back"
+            android:contentDescription="@string/back_desc"
             android:elevation="4dp"
             android:padding="12dp"
             android:src="@drawable/ic_back"
@@ -40,7 +40,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:elevation="4dp"
-            android:text="Alert detail"
+            android:text="@string/alert_detail"
             android:textColor="@color/text_primary"
             android:textSize="18sp"
             android:textStyle="bold"
@@ -54,7 +54,7 @@
             android:layout_width="44dp"
             android:layout_height="44dp"
             android:background="@drawable/bg_button_circle_border"
-            android:contentDescription="Menu"
+            android:contentDescription="@string/menu_desc"
             android:elevation="4dp"
             android:padding="12dp"
             android:src="@android:drawable/ic_menu_more"
@@ -233,7 +233,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Radius"
+                        android:text="@string/radius"
                         android:textColor="@color/text_secondary"
                         android:textSize="11sp" />
 
@@ -241,7 +241,7 @@
                         android:id="@+id/tvRadius"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="250 m"
+                        android:text="@string/radius_val"
                         android:textColor="@color/text_primary"
                         android:textSize="14sp"
                         android:textStyle="bold" />

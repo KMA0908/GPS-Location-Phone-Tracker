@@ -69,7 +69,7 @@
                     android:layout_height="wrap_content"
                     android:paddingHorizontal="16dp"
                     android:paddingVertical="8dp"
-                    android:text="Phone number locator"
+                    android:text="@string/phone_number_locator"
                     android:textColor="#212121"
                     android:textSize="16sp"
                     android:textStyle="bold"
@@ -120,7 +120,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Trusted by millions"
+                            android:text="@string/trusted_by_millions"
                             android:textColor="#FFFFFF"
                             android:textSize="15sp"
                             android:textStyle="bold"/>
@@ -128,7 +128,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Fast Secure"
+                            android:text="@string/fast_secure"
                             android:textColor="#E9FFF1"
                             android:textSize="13sp"/>
 
@@ -185,7 +185,7 @@
                         android:id="@+id/tvCountry"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Country"
+                        android:text="@string/country"
                         android:textColor="#727272"
                         android:textSize="14sp"/>
 
@@ -216,7 +216,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
-                        android:text="Phone number"
+                        android:text="@string/phone_number"
                         android:textColor="#727272"
                         android:textSize="14sp"/>
 
@@ -248,7 +248,7 @@
                         android:layout_height="56dp"
                         android:layout_marginTop="8dp"
                         android:backgroundTint="@color/bg_botton_friend"
-                        android:text="Find location"
+                        android:text="@string/find_location"
                         android:textAllCaps="false"
                         android:textColor="#FFFFFF"
                         android:textSize="16sp"
