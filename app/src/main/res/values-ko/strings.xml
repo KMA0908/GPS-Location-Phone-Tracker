@@ -57,4 +57,10 @@
     <string name="rate_us">우리를 평가해 주세요</string>
     <string name="get_premium">보이스 락 프로</string>
     <string name="notification_title">알림 활성화</string>
+    <string name="dialog_type_map_title">지도 유형</string>
+    <string name="dialog_type_map_normal_map">일반 지도</string>
+    <string name="dialog_type_map_hybrid_map">하이브리드 지도</string>
+    <string name="dialog_type_map_satellite_map">위성 지도</string>
+    <string name="dialog_type_map_title_map_details">지도 세부정보</string>
+    <string name="dialog_type_map_traffic">교통</string>
 </resources>

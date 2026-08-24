@@ -57,4 +57,10 @@
     <string name="rate_us">Nilai Kami</string>
     <string name="get_premium">Kunci Suara Pro</string>
     <string name="notification_title">Aktifkan notifikasi</string>
+    <string name="dialog_type_map_title">Jenis Peta</string>
+    <string name="dialog_type_map_normal_map">Peta Normal</string>
+    <string name="dialog_type_map_hybrid_map">Peta Gabungan</string>
+    <string name="dialog_type_map_satellite_map">Peta Satelit</string>
+    <string name="dialog_type_map_title_map_details">Rincian Peta</string>
+    <string name="dialog_type_map_traffic">Lalu lintas</string>
 </resources>

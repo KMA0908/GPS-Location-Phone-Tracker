@@ -8,7 +8,10 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.google.android.gms.ads.AdRequest
-import com.google.android.libraries.places.api.Places
+import com.google.firebase.FirebaseApp
+import com.google.firebase.appcheck.FirebaseAppCheck
+import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
+import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory
 import com.leansoft.ads.AdManager
 import com.leansoft.ads.AdsApplication
 import com.nhn.gps.location.phone.tracker.analytics.GpsAnalyticsTracker
@@ -27,10 +30,15 @@ class GpsTrackerApp : AdsApplication() {
 
     override fun onCreate() {
         super.onCreate()
+        FirebaseApp.initializeApp(this)
+        FirebaseAppCheck.getInstance().installAppCheckProviderFactory(
+            if (BuildConfig.DEBUG) {
+                DebugAppCheckProviderFactory.getInstance()
+            } else {
+                PlayIntegrityAppCheckProviderFactory.getInstance()
+            },
+        )
         GpsAnalyticsTracker.initialize(this)
-        if (!Places.isInitialized()) {
-            Places.initializeWithNewPlacesApiEnabled(this, getString(R.string.maps_api_key))
-        }
         enableLeanSoftDebugAds()
         registerActivityLifecycleCallbacks(activityCallbacks)
         if (GpsAdConfig.ADS_ENABLED) {

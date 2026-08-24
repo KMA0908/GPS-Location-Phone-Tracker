@@ -57,4 +57,10 @@
     <string name="rate_us">I-rate Kami</string>
     <string name="get_premium">Voice Lock Pro</string>
     <string name="notification_title">Paganahin ang mga notification</string>
+    <string name="dialog_type_map_title">Uri ng mapa</string>
+    <string name="dialog_type_map_normal_map">Karaniwang mapa</string>
+    <string name="dialog_type_map_hybrid_map">Hybrid na mapa</string>
+    <string name="dialog_type_map_satellite_map">Satellite map</string>
+    <string name="dialog_type_map_title_map_details">Mga detalye ng mapa</string>
+    <string name="dialog_type_map_traffic">Trapiko</string>
 </resources>

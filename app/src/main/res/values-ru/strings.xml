@@ -57,4 +57,10 @@
     <string name="rate_us">Оцените нас</string>
     <string name="get_premium">Голосовая блокировка Про</string>
     <string name="notification_title">Включить уведомления</string>
+    <string name="dialog_type_map_title">Тип карты</string>
+    <string name="dialog_type_map_normal_map">Обычная карта</string>
+    <string name="dialog_type_map_hybrid_map">Гибридная карта</string>
+    <string name="dialog_type_map_satellite_map">Спутниковая карта</string>
+    <string name="dialog_type_map_title_map_details">Детали карты</string>
+    <string name="dialog_type_map_traffic">Трафик</string>
 </resources>

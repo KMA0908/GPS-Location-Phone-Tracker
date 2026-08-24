@@ -1,7 +1,6 @@
 package com.nhn.gps.location.phone.tracker.data.repository
 
 import android.content.Context
-import com.google.android.libraries.places.api.model.PhotoMetadata
 import com.nhn.gps.location.phone.tracker.R
 import com.nhn.gps.location.phone.tracker.data.model.FamousPlaceModel
 import com.nhn.gps.location.phone.tracker.data.local.AppPreferences
@@ -138,10 +137,6 @@ class ExploreRepositoryImpl @Inject constructor(
         val allPlaces = loadFamousPlacesFromJson()
         val results = allPlaces.asSequence().filter { it.name.contains(query, ignoreCase = true) }.take(10).toList()
         return if (results.isEmpty()) ExploreResult.Empty else ExploreResult.Success(results)
-    }
-
-    override suspend fun getResolvedPhotoUri(metadata: PhotoMetadata): String? {
-        return null
     }
 
     override suspend fun getAllFamousPlaces(): ExploreResult<List<FamousPlaceModel>> {

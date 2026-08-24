@@ -57,4 +57,10 @@
     <string name="rate_us">आम्हाला रेट करा</string>
     <string name="get_premium">व्हॉइस लॉक प्रो</string>
     <string name="notification_title">सूचना सक्षम करा</string>
+    <string name="dialog_type_map_title">नकाशाचा प्रकार</string>
+    <string name="dialog_type_map_normal_map">सामान्य नकाशा</string>
+    <string name="dialog_type_map_hybrid_map">हायब्रिड नकाशा</string>
+    <string name="dialog_type_map_satellite_map">उपग्रह नकाशा</string>
+    <string name="dialog_type_map_title_map_details">नकाशाचे तपशील</string>
+    <string name="dialog_type_map_traffic">वाहतूक</string>
 </resources>

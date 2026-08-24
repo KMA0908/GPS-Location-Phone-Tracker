@@ -55,7 +55,7 @@ class FamousPlaceAdapter(
             ivThumbnail.setImageResource(item.imageRes.takeIf { it != 0 } ?: R.drawable.ic_paris)
             onBindPhoto(item, ivThumbnail)
 
-            tvAttribution.text = item.imageAttribution ?: item.photoMetadata?.attributions.orEmpty()
+            tvAttribution.text = item.imageAttribution.orEmpty()
             tvAttribution.visibility = if (tvAttribution.text.isNotEmpty()) android.view.View.VISIBLE else android.view.View.GONE
 
             tvReviewCount.text = if (item.reviewCount > 0) {

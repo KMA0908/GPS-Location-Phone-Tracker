@@ -28,12 +28,11 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 enum class DirectionTravelMode(
-    val googleMapsValue: String,
     val routeApiMode: GoogleRouteTravelMode,
 ) {
-    CAR("driving", GoogleRouteTravelMode.DRIVE),
-    MOTORCYCLE("two-wheeler", GoogleRouteTravelMode.TWO_WHEELER),
-    WALKING("walking", GoogleRouteTravelMode.WALK),
+    CAR(GoogleRouteTravelMode.DRIVE),
+    MOTORCYCLE(GoogleRouteTravelMode.TWO_WHEELER),
+    WALKING(GoogleRouteTravelMode.WALK),
 }
 
 @HiltViewModel

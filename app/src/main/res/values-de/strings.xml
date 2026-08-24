@@ -57,4 +57,10 @@
     <string name="rate_us">Bewerten Sie uns</string>
     <string name="get_premium">Voice Lock Pro</string>
     <string name="notification_title">Benachrichtigungen aktivieren</string>
+    <string name="dialog_type_map_title">Kartentyp</string>
+    <string name="dialog_type_map_normal_map">Normale Karte</string>
+    <string name="dialog_type_map_hybrid_map">Hybrid-Karte</string>
+    <string name="dialog_type_map_satellite_map">Satellitenkarte</string>
+    <string name="dialog_type_map_title_map_details">Kartendetails</string>
+    <string name="dialog_type_map_traffic">Verkehr</string>
 </resources>

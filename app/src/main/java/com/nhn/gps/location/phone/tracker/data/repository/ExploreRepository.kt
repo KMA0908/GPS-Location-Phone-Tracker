@@ -1,6 +1,5 @@
 package com.nhn.gps.location.phone.tracker.data.repository
 
-import com.google.android.libraries.places.api.model.PhotoMetadata
 import com.nhn.gps.location.phone.tracker.data.model.FamousPlaceModel
 import kotlinx.coroutines.flow.Flow
 
@@ -25,8 +24,6 @@ interface ExploreRepository {
     suspend fun getPlaceDetail(placeId: String): ExploreResult<FamousPlaceModel>
 
     suspend fun searchPlaces(query: String): ExploreResult<List<FamousPlaceModel>>
-
-    suspend fun getResolvedPhotoUri(metadata: PhotoMetadata): String?
 
     suspend fun getAllFamousPlaces(): ExploreResult<List<FamousPlaceModel>>
 

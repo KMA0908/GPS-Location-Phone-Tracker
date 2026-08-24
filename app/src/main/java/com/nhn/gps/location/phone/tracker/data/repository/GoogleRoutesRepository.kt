@@ -1,19 +1,17 @@
 package com.nhn.gps.location.phone.tracker.data.repository
 
-import android.content.Context
-import androidx.core.content.pm.PackageInfoCompat
 import com.google.android.gms.maps.model.LatLng
+import com.google.firebase.appcheck.FirebaseAppCheck
+import com.google.firebase.auth.FirebaseAuth
 import com.google.maps.android.PolyUtil
-import com.nhn.gps.location.phone.tracker.R
-import dagger.hilt.android.qualifiers.ApplicationContext
+import com.nhn.gps.location.phone.tracker.BuildConfig
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
-import java.security.MessageDigest
-import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 
@@ -41,136 +39,96 @@ class GoogleRoutesInvalidResponseException(message: String) : IOException(messag
 
 @Singleton
 class GoogleRoutesRepository @Inject constructor(
-    @param:ApplicationContext private val context: Context,
+    private val auth: FirebaseAuth,
+    private val appCheck: FirebaseAppCheck,
 ) {
-
-    fun hasSigningCertificate(): Boolean = signingCertificateSha1() != null
 
     suspend fun computeRoute(
         origin: LatLng,
         destination: LatLng,
         travelMode: GoogleRouteTravelMode,
-    ): GoogleRoute =
-        withContext(Dispatchers.IO) {
-            val connection = (URL(COMPUTE_ROUTES_URL).openConnection() as HttpURLConnection)
-            try {
-                connection.requestMethod = "POST"
-                connection.connectTimeout = CONNECT_TIMEOUT_MS
-                connection.readTimeout = READ_TIMEOUT_MS
-                connection.doOutput = true
-                connection.setRequestProperty("Content-Type", "application/json; charset=UTF-8")
-                connection.setRequestProperty(
-                    "X-Goog-Api-Key",
-                    context.getString(R.string.routes_api_key),
-                )
-                connection.setRequestProperty("X-Goog-FieldMask", RESPONSE_FIELD_MASK)
-                connection.setRequestProperty("X-Android-Package", context.packageName)
-                signingCertificateSha1()?.let {
-                    connection.setRequestProperty("X-Android-Cert", it)
-                }
-
-                connection.outputStream.bufferedWriter(Charsets.UTF_8).use { writer ->
-                    writer.write(GoogleRoutesCodec.createRequestBody(origin, destination, travelMode).toString())
-                }
-
-                val responseCode = connection.responseCode
-                val responseBody = (if (responseCode in 200..299) {
-                    connection.inputStream
-                } else {
-                    connection.errorStream
-                })?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
-
-                if (responseCode !in 200..299) {
-                    val backendError = readBackendError(responseBody, responseCode)
-                    throw GoogleRoutesException(
-                        httpCode = responseCode,
-                        backendStatus = backendError.status,
-                        backendMessage = backendError.message,
-                    )
-                }
-
-                GoogleRoutesCodec.parseRoute(responseBody)
-            } finally {
-                connection.disconnect()
-            }
-        }
-
-    private fun readBackendError(responseBody: String, responseCode: Int): BackendError {
-        val errorObject = runCatching {
-            JSONObject(responseBody).optJSONObject("error")
-        }.getOrNull()
-        return BackendError(
-            status = errorObject?.optString("status")?.takeIf { it.isNotBlank() },
-            message = errorObject?.optString("message")?.takeIf { it.isNotBlank() }
-                ?: "Routes API request failed with HTTP $responseCode",
+    ): GoogleRoute = withContext(Dispatchers.IO) {
+        val idToken = authenticatedIdToken()
+        val appCheckToken = appCheckToken()
+        val requestBody = JSONObject().put(
+            "data",
+            JSONObject()
+                .put("origin", coordinate(origin))
+                .put("destination", coordinate(destination))
+                .put("travelMode", travelMode.apiValue),
         )
+        val connection = (URL(BuildConfig.ROUTES_FUNCTION_URL).openConnection() as HttpURLConnection)
+        try {
+            connection.requestMethod = "POST"
+            connection.connectTimeout = CONNECT_TIMEOUT_MS
+            connection.readTimeout = READ_TIMEOUT_MS
+            connection.doOutput = true
+            connection.setRequestProperty("Content-Type", "application/json; charset=UTF-8")
+            connection.setRequestProperty("Authorization", "Bearer $idToken")
+            connection.setRequestProperty(APP_CHECK_HEADER, appCheckToken)
+            connection.outputStream.bufferedWriter(Charsets.UTF_8).use { writer ->
+                writer.write(requestBody.toString())
+            }
+
+            val responseCode = connection.responseCode
+            val responseBody = (if (responseCode in 200..299) {
+                connection.inputStream
+            } else {
+                connection.errorStream
+            })?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
+            val responseJson = runCatching { JSONObject(responseBody) }.getOrNull()
+            if (responseCode !in 200..299) {
+                val error = responseJson?.optJSONObject("error")
+                throw GoogleRoutesException(
+                    httpCode = responseCode,
+                    backendStatus = error?.optString("status")?.takeIf(String::isNotBlank),
+                    backendMessage = error?.optString("message")?.takeIf(String::isNotBlank)
+                        ?: "Route function failed with HTTP $responseCode",
+                )
+            }
+
+            val result = responseJson?.optJSONObject("result")
+                ?: throw GoogleRoutesInvalidResponseException(
+                    "The route function returned an invalid response",
+                )
+            GoogleRoutesCodec.parseRoute(result)
+        } finally {
+            connection.disconnect()
+        }
     }
 
-    private fun signingCertificateSha1(): String? = runCatching {
-        val signature = PackageInfoCompat.getSignatures(
-            context.packageManager,
-            context.packageName,
-        ).firstOrNull() ?: return@runCatching null
-        MessageDigest.getInstance("SHA-1")
-            .digest(signature.toByteArray())
-            .joinToString(separator = "") { byte -> "%02X".format(byte) }
-    }.getOrNull()
+    private suspend fun authenticatedIdToken(): String {
+        val user = auth.currentUser ?: auth.signInAnonymously().await().user
+            ?: throw GoogleRoutesException(
+                httpCode = 403,
+                backendStatus = "UNAUTHENTICATED",
+                backendMessage = "Anonymous authentication failed",
+            )
+        return user.getIdToken(false).await().token
+            ?: throw GoogleRoutesException(
+                httpCode = 403,
+                backendStatus = "UNAUTHENTICATED",
+                backendMessage = "Firebase ID token is unavailable",
+            )
+    }
 
-    private data class BackendError(
-        val status: String?,
-        val message: String,
-    )
+    private suspend fun appCheckToken(): String =
+        appCheck.getAppCheckToken(false).await().token
+
+    private fun coordinate(point: LatLng): JSONObject = JSONObject()
+        .put("latitude", point.latitude)
+        .put("longitude", point.longitude)
 
     private companion object {
-        const val COMPUTE_ROUTES_URL =
-            "https://routes.googleapis.com/directions/v2:computeRoutes"
-        const val RESPONSE_FIELD_MASK =
-            "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline"
         const val CONNECT_TIMEOUT_MS = 15_000
-        const val READ_TIMEOUT_MS = 20_000
+        const val READ_TIMEOUT_MS = 30_000
+        const val APP_CHECK_HEADER = "X-Firebase-AppCheck"
     }
 }
 
 internal object GoogleRoutesCodec {
-    fun createRequestBody(
-        origin: LatLng,
-        destination: LatLng,
-        travelMode: GoogleRouteTravelMode,
-    ): JSONObject =
-        JSONObject().apply {
-            put("origin", waypoint(origin))
-            put("destination", waypoint(destination))
-            put("travelMode", travelMode.apiValue)
-            if (travelMode.supportsTrafficAware) {
-                put("routingPreference", "TRAFFIC_AWARE")
-            }
-            put("polylineQuality", "HIGH_QUALITY")
-            put("computeAlternativeRoutes", false)
-            put("languageCode", Locale.getDefault().toLanguageTag())
-            put("units", "METRIC")
-        }
-
-    private fun waypoint(point: LatLng): JSONObject = JSONObject().apply {
-        put(
-            "location",
-            JSONObject().put(
-                "latLng",
-                JSONObject()
-                    .put("latitude", point.latitude)
-                    .put("longitude", point.longitude),
-            ),
-        )
-    }
-
-    fun parseRoute(responseBody: String): GoogleRoute {
-        val route = JSONObject(responseBody)
-            .optJSONArray("routes")
-            ?.optJSONObject(0)
-            ?: throw GoogleRoutesNoRouteException()
-        val encodedPolyline = route
-            .optJSONObject("polyline")
-            ?.optString("encodedPolyline")
-            .orEmpty()
+    fun parseRoute(response: JSONObject): GoogleRoute {
+        val encodedPolyline = response.optString("encodedPolyline")
         if (encodedPolyline.isBlank()) {
             throw GoogleRoutesInvalidResponseException(
                 "The route response did not contain a polyline",
@@ -184,16 +142,8 @@ internal object GoogleRoutesCodec {
 
         return GoogleRoute(
             points = points,
-            distanceMeters = route.optInt("distanceMeters").coerceAtLeast(0),
-            durationSeconds = parseDurationSeconds(route.optString("duration")),
+            distanceMeters = response.optInt("distanceMeters").coerceAtLeast(0),
+            durationSeconds = response.optLong("durationSeconds").coerceAtLeast(0L),
         )
     }
-
-    fun parseDurationSeconds(value: String): Long = value
-        .removeSuffix("s")
-        .toDoubleOrNull()
-        ?.toLong()
-        ?.coerceAtLeast(0L)
-        ?: 0L
-
 }

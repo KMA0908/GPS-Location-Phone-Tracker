@@ -57,4 +57,10 @@
     <string name="rate_us">评价我们</string>
     <string name="get_premium">语音锁专业版</string>
     <string name="notification_title">启用通知</string>
+    <string name="dialog_type_map_title">地图类型</string>
+    <string name="dialog_type_map_normal_map">普通地图</string>
+    <string name="dialog_type_map_hybrid_map">混合地图</string>
+    <string name="dialog_type_map_satellite_map">卫星地图</string>
+    <string name="dialog_type_map_title_map_details">地图详情</string>
+    <string name="dialog_type_map_traffic">交通</string>
 </resources>

@@ -57,4 +57,10 @@
     <string name="rate_us">قيمنا</string>
     <string name="get_premium">قفل الصوت برو</string>
     <string name="notification_title">تمكين الإخطارات</string>
+    <string name="dialog_type_map_title">نوع الخريطة</string>
+    <string name="dialog_type_map_normal_map">خريطة عادية</string>
+    <string name="dialog_type_map_hybrid_map">خريطة مختلطة</string>
+    <string name="dialog_type_map_satellite_map">خريطة الأقمار الصناعية</string>
+    <string name="dialog_type_map_title_map_details">تفاصيل الخريطة</string>
+    <string name="dialog_type_map_traffic">حركة المرور</string>
 </resources>

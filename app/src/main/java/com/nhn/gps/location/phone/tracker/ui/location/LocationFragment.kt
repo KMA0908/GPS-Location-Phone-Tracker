@@ -1,7 +1,6 @@
 package com.nhn.gps.location.phone.tracker.ui.location
 
 import android.annotation.SuppressLint
-import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Bundle
@@ -13,7 +12,6 @@ import android.view.inputmethod.EditorInfo
 import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.StringRes
-import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.activityViewModels
@@ -28,6 +26,7 @@ import com.google.android.gms.maps.MapsInitializer
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.GroundOverlay
 import com.google.android.gms.maps.model.GroundOverlayOptions
 import com.google.android.gms.maps.model.JointType
@@ -42,11 +41,12 @@ import com.google.android.gms.maps.model.StrokeStyle
 import com.google.android.gms.maps.model.StyleSpan
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.card.MaterialCardView
+import com.google.maps.android.PolyUtil
 import com.google.maps.android.SphericalUtil
 import com.nhn.gps.location.phone.tracker.R
 import com.nhn.gps.location.phone.tracker.ads.GpsAdPlacement
-import com.nhn.gps.location.phone.tracker.ads.ResumeAdGuard
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
+import com.nhn.gps.location.phone.tracker.data.local.AppPreferences
 import com.nhn.gps.location.phone.tracker.data.model.FriendLocation
 import com.nhn.gps.location.phone.tracker.data.repository.GoogleRoute
 import com.nhn.gps.location.phone.tracker.data.repository.GoogleRoutesInvalidResponseException
@@ -63,9 +63,11 @@ import com.nhn.gps.location.phone.tracker.util.MapMarkerHelper
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import java.util.Locale
@@ -84,6 +86,12 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
 
     @Inject
     lateinit var routesRepository: GoogleRoutesRepository
+
+    @Inject
+    lateinit var twoWheelerCoverageResolver: TwoWheelerCoverageResolver
+
+    @Inject
+    lateinit var appPreferences: AppPreferences
 
     private var googleMap: GoogleMap? = null
 
@@ -119,12 +127,20 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     private var selectedFriendMarkerId: String? = null
     private var pendingMapRouteRequest: MapRouteRequest? = null
     private val routeJobs = mutableMapOf<DirectionTravelMode, Job>()
+    private var twoWheelerCoverageJob: Job? = null
     private val routeModeStates = PerModeResultStore<DirectionTravelMode, RouteModeState>()
     private val routeRequestGeneration = RouteRequestGeneration()
     private var lastRouteOrigin: LatLng? = null
     private var lastRouteDestination: LatLng? = null
     private var lastRouteRequestAt = 0L
     private var travelModeViewsConfigured = false
+    private var isInAppNavigationActive = false
+    private var navigationEnabledCompass = false
+    private var navigationArrivalAnnounced = false
+    private var lastNavigationCameraUpdateAt = 0L
+    private var isTwoWheelerOptionVisible = true
+    private var consecutiveOffRouteUpdates = 0
+    private var mapDisplayOptions = MapDisplayOptions()
 
     override fun createBinding(
         inflater: LayoutInflater,
@@ -132,10 +148,13 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     ): FragmentLocationBinding = FragmentLocationBinding.inflate(inflater, container, false)
 
     override fun setupViews(savedInstanceState: Bundle?) = with(binding) {
+        setupMapTypeResultListener()
         initializeGoogleMap()
 
         cardBack.setOnClickListener {
-            if (activeRoutePosition != null) {
+            if (isInAppNavigationActive) {
+                stopInAppNavigation()
+            } else if (activeRoutePosition != null) {
                 clearRoute()
             } else {
                 handleToolbarBack()
@@ -147,7 +166,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         }
 
         itemLayerStack.root.setOnClickListener {
-            cycleMapType()
+            showMapTypeBottomSheet()
         }
 
         itemCompass.root.setOnClickListener {
@@ -392,7 +411,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
 
     private fun setupDirectionPanel() = with(binding) {
         directionBottomPanel.btnStartNavigation.setOnClickListener {
-            startExternalNavigation()
+            toggleInAppNavigation()
         }
         configureTravelModeViews()
     }
@@ -546,7 +565,11 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                         tryStartPendingMapRoute()
                         activeRoutePosition?.let { destination ->
                             data.self?.let { origin ->
-                                refreshRouteIfNeeded(origin, destination)
+                                if (isInAppNavigationActive) {
+                                    updateInAppNavigation(origin, destination)
+                                } else {
+                                    refreshRouteIfNeeded(origin, destination)
+                                }
                             }
                         }
                         tryAutoZoom()
@@ -561,6 +584,11 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                     compassManager.bearing.collect { bearing ->
                         if (isCompassEnabled) {
                             updateDirectionUI(bearing)
+                            if (isInAppNavigationActive) {
+                                viewModel.selfLocation.value?.let { location ->
+                                    followNavigationCamera(location, bearing)
+                                }
+                            }
                         }
                     }
                 }
@@ -577,6 +605,22 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                     viewModel.selectedTravelMode.collectLatest {
                         renderSelectedTravelMode(it)
                         renderSelectedRouteMode(it)
+                    }
+                }
+                launch {
+                    combine(
+                        appPreferences.mapTypeFlow,
+                        appPreferences.mapTrafficEnabledFlow,
+                        appPreferences.mapBuildings3dEnabledFlow,
+                    ) { mapType, trafficEnabled, buildings3dEnabled ->
+                        MapDisplayOptions(
+                            baseType = MapBaseType.fromPersistedValue(mapType),
+                            trafficEnabled = trafficEnabled,
+                            buildings3dEnabled = buildings3dEnabled,
+                        )
+                    }.collectLatest { options ->
+                        mapDisplayOptions = options
+                        applyMapDisplayOptions()
                     }
                 }
         launch {
@@ -865,15 +909,49 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         }
     }
 
-    private fun cycleMapType() {
-        val map = googleMap ?: return
-        val nextType = when (map.mapType) {
-            GoogleMap.MAP_TYPE_NORMAL -> GoogleMap.MAP_TYPE_SATELLITE
-            GoogleMap.MAP_TYPE_SATELLITE -> GoogleMap.MAP_TYPE_TERRAIN
-            GoogleMap.MAP_TYPE_TERRAIN -> GoogleMap.MAP_TYPE_HYBRID
-            else -> GoogleMap.MAP_TYPE_NORMAL
+    private fun setupMapTypeResultListener() {
+        childFragmentManager.setFragmentResultListener(
+            MapTypeBottomSheet.REQUEST_KEY,
+            viewLifecycleOwner,
+        ) { _, result ->
+            val options = MapDisplayOptions(
+                baseType = MapBaseType.fromPersistedValue(
+                    result.getInt(
+                        MapTypeBottomSheet.KEY_MAP_TYPE,
+                        MapBaseType.NORMAL.persistedValue,
+                    ),
+                ),
+                trafficEnabled = result.getBoolean(MapTypeBottomSheet.KEY_TRAFFIC_ENABLED),
+                buildings3dEnabled = result.getBoolean(
+                    MapTypeBottomSheet.KEY_BUILDINGS_3D_ENABLED,
+                ),
+            )
+            mapDisplayOptions = options
+            applyMapDisplayOptions()
+            viewLifecycleOwner.lifecycleScope.launch {
+                appPreferences.saveMapDisplayOptions(
+                    mapType = options.baseType.persistedValue,
+                    trafficEnabled = options.trafficEnabled,
+                    buildings3dEnabled = options.buildings3dEnabled,
+                )
+            }
         }
-        map.mapType = nextType
+    }
+
+    private fun showMapTypeBottomSheet() {
+        if (childFragmentManager.findFragmentByTag(MapTypeBottomSheet.TAG) != null) return
+        MapTypeBottomSheet.newInstance(mapDisplayOptions).show(
+            childFragmentManager,
+            MapTypeBottomSheet.TAG,
+        )
+    }
+
+    private fun applyMapDisplayOptions() {
+        googleMap?.apply {
+            mapType = mapDisplayOptions.baseType.googleMapType
+            isTrafficEnabled = mapDisplayOptions.trafficEnabled
+            isBuildingsEnabled = mapDisplayOptions.buildings3dEnabled
+        }
     }
 
     private fun toggleCompass() {
@@ -931,6 +1009,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     override fun onMapReady(map: GoogleMap) {
         Log.d(TAG, "onMapReady: Map is ready")
         googleMap = map
+        applyMapDisplayOptions()
         lastDataPackage?.let { data ->
             updateMarkersWithAvatars(data.self, data.friends, data.avatar, data.name)
         }
@@ -1020,6 +1099,8 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         searchBottomSheetCallback = null
         routeJobs.values.forEach(Job::cancel)
         routeJobs.clear()
+        twoWheelerCoverageJob?.cancel()
+        twoWheelerCoverageJob = null
         routeModeStates.clear()
         bottomSheetCallback?.let {
             if (::bottomSheetBehavior.isInitialized) {
@@ -1052,6 +1133,12 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         lastRouteOrigin = null
         lastRouteDestination = null
         lastRouteRequestAt = 0L
+        isInAppNavigationActive = false
+        navigationEnabledCompass = false
+        navigationArrivalAnnounced = false
+        lastNavigationCameraUpdateAt = 0L
+        isTwoWheelerOptionVisible = true
+        consecutiveOffRouteUpdates = 0
         selfName = null
 
         friendMarkers.clear()
@@ -1108,13 +1195,20 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
             return false
         }
 
+        if (isInAppNavigationActive) {
+            stopInAppNavigation(restoreRouteOverview = false)
+        }
         activeRouteName = name
         activeRoutePosition = destination
         activeRouteFriendId = friendId
         viewModel.selectTravelMode(DirectionTravelMode.CAR)
         routeJobs.values.forEach(Job::cancel)
         routeJobs.clear()
+        twoWheelerCoverageJob?.cancel()
+        twoWheelerCoverageJob = null
         routeModeStates.clear()
+        setTwoWheelerOptionVisible(false)
+        consecutiveOffRouteUpdates = 0
         selectedFriendMarkerId = friendId
         selectedDestinationMarker?.remove()
         selectedDestinationMarker = googleMap?.addMarker(
@@ -1136,21 +1230,42 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     private fun refreshRouteIfNeeded(origin: LatLng, destination: LatLng) {
         val previousOrigin = lastRouteOrigin ?: return
         val previousDestination = lastRouteDestination ?: return
-        val elapsed = android.os.SystemClock.elapsedRealtime() - lastRouteRequestAt
-        if (elapsed < ROUTE_REFRESH_INTERVAL_MS) return
-
         val originMoved = SphericalUtil.computeDistanceBetween(previousOrigin, origin)
         val destinationMoved =
             SphericalUtil.computeDistanceBetween(previousDestination, destination)
-        if (originMoved >= ROUTE_REFRESH_DISTANCE_METERS ||
-            destinationMoved >= ROUTE_REFRESH_DISTANCE_METERS
-        ) {
+        val selectedState = routeModeStates[viewModel.selectedTravelMode.value]
+        val isOffRouteNow = isInAppNavigationActive &&
+            selectedState is RouteModeState.Success &&
+            !PolyUtil.isLocationOnPath(
+                origin,
+                selectedState.route.points,
+                false,
+                NAVIGATION_OFF_ROUTE_TOLERANCE_METERS,
+            )
+        consecutiveOffRouteUpdates = if (isOffRouteNow) {
+            consecutiveOffRouteUpdates + 1
+        } else {
+            0
+        }
+        val elapsed = android.os.SystemClock.elapsedRealtime() - lastRouteRequestAt
+        val refreshInterval = if (isInAppNavigationActive) {
+            NAVIGATION_ROUTE_REFRESH_INTERVAL_MS
+        } else {
+            ROUTE_REFRESH_INTERVAL_MS
+        }
+        if (elapsed < refreshInterval) return
+
+        val shouldRefresh = if (isInAppNavigationActive) {
+            consecutiveOffRouteUpdates >= NAVIGATION_OFF_ROUTE_CONFIRMATION_UPDATES ||
+                destinationMoved >= ROUTE_DESTINATION_REFRESH_DISTANCE_METERS
+        } else {
+            originMoved >= ROUTE_REFRESH_DISTANCE_METERS ||
+                destinationMoved >= ROUTE_DESTINATION_REFRESH_DISTANCE_METERS
+        }
+        if (shouldRefresh) {
+            consecutiveOffRouteUpdates = 0
             val requestGeneration = routeRequestGeneration.next()
             val selectedMode = viewModel.selectedTravelMode.value
-            DirectionTravelMode.entries
-                .filter { it != selectedMode }
-                .forEach { routeModeStates[it] = RouteModeState.Idle }
-            renderAllRouteOptionLabels()
             requestRouteMode(
                 origin,
                 destination,
@@ -1167,14 +1282,68 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         fitBounds: Boolean,
     ) {
         val requestGeneration = routeRequestGeneration.next()
-        DirectionTravelMode.entries.forEach { mode ->
-            requestRouteMode(
-                origin = origin,
-                destination = destination,
-                mode = mode,
-                fitBounds = fitBounds && mode == viewModel.selectedTravelMode.value,
-                requestGeneration = requestGeneration,
+        val selectedMode = viewModel.selectedTravelMode.value
+        requestRouteMode(
+            origin = origin,
+            destination = destination,
+            mode = selectedMode,
+            fitBounds = fitBounds,
+            requestGeneration = requestGeneration,
+        )
+        twoWheelerCoverageJob?.cancel()
+        twoWheelerCoverageJob = viewLifecycleOwner.lifecycleScope.launch {
+            val coverageDeferred = async {
+                twoWheelerCoverageResolver.resolve(origin, destination)
+            }
+            withTimeoutOrNull(SELECTED_ROUTE_HEAD_START_MS) {
+                routeJobs[selectedMode]?.join()
+            }
+            val currentDestination = activeRoutePosition ?: return@launch
+            if (!routeRequestGeneration.isCurrent(requestGeneration) ||
+                SphericalUtil.computeDistanceBetween(currentDestination, destination) >
+                ROUTE_RESPONSE_STALE_DISTANCE_METERS
+            ) {
+                Log.d(TAG, "two_wheeler_coverage_ignored_stale")
+                return@launch
+            }
+
+            DirectionTravelMode.entries
+                .filter { it != selectedMode && it != DirectionTravelMode.MOTORCYCLE }
+                .forEach { mode ->
+                    requestRouteMode(
+                        origin = origin,
+                        destination = destination,
+                        mode = mode,
+                        fitBounds = false,
+                        requestGeneration = requestGeneration,
+                    )
+                }
+
+            val coverage = coverageDeferred.await()
+            val shouldShow = coverage.isSupported != false
+            Log.d(
+                TAG,
+                "two_wheeler_coverage origin=${coverage.originCountryCode ?: "unknown"} " +
+                    "destination=${coverage.destinationCountryCode ?: "unknown"} " +
+                    "supported=${coverage.isSupported ?: "unknown"}",
             )
+            setTwoWheelerOptionVisible(shouldShow)
+            when {
+                !shouldShow -> {
+                    routeModeStates[DirectionTravelMode.MOTORCYCLE] = RouteModeState.Idle
+                    renderRouteOptionLabel(DirectionTravelMode.MOTORCYCLE)
+                }
+
+                selectedMode != DirectionTravelMode.MOTORCYCLE -> {
+                    requestRouteMode(
+                        origin = origin,
+                        destination = destination,
+                        mode = DirectionTravelMode.MOTORCYCLE,
+                        fitBounds = false,
+                        requestGeneration = requestGeneration,
+                    )
+                }
+            }
         }
     }
 
@@ -1186,6 +1355,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         requestGeneration: Long = routeRequestGeneration.current(),
     ) {
         if (activeRoutePosition == null) return
+        if (mode == DirectionTravelMode.MOTORCYCLE && !isTwoWheelerOptionVisible) return
         lastRouteOrigin = origin
         lastRouteDestination = destination
         lastRouteRequestAt = android.os.SystemClock.elapsedRealtime()
@@ -1212,6 +1382,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                 )
                 renderRouteOptionLabel(mode)
                 if (viewModel.selectedTravelMode.value == mode) {
+                    consecutiveOffRouteUpdates = 0
                     drawRouteLine(route, fitBounds)
                     showDirectionPanels(mode, route.distanceMeters, route.durationSeconds)
                 }
@@ -1232,8 +1403,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                         "backendStatus=${routesError?.backendStatus ?: "n/a"} " +
                         "backendMessage=${sanitizeRouteLogMessage(routesError?.backendMessage)} " +
                         "errorType=${error.javaClass.simpleName} " +
-                        "package=${requireContext().packageName} " +
-                        "signingCertificateAvailable=${routesRepository.hasSigningCertificate()}",
+                        "routeBackend=firebase_function",
                     error,
                 )
                 val currentDestination = activeRoutePosition
@@ -1251,6 +1421,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     }
 
     private fun selectOrRequestRouteMode(mode: DirectionTravelMode) {
+        if (mode == DirectionTravelMode.MOTORCYCLE && !isTwoWheelerOptionVisible) return
         val origin = viewModel.selfLocation.value?.takeIf(::isValidRoutePoint) ?: return
         val destination = activeRoutePosition?.takeIf(::isValidRoutePoint) ?: return
         val state = routeModeStates[mode]
@@ -1324,7 +1495,15 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         directionBottomPanel.tvTraffic.text = getString(R.string.route_calculating_description)
         directionBottomPanel.btnStartNavigation.isEnabled = false
         directionBottomPanel.btnStartNavigation.alpha = 0.55f
-        DirectionTravelMode.entries.forEach { routeModeStates[it] = RouteModeState.Loading }
+        DirectionTravelMode.entries.forEach { mode ->
+            routeModeStates[mode] = if (
+                mode == DirectionTravelMode.MOTORCYCLE && !isTwoWheelerOptionVisible
+            ) {
+                RouteModeState.Idle
+            } else {
+                RouteModeState.Loading
+            }
+        }
         renderAllRouteOptionLabels()
         directionTopPanel.root.visibility = View.VISIBLE
         directionBottomPanel.root.visibility = View.VISIBLE
@@ -1339,6 +1518,12 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         distanceMeters: Int,
         durationSeconds: Long,
     ) = with(binding) {
+        if (navigationArrivalAnnounced) {
+            directionBottomPanel.tvRouteTime.text = getString(R.string.route_arrived)
+            directionBottomPanel.tvTraffic.text = getString(R.string.route_arrived_description)
+            renderNavigationButton()
+            return@with
+        }
         val distanceText = formatDistance(distanceMeters)
         val durationText = formatDuration(durationSeconds)
         directionBottomPanel.tvRouteTime.text =
@@ -1350,12 +1535,24 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                 DirectionTravelMode.WALKING -> R.string.route_walking_description
             }
         )
-        directionBottomPanel.btnStartNavigation.isEnabled = true
-        directionBottomPanel.btnStartNavigation.alpha = 1f
+        renderNavigationButton()
     }
 
     private fun renderAllRouteOptionLabels() {
         DirectionTravelMode.entries.forEach(::renderRouteOptionLabel)
+    }
+
+    private fun setTwoWheelerOptionVisible(visible: Boolean) {
+        isTwoWheelerOptionVisible = visible
+        val motorcycleOption = binding.directionTopPanel.layoutRoutes
+            .getChildAt(DirectionTravelMode.MOTORCYCLE.ordinal)
+        motorcycleOption?.visibility = if (visible) View.VISIBLE else View.GONE
+
+        if (!visible && viewModel.selectedTravelMode.value == DirectionTravelMode.MOTORCYCLE) {
+            viewModel.selectTravelMode(DirectionTravelMode.CAR)
+            renderSelectedTravelMode(DirectionTravelMode.CAR)
+            renderSelectedRouteMode(DirectionTravelMode.CAR)
+        }
     }
 
     private fun renderRouteOptionLabel(mode: DirectionTravelMode) {
@@ -1413,8 +1610,8 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         routeLine = null
         directionBottomPanel.tvRouteTime.text = getString(R.string.route_unavailable_short)
         directionBottomPanel.tvTraffic.text = getString(descriptionRes)
-        directionBottomPanel.btnStartNavigation.isEnabled = true
-        directionBottomPanel.btnStartNavigation.alpha = 1f
+        directionBottomPanel.btnStartNavigation.isEnabled = false
+        directionBottomPanel.btnStartNavigation.alpha = 0.55f
     }
 
     @StringRes
@@ -1492,9 +1689,13 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     }
 
     private fun clearRoute() = with(binding) {
+        stopInAppNavigation(restoreRouteOverview = false, showStoppedMessage = false)
         routeJobs.values.forEach(Job::cancel)
         routeJobs.clear()
+        twoWheelerCoverageJob?.cancel()
+        twoWheelerCoverageJob = null
         routeModeStates.clear()
+        setTwoWheelerOptionVisible(true)
         (activity as? MainActivity)?.showScreenBanner(GpsAdPlacement.BANNER_REALTIME_TRACKER)
         routeOutline?.remove()
         routeOutline = null
@@ -1510,6 +1711,8 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         lastRouteOrigin = null
         lastRouteDestination = null
         lastRouteRequestAt = 0L
+        consecutiveOffRouteUpdates = 0
+        directionBottomPanel.btnStartNavigation.setText(R.string.route_start_navigation)
         directionTopPanel.root.visibility = View.GONE
         directionBottomPanel.root.visibility = View.GONE
         layoutTools.visibility = View.VISIBLE
@@ -1517,37 +1720,145 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         txtTitle.text = getString(R.string.realtime_tracker)
     }
 
-    private fun startExternalNavigation() {
+    private fun toggleInAppNavigation() {
+        if (isInAppNavigationActive) {
+            stopInAppNavigation()
+            return
+        }
+
         val destination = activeRoutePosition ?: return
-        ResumeAdGuard.suppressNextResumeAd()
         val mode = viewModel.selectedTravelMode.value
         val origin = viewModel.selfLocation.value?.takeIf { isValidRoutePoint(it) }
-        val uriBuilder = "https://www.google.com/maps/dir/".toUri().buildUpon()
-            .appendQueryParameter("api", "1")
-            .appendQueryParameter("destination", "${destination.latitude},${destination.longitude}")
-            .appendQueryParameter("travelmode", mode.googleMapsValue)
-            .appendQueryParameter("dir_action", "navigate")
-        origin?.let { uriBuilder.appendQueryParameter("origin", "${it.latitude},${it.longitude}") }
-        val mapsUriBuilt = uriBuilder.build()
-        val googleMapsIntent = Intent(Intent.ACTION_VIEW, mapsUriBuilt).apply {
-            setPackage("com.google.android.apps.maps")
+        val state = routeModeStates[mode]
+        if (origin == null) {
+            Toast.makeText(requireContext(), R.string.route_waiting_for_location, Toast.LENGTH_SHORT)
+                .show()
+            return
         }
-        val fallbackIntent = Intent(Intent.ACTION_VIEW, mapsUriBuilt)
-        when {
-            googleMapsIntent.resolveActivity(requireActivity().packageManager) != null -> startActivity(
-                googleMapsIntent
-            )
-
-            fallbackIntent.resolveActivity(requireActivity().packageManager) != null -> startActivity(
-                fallbackIntent
-            )
-
-            else -> Toast.makeText(
-                requireContext(),
-                R.string.route_navigation_unavailable,
-                Toast.LENGTH_SHORT
-            ).show()
+        if (state !is RouteModeState.Success) {
+            Toast.makeText(requireContext(), R.string.route_navigation_route_required, Toast.LENGTH_SHORT)
+                .show()
+            if (state !is RouteModeState.Loading) {
+                requestRouteMode(origin, destination, mode, fitBounds = false)
+            }
+            return
         }
+
+        isInAppNavigationActive = true
+        navigationArrivalAnnounced = false
+        lastNavigationCameraUpdateAt = 0L
+        consecutiveOffRouteUpdates = 0
+        if (!isCompassEnabled) {
+            navigationEnabledCompass = true
+            toggleCompass()
+        }
+        binding.txtTitle.text = getString(R.string.route_navigation_title)
+        binding.directionBottomPanel.tvTraffic.text =
+            getString(R.string.route_navigation_active_description)
+        renderNavigationButton()
+        followNavigationCamera(origin, compassManager.bearing.value, force = true)
+        Toast.makeText(requireContext(), R.string.route_navigation_started, Toast.LENGTH_SHORT).show()
+        Log.d(TAG, "in_app_navigation_started mode=${mode.name}")
+    }
+
+    private fun updateInAppNavigation(origin: LatLng, destination: LatLng) {
+        if (!isInAppNavigationActive) return
+        val distanceToDestination = SphericalUtil.computeDistanceBetween(origin, destination)
+        if (navigationArrivalAnnounced &&
+            distanceToDestination > NAVIGATION_ARRIVAL_RESET_DISTANCE_METERS
+        ) {
+            navigationArrivalAnnounced = false
+            val selectedState = routeModeStates[viewModel.selectedTravelMode.value]
+            if (selectedState is RouteModeState.Success) {
+                showDirectionPanels(
+                    viewModel.selectedTravelMode.value,
+                    selectedState.route.distanceMeters,
+                    selectedState.route.durationSeconds,
+                )
+            }
+        }
+        if (distanceToDestination <= NAVIGATION_ARRIVAL_DISTANCE_METERS) {
+            if (!navigationArrivalAnnounced) {
+                navigationArrivalAnnounced = true
+                binding.directionBottomPanel.tvRouteTime.text = getString(R.string.route_arrived)
+                binding.directionBottomPanel.tvTraffic.text =
+                    getString(R.string.route_arrived_description)
+                renderNavigationButton()
+                Toast.makeText(requireContext(), R.string.route_arrived, Toast.LENGTH_LONG).show()
+                Log.d(TAG, "in_app_navigation_arrived")
+            }
+            followNavigationCamera(origin, compassManager.bearing.value)
+            return
+        }
+
+        refreshRouteIfNeeded(origin, destination)
+        followNavigationCamera(origin, compassManager.bearing.value)
+    }
+
+    private fun followNavigationCamera(
+        location: LatLng,
+        bearing: Float,
+        force: Boolean = false,
+    ) {
+        val map = googleMap ?: return
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (!force && now - lastNavigationCameraUpdateAt < NAVIGATION_CAMERA_INTERVAL_MS) return
+        lastNavigationCameraUpdateAt = now
+        val cameraPosition = CameraPosition.Builder()
+            .target(location)
+            .zoom(maxOf(map.cameraPosition.zoom, NAVIGATION_ZOOM).coerceAtMost(NAVIGATION_MAX_ZOOM))
+            .tilt(NAVIGATION_TILT)
+            .bearing(((bearing % 360f) + 360f) % 360f)
+            .build()
+        map.animateCamera(
+            CameraUpdateFactory.newCameraPosition(cameraPosition),
+            NAVIGATION_CAMERA_ANIMATION_MS,
+            null,
+        )
+    }
+
+    private fun stopInAppNavigation(
+        restoreRouteOverview: Boolean = true,
+        showStoppedMessage: Boolean = true,
+    ) {
+        if (!isInAppNavigationActive) return
+        isInAppNavigationActive = false
+        navigationArrivalAnnounced = false
+        lastNavigationCameraUpdateAt = 0L
+        consecutiveOffRouteUpdates = 0
+        if (navigationEnabledCompass && isCompassEnabled) {
+            toggleCompass()
+        }
+        navigationEnabledCompass = false
+        binding.txtTitle.text = getString(R.string.directions)
+        renderNavigationButton()
+        val selectedState = routeModeStates[viewModel.selectedTravelMode.value]
+        if (selectedState is RouteModeState.Success) {
+            showDirectionPanels(
+                viewModel.selectedTravelMode.value,
+                selectedState.route.distanceMeters,
+                selectedState.route.durationSeconds,
+            )
+            if (restoreRouteOverview) {
+                drawRouteLine(selectedState.route, fitBounds = true)
+            }
+        }
+        if (showStoppedMessage && isAdded) {
+            Toast.makeText(requireContext(), R.string.route_navigation_stopped, Toast.LENGTH_SHORT).show()
+        }
+        Log.d(TAG, "in_app_navigation_stopped")
+    }
+
+    private fun renderNavigationButton() = with(binding.directionBottomPanel.btnStartNavigation) {
+        isEnabled = true
+        alpha = 1f
+        setText(
+            if (isInAppNavigationActive) {
+                R.string.route_end_navigation
+            } else {
+                R.string.route_start_navigation
+            }
+        )
     }
 
     private sealed interface RouteModeState {
@@ -1565,8 +1876,20 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         private const val TAG = "LocationFragment"
         private const val DEFAULT_ZOOM = 15f
         private const val BASE_CONE_HEIGHT = 500.0 // Chiều dài cơ sở tại zoom 15
-        private const val ROUTE_REFRESH_INTERVAL_MS = 8_000L
-        private const val ROUTE_REFRESH_DISTANCE_METERS = 40.0
+        private const val SELECTED_ROUTE_HEAD_START_MS = 700L
+        private const val ROUTE_REFRESH_INTERVAL_MS = 30_000L
+        private const val ROUTE_REFRESH_DISTANCE_METERS = 200.0
+        private const val ROUTE_DESTINATION_REFRESH_DISTANCE_METERS = 50.0
+        private const val NAVIGATION_ROUTE_REFRESH_INTERVAL_MS = 15_000L
+        private const val NAVIGATION_OFF_ROUTE_TOLERANCE_METERS = 60.0
+        private const val NAVIGATION_OFF_ROUTE_CONFIRMATION_UPDATES = 2
+        private const val NAVIGATION_ARRIVAL_DISTANCE_METERS = 30.0
+        private const val NAVIGATION_ARRIVAL_RESET_DISTANCE_METERS = 60.0
+        private const val NAVIGATION_CAMERA_INTERVAL_MS = 750L
+        private const val NAVIGATION_CAMERA_ANIMATION_MS = 650
+        private const val NAVIGATION_ZOOM = 17.5f
+        private const val NAVIGATION_MAX_ZOOM = 19f
+        private const val NAVIGATION_TILT = 50f
         private const val ROUTE_RESPONSE_STALE_DISTANCE_METERS = 50.0
         private const val MAX_ROUTE_LOG_MESSAGE_LENGTH = 500
         private val ROUTE_START_COLOR = Color.rgb(62, 218, 105)

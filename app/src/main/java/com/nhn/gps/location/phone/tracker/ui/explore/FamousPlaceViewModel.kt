@@ -2,7 +2,6 @@ package com.nhn.gps.location.phone.tracker.ui.explore
 
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.maps.model.LatLng
-import com.google.android.libraries.places.api.model.PhotoMetadata
 import com.nhn.gps.location.phone.tracker.base.BaseViewModel
 import com.nhn.gps.location.phone.tracker.data.model.FamousPlaceModel
 import com.nhn.gps.location.phone.tracker.data.repository.ExploreRepository
@@ -264,10 +263,6 @@ class FamousPlaceViewModel @Inject constructor(
         viewModelScope.launch {
             repository.toggleFavorite(placeId)
         }
-    }
-
-    suspend fun getPhotoUri(metadata: PhotoMetadata): String? {
-        return repository.getResolvedPhotoUri(metadata)
     }
 
     companion object {

@@ -57,4 +57,10 @@
     <string name="rate_us">Évaluez-nous</string>
     <string name="get_premium">Verrouillage vocal Pro</string>
     <string name="notification_title">Activer les notifications</string>
+    <string name="dialog_type_map_title">Type de carte</string>
+    <string name="dialog_type_map_normal_map">Carte normale</string>
+    <string name="dialog_type_map_hybrid_map">Carte hybride</string>
+    <string name="dialog_type_map_satellite_map">Carte satellite</string>
+    <string name="dialog_type_map_title_map_details">Détails de la carte</string>
+    <string name="dialog_type_map_traffic">Trafic</string>
 </resources>

@@ -1,6 +1,7 @@
 package com.nhn.gps.location.phone.tracker.di
 
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.appcheck.FirebaseAppCheck
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
@@ -25,6 +26,10 @@ object FirebaseModule {
     @Provides
     @Singleton
     fun provideAuth(): FirebaseAuth = FirebaseAuth.getInstance()
+
+    @Provides
+    @Singleton
+    fun provideAppCheck(): FirebaseAppCheck = FirebaseAppCheck.getInstance()
 
     @Provides
     @Singleton

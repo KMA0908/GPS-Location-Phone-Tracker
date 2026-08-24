@@ -57,4 +57,10 @@
     <string name="rate_us">Avalie-nos</string>
     <string name="get_premium">Bloqueio de voz Pro</string>
     <string name="notification_title">Habilitar notificações</string>
+    <string name="dialog_type_map_title">Tipo de mapa</string>
+    <string name="dialog_type_map_normal_map">Mapa normal</string>
+    <string name="dialog_type_map_hybrid_map">Mapa híbrido</string>
+    <string name="dialog_type_map_satellite_map">Mapa de satélite</string>
+    <string name="dialog_type_map_title_map_details">Detalhes do mapa</string>
+    <string name="dialog_type_map_traffic">Trânsito</string>
 </resources>

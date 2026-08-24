@@ -57,4 +57,10 @@
     <string name="rate_us">আমাদের রেট</string>
     <string name="get_premium">ভয়েস লক প্রো</string>
     <string name="notification_title">বিজ্ঞপ্তি সক্রিয় করুন</string>
+    <string name="dialog_type_map_title">মানচিত্রের ধরন</string>
+    <string name="dialog_type_map_normal_map">সাধারণ মানচিত্র</string>
+    <string name="dialog_type_map_hybrid_map">হাইব্রিড মানচিত্র</string>
+    <string name="dialog_type_map_satellite_map">স্যাটেলাইট মানচিত্র</string>
+    <string name="dialog_type_map_title_map_details">মানচিত্রের বিবরণ</string>
+    <string name="dialog_type_map_traffic">ট্রাফিক</string>
 </resources>

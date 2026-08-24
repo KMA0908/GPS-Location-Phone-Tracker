@@ -36,6 +36,30 @@ class AppPreferences @Inject constructor(
         parseFriendSearchHistory(preferences[FRIEND_SEARCH_HISTORY_JSON] ?: "[]")
     }
 
+    val mapTypeFlow: Flow<Int> = context.appDataStore.safeData.map { preferences ->
+        preferences[MAP_TYPE] ?: DEFAULT_MAP_TYPE
+    }
+
+    val mapTrafficEnabledFlow: Flow<Boolean> = context.appDataStore.safeData.map { preferences ->
+        preferences[MAP_TRAFFIC_ENABLED] ?: false
+    }
+
+    val mapBuildings3dEnabledFlow: Flow<Boolean> = context.appDataStore.safeData.map { preferences ->
+        preferences[MAP_BUILDINGS_3D_ENABLED] ?: false
+    }
+
+    suspend fun saveMapDisplayOptions(
+        mapType: Int,
+        trafficEnabled: Boolean,
+        buildings3dEnabled: Boolean,
+    ) {
+        context.appDataStore.edit { preferences ->
+            preferences[MAP_TYPE] = mapType
+            preferences[MAP_TRAFFIC_ENABLED] = trafficEnabled
+            preferences[MAP_BUILDINGS_3D_ENABLED] = buildings3dEnabled
+        }
+    }
+
     suspend fun recordFriendSearch(friendId: String) {
         if (friendId.isBlank()) return
         context.appDataStore.edit { preferences ->
@@ -320,6 +344,10 @@ class AppPreferences @Inject constructor(
         val FAVORITE_PLACES_JSON = stringPreferencesKey("favorite_places_json")
         val FRIEND_SEARCH_HISTORY_JSON = stringPreferencesKey("friend_search_history_json")
         val LOCAL_AVATAR_PATH = stringPreferencesKey("local_avatar_path")
+        val MAP_TYPE = intPreferencesKey("map_type")
+        val MAP_TRAFFIC_ENABLED = booleanPreferencesKey("map_traffic_enabled")
+        val MAP_BUILDINGS_3D_ENABLED = booleanPreferencesKey("map_buildings_3d_enabled")
+        const val DEFAULT_MAP_TYPE = 1
 
         fun parseFriendSearchHistory(json: String): List<FriendSearchHistoryEntry> = try {
             val array = JSONArray(json)

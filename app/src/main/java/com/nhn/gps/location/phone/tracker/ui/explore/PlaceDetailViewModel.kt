@@ -2,7 +2,6 @@ package com.nhn.gps.location.phone.tracker.ui.explore
 
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.maps.model.LatLng
-import com.google.android.libraries.places.api.model.PhotoMetadata
 import com.google.maps.android.SphericalUtil
 import com.nhn.gps.location.phone.tracker.base.BaseViewModel
 import com.nhn.gps.location.phone.tracker.data.model.FamousPlaceModel
@@ -104,7 +103,4 @@ class PlaceDetailViewModel @Inject constructor(
         }
     }
 
-    suspend fun getPhotoUri(metadata: PhotoMetadata): String? {
-        return repository.getResolvedPhotoUri(metadata)
-    }
 }

@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -7,7 +9,21 @@ plugins {
     id("kotlin-parcelize")
 }
 
-val googleMapApiKey = "AIzaSyCeCWr2pK_oWbdA3PCJ5PLRaNtcHtaHT5c"
+val localSecrets = Properties().apply {
+    val secretsFile = rootProject.file("secrets.properties")
+    if (secretsFile.isFile) {
+        secretsFile.inputStream().use { load(it) }
+    }
+}
+
+val mapsApiKey = (
+    providers.environmentVariable("MAPS_API_KEY").orNull
+        ?: localSecrets.getProperty("MAPS_API_KEY")
+).orEmpty().trim().takeIf { it.isNotEmpty() && it != "DEFAULT_API_KEY" }
+    ?: throw GradleException(
+        "MAPS_API_KEY is missing. Add it to the ignored secrets.properties file " +
+            "or set MAPS_API_KEY in the build environment.",
+    )
 
 android {
     namespace = "com.nhn.gps.location.phone.tracker"
@@ -22,9 +38,12 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["appName"] = "GPS Location Phone Tracker"
-        manifestPlaceholders["MAPS_API_KEY"] = googleMapApiKey
-        resValue("string", "maps_api_key", googleMapApiKey)
-        resValue("string", "routes_api_key", googleMapApiKey)
+        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
+        buildConfigField(
+            "String",
+            "ROUTES_FUNCTION_URL",
+            "\"https://asia-southeast1-gps-location-phone.cloudfunctions.net/computeRoute\"",
+        )
         manifestPlaceholders["admobAppId"] = "ca-app-pub-5889155949011891~7746138357"
     }
 
@@ -92,7 +111,6 @@ dependencies {
 
     implementation(libs.hilt.android)
     implementation(libs.play.services.maps)
-    implementation(libs.places)
     implementation(libs.kotlinx.coroutines.play.services)
     kapt(libs.hilt.compiler)
 
@@ -103,6 +121,8 @@ dependencies {
     implementation(libs.firebase.storage)
     implementation(libs.firebase.auth)
     implementation(libs.firebase.config)
+    implementation(libs.firebase.appcheck.playintegrity)
+    debugImplementation(libs.firebase.appcheck.debug)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

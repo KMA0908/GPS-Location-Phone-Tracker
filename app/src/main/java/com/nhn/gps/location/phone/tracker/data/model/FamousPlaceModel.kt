@@ -1,7 +1,5 @@
 package com.nhn.gps.location.phone.tracker.data.model
 
-import com.google.android.libraries.places.api.model.PhotoMetadata
-
 data class FamousPlaceModel(
     val id: String,
     val name: String,
@@ -20,7 +18,6 @@ data class FamousPlaceModel(
     val openingHours: List<String>? = null,
     val types: List<String>? = null,
     val address: String? = null,
-    val photoMetadata: PhotoMetadata? = null,
     val idPlaceType: Int = 0,
     val descriptionResKey: String? = null,
     val previewPhotos: List<String> = emptyList(),
