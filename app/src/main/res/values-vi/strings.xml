@@ -133,7 +133,6 @@
     <string name="place_qr_inside_frame">Đặt mã QR vào trong khung để thêm họ ngay lập tức.</string>
     <string name="open_camera">Mở camera</string>
     <string name="my_qr">QR của tôi</string>
-    <string name="route_start_navigation">Bắt đầu chỉ đường</string>
     <string name="alert_detail">Chi tiết cảnh báo</string>
     <string name="radius_meters">Bán kính: %1$d m</string>
     <string name="zone_name">Tên vùng</string>
@@ -271,8 +270,6 @@
     <string name="route_tap_to_calculate">Chạm để tính</string>
     <string name="route_motorcycle_description">Tuyến xe máy do Google Routes cung cấp</string>
     <string name="route_walking_description">Tuyến đi bộ do Google Routes cung cấp</string>
-    <string name="route_destination_unavailable">Bạn bè này chưa chia sẻ vị trí hợp lệ.</string>
-    <string name="route_approximate_description">Đang hiển thị đường thẳng tham khảo. Nhấn Bắt đầu chỉ đường để nhận chỉ đường trong Google Maps.</string>
     <string name="route_destination_unavailable">Bạn bè chưa gửi vị trí hợp lệ.</string>
     <string name="route_approximate_description">Đang hiển thị đường thẳng tham khảo. Nhấn Bắt đầu chỉ đường để đi theo tuyến ngay trong ứng dụng.</string>
     <string name="route_fastest_driving">Tuyến lái xe nhanh nhất</string>
@@ -389,8 +386,6 @@
     <string name="language_native_dutch">Nederlands</string>
     <string name="language_arabic">Tiếng Ả Rập</string>
     <string name="language_native_arabic">العربية</string>
-    <string name="language_arabic">tiếng Ả Rập</string>
-    <string name="language_native_arabic">عربية</string>
     <string name="dialog_type_map_title">Loại bản đồ</string>
     <string name="dialog_type_map_normal_map">Bản đồ bình thường</string>
     <string name="dialog_type_map_hybrid_map">Bản đồ kết hợp</string>

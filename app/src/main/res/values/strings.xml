@@ -132,7 +132,6 @@
     <string name="place_qr_inside_frame">Place the QR inside the frame to add them instantly.</string>
     <string name="open_camera">Open camera</string>
     <string name="my_qr">My QR</string>
-    <string name="route_start_navigation">Start Navigation</string>
     <string name="alert_detail">Alert detail</string>
     <string name="radius_meters">Radius: %1$d m</string>
     <string name="zone_name">Zone name</string>
