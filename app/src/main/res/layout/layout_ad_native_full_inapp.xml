@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/native_ad_surface">
+
+    <include layout="@layout/layout_ad_native_full" />
+
+    <com.leansoft.ads.view.DelayContainerView
+        android:id="@id/root_collapsible"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_gravity="top|end"
+        android:layout_margin="16dp"
+        android:clickable="false"
+        android:focusable="false"
+        android:translationZ="20dp">
+
+        <FrameLayout
+            android:id="@id/layout_countdown"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/bg_native_full_countdown">
+
+            <TextView
+                android:id="@id/tvCountdown"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:fontFamily="@font/plus_jakarta_sans_semibold"
+                android:gravity="center"
+                android:includeFontPadding="false"
+                android:textColor="@color/white"
+                android:textSize="14sp"
+                tools:text="3" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@id/btn_collapsible"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:contentDescription="@null"
+                android:padding="6dp"
+                android:src="@drawable/ic_close_ads" />
+        </FrameLayout>
+    </com.leansoft.ads.view.DelayContainerView>
+</FrameLayout>

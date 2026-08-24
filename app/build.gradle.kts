@@ -1,5 +1,3 @@
-import java.util.Properties
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -9,23 +7,7 @@ plugins {
     id("kotlin-parcelize")
 }
 
-val localProperties = Properties().apply {
-    val propertiesFile = rootProject.file("local.properties")
-    if (propertiesFile.isFile) {
-        propertiesFile.inputStream().use { load(it) }
-    }
-}
-
-fun requiredApiKey(propertyName: String): String =
-    providers.gradleProperty(propertyName).orNull
-        ?.takeIf(String::isNotBlank)
-        ?: localProperties.getProperty(propertyName)?.takeIf(String::isNotBlank)
-        ?: throw GradleException(
-            "$propertyName is missing. Add it to local.properties or provide it as a Gradle property.",
-        )
-
-val mapsApiKey = requiredApiKey("MAPS_API_KEY")
-val routesApiKey = requiredApiKey("ROUTES_API_KEY")
+val googleMapApiKey = "AIzaSyCeCWr2pK_oWbdA3PCJ5PLRaNtcHtaHT5c"
 
 android {
     namespace = "com.nhn.gps.location.phone.tracker"
@@ -40,9 +22,9 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["appName"] = "GPS Location Phone Tracker"
-        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
-        resValue("string", "maps_api_key", mapsApiKey)
-        resValue("string", "routes_api_key", routesApiKey)
+        manifestPlaceholders["MAPS_API_KEY"] = googleMapApiKey
+        resValue("string", "maps_api_key", googleMapApiKey)
+        resValue("string", "routes_api_key", googleMapApiKey)
         manifestPlaceholders["admobAppId"] = "ca-app-pub-5889155949011891~7746138357"
     }
 
