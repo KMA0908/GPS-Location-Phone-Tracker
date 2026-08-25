@@ -141,7 +141,7 @@ class FriendRepositoryImpl @Inject constructor(
         friendId: String
     ): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            Log.d("FriendRepo", "Adding friend atomic: myUid=$currentUserId, friendId=$friendId")
+            Log.d("FriendRepo", "Adding friend atomically")
             
             val updates = mapOf<String, Any>(
                 "$currentUserId/friends/$friendId" to true,
@@ -160,9 +160,12 @@ class FriendRepositoryImpl @Inject constructor(
 
     override suspend fun removeFriend(currentUserId: String, friendId: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            Log.d("FriendRepo", "Removing friend: myUid=$currentUserId, friendId=$friendId")
-            usersRef.child(currentUserId).child("friends").child(friendId).removeValue().await()
-            usersRef.child(friendId).child("friends").child(currentUserId).removeValue().await()
+            Log.d("FriendRepo", "Removing friend atomically")
+            val updates = mapOf<String, Any?>(
+                "$currentUserId/friends/$friendId" to null,
+                "$friendId/friends/$currentUserId" to null,
+            )
+            usersRef.updateChildren(updates).await()
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e("FriendRepo", "Error removing friend", e)

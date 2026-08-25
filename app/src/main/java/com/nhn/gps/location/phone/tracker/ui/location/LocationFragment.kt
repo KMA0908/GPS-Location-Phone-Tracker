@@ -96,6 +96,8 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     private var googleMap: GoogleMap? = null
 
     private var selfMarker: Marker? = null
+    private var lastDisplayedNavigationSelfLocation: LatLng? = null
+    private val lastDisplayedNavigationFriendLocations = mutableMapOf<String, LatLng>()
     private var selectedDestinationMarker: Marker? = null
     private var routeOutline: Polyline? = null
     private var routeLine: Polyline? = null
@@ -138,6 +140,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     private var navigationEnabledCompass = false
     private var navigationArrivalAnnounced = false
     private var lastNavigationCameraUpdateAt = 0L
+    private var lastNavigationCameraLocation: LatLng? = null
     private var isTwoWheelerOptionVisible = true
     private var consecutiveOffRouteUpdates = 0
     private var mapDisplayOptions = MapDisplayOptions()
@@ -654,6 +657,10 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                 launch {
                     mainViewModel.mapRouteRequest.collectLatest { request ->
                         if (request != null) {
+                            Log.d(
+                                TAG,
+                                "map_route_request_received source=${request.source} requestId=${request.requestId.take(8)}",
+                            )
                             pendingMapRouteRequest = request
                             tryStartPendingMapRoute()
                         }
@@ -665,7 +672,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
 
     private fun updateBottomSheetUi(friends: List<FriendLocation>) =
         with(binding.friendBottomSheetLayout) {
-            tvFriendCount.text = String.format(Locale.getDefault(), "Friends (%d)", friends.size)
+            tvFriendCount.text = getString(R.string.friends_count, friends.size)
             if (friends.isEmpty()) {
                 layoutEmpty.root.visibility = View.VISIBLE
                 rvFriends.visibility = View.GONE
@@ -722,6 +729,17 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     private fun showSelfMarker(location: LatLng, avatarUrl: String, name: String) {
         val map = googleMap ?: return
         val displayName = name.ifBlank { "You" }
+        if (isInAppNavigationActive && selfMarker != null &&
+            !LocationMovementPolicy.shouldAccept(lastDisplayedNavigationSelfLocation, location)
+        ) {
+            if (selfAvatarUrl != avatarUrl || selfName != displayName) {
+                updateMarkerIcon(selfMarker!!, mainViewModel.userAvatarKey.value, avatarUrl, displayName)
+                selfAvatarUrl = avatarUrl
+                selfName = displayName
+            }
+            return
+        }
+        lastDisplayedNavigationSelfLocation = location
         if (selfMarker == null) {
             selfMarker = map.addMarker(
                 MarkerOptions()
@@ -770,6 +788,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                 entry.value.remove()
                 iterator.remove()
                 friendAvatars.remove(entry.key)
+                lastDisplayedNavigationFriendLocations.remove(entry.key)
             }
         }
 
@@ -788,16 +807,25 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                 )
                 if (marker != null) {
                     friendMarkers[friend.id] = marker
+                    lastDisplayedNavigationFriendLocations[friend.id] = position
                     marker.tag = friend
                     val displayName = friend.name.ifBlank { "Friend" }
                     updateMarkerIcon(marker, friend.avatarKey, friend.avatarUrl, displayName)
                     friendNames[friend.id] = displayName
                 }
             } else {
-                existingMarker.position = position
+                val shouldMove = !isInAppNavigationActive ||
+                    LocationMovementPolicy.shouldAccept(
+                        lastDisplayedNavigationFriendLocations[friend.id],
+                        position,
+                    )
+                if (shouldMove) {
+                    existingMarker.position = position
+                    lastDisplayedNavigationFriendLocations[friend.id] = position
+                }
                 existingMarker.title = friend.name
                 existingMarker.tag = friend
-                if (activeRouteFriendId == friend.id) {
+                if (activeRouteFriendId == friend.id && shouldMove) {
                     activeRoutePosition = position
                     selectedDestinationMarker?.position = position
                 }
@@ -1148,7 +1176,14 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
 
     private fun tryStartPendingMapRoute() {
         val request = pendingMapRouteRequest ?: return
-        if (googleMap == null || viewModel.selfLocation.value == null) return
+        if (googleMap == null) {
+            Log.d(TAG, "map_route_waiting_for_map requestId=${request.requestId.take(8)}")
+            return
+        }
+        if (viewModel.selfLocation.value == null) {
+            Log.d(TAG, "map_route_waiting_for_origin requestId=${request.requestId.take(8)}")
+            return
+        }
         val started = showRouteTo(
             name = request.destinationName,
             destination = LatLng(request.latitude, request.longitude),
@@ -1745,6 +1780,10 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         }
 
         isInAppNavigationActive = true
+        lastDisplayedNavigationSelfLocation = selfMarker?.position ?: origin
+        friendMarkers.forEach { (id, marker) ->
+            lastDisplayedNavigationFriendLocations[id] = marker.position
+        }
         navigationArrivalAnnounced = false
         lastNavigationCameraUpdateAt = 0L
         consecutiveOffRouteUpdates = 0
@@ -1801,9 +1840,11 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         force: Boolean = false,
     ) {
         val map = googleMap ?: return
+        if (!force && !LocationMovementPolicy.shouldAccept(lastNavigationCameraLocation, location)) return
         val now = android.os.SystemClock.elapsedRealtime()
         if (!force && now - lastNavigationCameraUpdateAt < NAVIGATION_CAMERA_INTERVAL_MS) return
         lastNavigationCameraUpdateAt = now
+        lastNavigationCameraLocation = location
         val cameraPosition = CameraPosition.Builder()
             .target(location)
             .zoom(maxOf(map.cameraPosition.zoom, NAVIGATION_ZOOM).coerceAtMost(NAVIGATION_MAX_ZOOM))
@@ -1823,8 +1864,11 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     ) {
         if (!isInAppNavigationActive) return
         isInAppNavigationActive = false
+        lastDisplayedNavigationSelfLocation = null
+        lastDisplayedNavigationFriendLocations.clear()
         navigationArrivalAnnounced = false
         lastNavigationCameraUpdateAt = 0L
+        lastNavigationCameraLocation = null
         consecutiveOffRouteUpdates = 0
         if (navigationEnabledCompass && isCompassEnabled) {
             toggleCompass()

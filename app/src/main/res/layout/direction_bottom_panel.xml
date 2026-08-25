@@ -39,7 +39,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:text="@string/route_duration_and_distance"
+            android:text="@string/route_calculating"
             android:textSize="16sp"
             android:textStyle="bold"/>
 

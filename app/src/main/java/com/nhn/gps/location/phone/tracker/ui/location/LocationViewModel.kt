@@ -25,6 +25,8 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 
 enum class DirectionTravelMode(
@@ -46,6 +48,8 @@ class LocationViewModel @Inject constructor(
 
     private val _selfLocation = MutableStateFlow<LatLng?>(null)
     val selfLocation: StateFlow<LatLng?> = _selfLocation.asStateFlow()
+    private var lastSyncedLocation: LatLng? = null
+    private val locationSyncMutex = Mutex()
 
     private val _friendsLocations = MutableStateFlow<List<FriendLocation>>(emptyList())
     val friendsLocations: StateFlow<List<FriendLocation>> = _friendsLocations.asStateFlow()
@@ -159,14 +163,19 @@ class LocationViewModel @Inject constructor(
 
     private fun syncLocationWithFirebase(latLng: LatLng) {
         viewModelScope.launch {
-            if (!appPreferences.isLocationSharingEnabled.first()) return@launch
-            val uid = appPreferences.userId.first() ?: return@launch
-            val userLocation = UserLocation(
-                latitude = latLng.latitude,
-                longitude = latLng.longitude,
-                updatedAt = System.currentTimeMillis()
-            )
-            repository.updateSelfLocation(uid, userLocation)
+            locationSyncMutex.withLock {
+                if (!appPreferences.isLocationSharingEnabled.first()) return@withLock
+                if (!LocationMovementPolicy.shouldAccept(lastSyncedLocation, latLng)) return@withLock
+                val uid = appPreferences.userId.first() ?: return@withLock
+                val userLocation = UserLocation(
+                    latitude = latLng.latitude,
+                    longitude = latLng.longitude,
+                    updatedAt = System.currentTimeMillis()
+                )
+                repository.updateSelfLocation(uid, userLocation).onSuccess {
+                    lastSyncedLocation = latLng
+                }
+            }
         }
     }
 

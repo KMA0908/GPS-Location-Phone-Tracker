@@ -261,11 +261,16 @@ class MainViewModel @Inject constructor(
         longitude: Double,
         friendId: String? = null,
     ) {
-        _mapRouteRequest.value = MapRouteRequest(
+        val request = MapRouteRequest(
             destinationName = destinationName,
             latitude = latitude,
             longitude = longitude,
             friendId = friendId,
+        )
+        _mapRouteRequest.value = request
+        android.util.Log.d(
+            "MainViewModel",
+            "map_route_request_created source=${request.source} requestId=${request.requestId.take(8)}",
         )
         navigationManager.navigateTo(AppDestination.Map)
     }

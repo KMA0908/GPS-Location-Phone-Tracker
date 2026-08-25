@@ -60,11 +60,8 @@ class MyFriendFragment : BaseFragment<FragmentMyFriendBinding, FriendListViewMod
             }
         }
 
-        layoutFriendList.fabAddFriend.setOnClickListener {
-            if (isAdded) {
-                Toast.makeText(requireContext(), "Ads feature coming soon!", Toast.LENGTH_SHORT).show()
-            }
-        }
+        layoutNoFriend.tvFriendCount.text = getString(R.string.friends_count, 0)
+        layoutFriendList.tvFriendCount.text = getString(R.string.friends_count, 0)
 
         layoutFriendProfile.ivBack.setOnClickListener {
             hideProfile()
@@ -133,7 +130,7 @@ class MyFriendFragment : BaseFragment<FragmentMyFriendBinding, FriendListViewMod
         )
         (activity as? MainActivity)?.overrideNextRouteInterstitial(GpsAdPlacement.INTER_FRIEND_DETAIL)
         layoutFriendProfile.tvName.text = friend.name
-        layoutFriendProfile.tvUserId.text = "ID: ${friend.id}"
+        layoutFriendProfile.tvUserId.text = getString(R.string.user_id_prefix, friend.id)
         layoutFriendProfile.tvPhoneNumber.text = "+84 000 0000"
 
         layoutFriendProfile.imgAvatar.loadAvatar(friend.avatarKey, friend.avatarUrl, fallbackRes = R.drawable.ic_avt_location )
@@ -217,7 +214,9 @@ class MyFriendFragment : BaseFragment<FragmentMyFriendBinding, FriendListViewMod
             }
         }
         layoutFriendList.rvFriends.adapter = ConcatAdapter(adapters)
-        layoutFriendList.tvFriendCount.text = "Friends (${friends.size})"
+        val countText = getString(R.string.friends_count, friends.size)
+        layoutFriendList.tvFriendCount.text = countText
+        layoutNoFriend.tvFriendCount.text = countText
         
         if (friends.isEmpty()) {
             layoutNoFriend.root.visibility = View.VISIBLE

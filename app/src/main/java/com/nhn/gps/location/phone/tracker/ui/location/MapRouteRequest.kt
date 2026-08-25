@@ -8,4 +8,5 @@ data class MapRouteRequest(
     val latitude: Double,
     val longitude: Double,
     val friendId: String? = null,
+    val source: String = "famous_place",
 )

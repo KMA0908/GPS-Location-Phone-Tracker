@@ -252,6 +252,8 @@
     <string name="route_waiting_for_location">Getting your current location…</string>
     <string name="route_same_location">The destination is the same as your current location</string>
     <string name="route_calculating">Finding the best route…</string>
+    <string name="route_start_navigation">Start navigation</string>
+    <string name="route_navigation_unavailable">No navigation app is available</string>
     <string name="route_calculating_short">…</string>
     <string name="route_calculating_description">Calculating a route that follows the road</string>
     <string name="route_not_found">Route unavailable</string>

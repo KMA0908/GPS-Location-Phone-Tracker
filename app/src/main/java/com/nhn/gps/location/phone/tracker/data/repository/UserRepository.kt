@@ -32,19 +32,14 @@ class UserRepositoryImpl @Inject constructor(
     override fun getCurrentUserId(): String? = auth.currentUser?.uid
 
     override suspend fun findUserByPhone(phone: String): UserProfile? = withContext(Dispatchers.IO) {
-        try {
-            val query = usersRef.orderByChild("profile/phone").equalTo(phone).limitToFirst(1)
-            val snapshot = query.get().await()
+        val query = usersRef.orderByChild("profile/phone").equalTo(phone).limitToFirst(1)
+        val snapshot = query.get().await()
 
-            if (snapshot.exists() && snapshot.childrenCount > 0) {
-                val userSnapshot = snapshot.children.first()
-                val profile = userSnapshot.child("profile").getValue(UserProfile::class.java)
-                // Đảm bảo UID trong object profile khớp với node key trong database
-                profile?.copy(uid = userSnapshot.key ?: profile.uid)
-            } else {
-                null
-            }
-        } catch (e: Exception) {
+        if (snapshot.exists() && snapshot.childrenCount > 0) {
+            val userSnapshot = snapshot.children.first()
+            val profile = userSnapshot.child("profile").getValue(UserProfile::class.java)
+            profile?.copy(uid = userSnapshot.key ?: profile.uid)
+        } else {
             null
         }
     }
@@ -73,11 +68,17 @@ class UserRepositoryImpl @Inject constructor(
 
     override suspend fun saveUserProfile(uid: String, profile: UserProfile): Unit = withContext(Dispatchers.IO) {
         try {
-            // Đảm bảo profile.uid luôn trùng với Auth UID (uid truyền vào)
             val profileToSave = profile.copy(uid = uid)
-            usersRef.child(uid).child("profile").setValue(profileToSave).await()
+            val firebaseProfile = mapOf(
+                "uid" to profileToSave.uid,
+                "name" to profileToSave.name,
+                "phone" to profileToSave.phone,
+                "avatarKey" to profileToSave.avatarKey,
+            )
+            usersRef.child(uid).child("profile").setValue(firebaseProfile).await()
         } catch (e: Exception) {
-            throw Exception("Database Write Error: ${e.localizedMessage}. Check your Firebase Rules and Internet connection.")
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            throw e
         }
     }
 

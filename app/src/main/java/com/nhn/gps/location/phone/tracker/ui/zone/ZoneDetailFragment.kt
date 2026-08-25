@@ -81,7 +81,7 @@ class ZoneDetailFragment : BaseFragment<FragmentZoneDetailLocalBinding, MainView
         currentZone = zone
         tvZoneName.text = zone.name
         tvZoneAddress.text = zone.address.ifBlank { "Location not set" }
-        tvRadiusValue.text = "${zone.radiusMeters} m"
+        tvRadiusValue.text = getString(R.string.radius_val, zone.radiusMeters)
         sliderRadius.value = zone.radiusMeters.toFloat().coerceIn(40f, 1000f)
         
         val dateFormat = SimpleDateFormat("MMMM d'st' yyyy", Locale.ENGLISH)
