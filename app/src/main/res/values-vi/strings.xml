@@ -274,7 +274,6 @@
     <string name="route_approximate_description">Đang hiển thị đường thẳng tham khảo. Nhấn Bắt đầu chỉ đường để đi theo tuyến ngay trong ứng dụng.</string>
     <string name="route_fastest_driving">Tuyến lái xe nhanh nhất</string>
     <string name="route_navigation_unavailable">Không có ứng dụng chỉ đường nào khả dụng</string>
-    <string name="route_start_navigation">Bắt đầu chỉ đường</string>
     <string name="route_end_navigation">Kết thúc chỉ đường</string>
     <string name="route_navigation_title">Đang chỉ đường</string>
     <string name="route_navigation_started">Đã bắt đầu chỉ đường</string>
