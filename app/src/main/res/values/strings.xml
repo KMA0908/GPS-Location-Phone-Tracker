@@ -274,14 +274,12 @@
     <string name="route_destination_unavailable">This friend has not shared a valid location yet.</string>
     <string name="route_approximate_description">Showing a direct-line estimate. Tap Start navigation to follow the road route inside the app.</string>
     <string name="route_fastest_driving">Fastest driving route</string>
-    <string name="route_start_navigation" translatable="false">Start navigation</string>
     <string name="route_end_navigation" translatable="false">End navigation</string>
     <string name="route_navigation_title" translatable="false">Navigation</string>
     <string name="route_navigation_started" translatable="false">Navigation started</string>
     <string name="route_navigation_stopped" translatable="false">Navigation ended</string>
     <string name="route_navigation_active_description" translatable="false">Following the route inside the app</string>
     <string name="route_navigation_route_required" translatable="false">Wait for the route to finish calculating</string>
-    <string name="route_navigation_unavailable" translatable="false">No navigation app available</string>
     <string name="route_arrived" translatable="false">Arrived</string>
     <string name="route_arrived_description" translatable="false">You have reached your destination</string>
     <string name="route_duration_and_distance">%1$s (%2$s)</string>
