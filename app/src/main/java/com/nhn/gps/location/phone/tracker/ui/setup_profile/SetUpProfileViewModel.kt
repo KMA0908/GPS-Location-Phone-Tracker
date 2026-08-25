@@ -61,7 +61,7 @@ class SetUpProfileViewModel @Inject constructor(
     }
 
     fun onAvatarChanged(avatarKey: String) {
-        _avatarKey.value = avatarKey
+        _avatarKey.value = AvatarHelper.normalizeKey(avatarKey)
     }
 
     fun onSaveClicked() {
@@ -83,19 +83,12 @@ class SetUpProfileViewModel @Inject constructor(
 
             val existingUser = userRepository.findUserByPhone(phone)
 
-            if (existingUser != null && existingUser.uid != uid) {
-                // A phone number alone is not proof of account ownership. Without an
-                // OTP/login flow, never attach this installation to another auth UID.
-                _uiState.value = SetUpProfileUiState.PhoneAlreadyExists
-                return@launchCatching
-            }
-
             if (existingUser != null) {
                 appPreferences.setUserId(existingUser.uid)
                 appPreferences.setUserName(existingUser.name)
                 appPreferences.setUserPhone(existingUser.phone)
                 appPreferences.setUserAvatar(existingUser.avatarUrl)
-                appPreferences.setUserAvatarKey(existingUser.avatarKey)
+                appPreferences.setUserAvatarKey(AvatarHelper.normalizeKey(existingUser.avatarKey))
                 
                 _uiState.value = SetUpProfileUiState.Success
                 navigateAfterProfileCreated()
@@ -107,7 +100,7 @@ class SetUpProfileViewModel @Inject constructor(
                 name = name,
                 phone = phone,
                 avatarUrl = "", // We no longer upload avatar from this screen
-                avatarKey = _avatarKey.value
+                avatarKey = AvatarHelper.normalizeKey(_avatarKey.value)
             )
 
             // Save the profile under the authenticated anonymous UID.
@@ -118,7 +111,7 @@ class SetUpProfileViewModel @Inject constructor(
             appPreferences.setUserName(name)
             appPreferences.setUserPhone(phone)
             appPreferences.setUserAvatar("")
-            appPreferences.setUserAvatarKey(_avatarKey.value)
+            appPreferences.setUserAvatarKey(AvatarHelper.normalizeKey(_avatarKey.value))
 
             // Finish and navigate.
             _uiState.value = SetUpProfileUiState.Success

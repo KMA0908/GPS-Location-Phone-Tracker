@@ -5,6 +5,7 @@ import com.nhn.gps.location.phone.tracker.base.BaseViewModel
 import com.nhn.gps.location.phone.tracker.data.local.AppPreferences
 import com.nhn.gps.location.phone.tracker.data.model.UserProfile
 import com.nhn.gps.location.phone.tracker.data.repository.UserRepository
+import com.nhn.gps.location.phone.tracker.util.AvatarHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,7 +43,7 @@ class EditProfileViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             val name = appPreferences.userName.first()
-            val avatarKey = appPreferences.userAvatarKey.first()
+            val avatarKey = AvatarHelper.normalizeKey(appPreferences.userAvatarKey.first())
             
             _initialName.value = name
             _currentName.value = name
@@ -58,18 +59,15 @@ class EditProfileViewModel @Inject constructor(
     }
 
     fun onAvatarChanged(newKey: String) {
-        _currentAvatarKey.value = newKey
+        _currentAvatarKey.value = AvatarHelper.normalizeKey(newKey)
         checkChanges()
     }
 
     fun selectPresetAvatar(avatarKey: String) {
-        viewModelScope.launch {
-            appPreferences.setUserAvatarKey(avatarKey)
-            appPreferences.setLocalAvatarPath(null)
-            _initialAvatarKey.value = avatarKey
-            _currentAvatarKey.value = avatarKey
-            checkChanges()
-        }
+        // Keep the selection as a draft. Firebase and the local cache are committed
+        // together only after the user taps Save and the remote write succeeds.
+        _currentAvatarKey.value = AvatarHelper.normalizeKey(avatarKey)
+        checkChanges()
     }
 
     private fun checkChanges() {
@@ -80,7 +78,7 @@ class EditProfileViewModel @Inject constructor(
 
     fun saveChanges() {
         val newName = _currentName.value.trim()
-        val newAvatarKey = _currentAvatarKey.value
+        val newAvatarKey = AvatarHelper.normalizeKey(_currentAvatarKey.value)
         if (newName.isBlank() || !isChanged.value) return
 
         launchCatching {
@@ -101,6 +99,7 @@ class EditProfileViewModel @Inject constructor(
             // Update Local Preferences
             appPreferences.setUserName(newName)
             appPreferences.setUserAvatarKey(newAvatarKey)
+            appPreferences.setLocalAvatarPath(null)
             
             // Update Initial State
             _initialName.value = newName

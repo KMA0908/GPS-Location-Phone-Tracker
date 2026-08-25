@@ -189,8 +189,28 @@ class MyFriendFragment : BaseFragment<FragmentMyFriendBinding, FriendListViewMod
                         showSuccessDialog()
                     }
                 }
+
+                launch {
+                    viewModel.removeError.collect {
+                        showRemoveFriendErrorDialog()
+                    }
+                }
+
+                launch {
+                    viewModel.isRemoving.collect { removing ->
+                        binding.viewRemoveDialog.btnRemove.isEnabled = !removing
+                    }
+                }
             }
         }
+    }
+
+    private fun showRemoveFriendErrorDialog() {
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle(R.string.friend_action_error_title)
+            .setMessage(R.string.remove_friend_error)
+            .setPositiveButton(R.string.ok, null)
+            .show()
     }
 
     private fun updateFriendList(friends: List<com.nhn.gps.location.phone.tracker.data.model.FriendLocation>) = with(binding) {

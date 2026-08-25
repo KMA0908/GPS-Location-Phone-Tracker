@@ -289,6 +289,24 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
                         showFriendAdded()
                     }
                 }
+
+                launch {
+                    viewModel.premiumRequired.collect { limit ->
+                        showPremiumRequiredDialog(limit)
+                    }
+                }
+
+                launch {
+                    viewModel.addError.collect {
+                        showAddFriendErrorDialog()
+                    }
+                }
+
+                launch {
+                    viewModel.isLoading.collect { loading ->
+                        binding.layoutFriendFound.btnAddFriend.isEnabled = !loading
+                    }
+                }
             }
         }
     }
@@ -319,6 +337,22 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
             .setTitle("Already Friend")
             .setMessage("This user is already in your friend list.")
             .setPositiveButton("OK", null)
+            .show()
+    }
+
+    private fun showPremiumRequiredDialog(limit: Int) {
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.friend_limit_title)
+            .setMessage(getString(R.string.friend_limit_message, limit))
+            .setPositiveButton(R.string.ok, null)
+            .show()
+    }
+
+    private fun showAddFriendErrorDialog() {
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.friend_action_error_title)
+            .setMessage(R.string.add_friend_error)
+            .setPositiveButton(R.string.ok, null)
             .show()
     }
 

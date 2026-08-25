@@ -121,7 +121,7 @@ class PhoneLocatorRepositoryImpl @Inject constructor(
                 val loc = GeocodedLocation(
                     latitude = address.latitude,
                     longitude = address.longitude,
-                    formattedAddress = address.getAddressLine(0) ?: trimmedQuery
+                    formattedAddress = address.getAddressLine(0) ?: trimmedQuery,
                 )
                 Result.success(loc)
             } else {

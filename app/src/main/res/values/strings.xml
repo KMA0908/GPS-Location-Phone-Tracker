@@ -59,6 +59,11 @@
     <string name="remove_friend_desc">You will no longer see their location.</string>
     <string name="remove_friend_success_title">Success</string>
     <string name="remove_friend_success_desc">Friend removed successfully</string>
+    <string name="friend_action_error_title">Unable to update friends</string>
+    <string name="add_friend_error">Friend could not be added. Check your connection and account permissions, then try again.</string>
+    <string name="remove_friend_error">Friend could not be removed. Check your connection and account permissions, then try again.</string>
+    <string name="friend_limit_title">Friend limit reached</string>
+    <string name="friend_limit_message">The free plan supports up to %1$d friends. Upgrade to Premium to add more.</string>
     <string name="cancel">Cancel</string>
     <string name="remove">Remove</string>
     <string name="ok">OK</string>

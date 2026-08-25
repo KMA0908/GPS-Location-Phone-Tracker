@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -138,20 +139,28 @@ class LocationViewModel @Inject constructor(
 
     private fun observeAllLocations() {
         launchCatching {
-            val myUid = appPreferences.userId.first() ?: return@launchCatching
-            Log.d("LocationVM", "Observing friends locations for $myUid")
-            friendRepository.getFriends(myUid).collectLatest { locations ->
-                Log.d("LocationVM", "Received ${locations.size} friends locations")
-                _friendsLocations.value = locations
-                _isFriendsDataLoaded.value = true
-                locations.forEach { friend ->
-                    zoneRepository.processLocation(
-                        LatLng(friend.latitude, friend.longitude),
-                        subjectId = "friend:${friend.id}",
-                        subjectName = friend.name.ifBlank { "Friend" },
-                    )
+            appPreferences.userId
+                .distinctUntilChanged()
+                .collectLatest { myUid ->
+                    _friendsLocations.value = emptyList()
+                    _isFriendsDataLoaded.value = false
+
+                    if (myUid.isNullOrBlank()) return@collectLatest
+
+                    Log.d("LocationVM", "Observing friends after active user changed")
+                    friendRepository.getFriends(myUid).collectLatest { locations ->
+                        Log.d("LocationVM", "Received ${locations.size} friends locations")
+                        _friendsLocations.value = locations
+                        _isFriendsDataLoaded.value = true
+                        locations.forEach { friend ->
+                            zoneRepository.processLocation(
+                                LatLng(friend.latitude, friend.longitude),
+                                subjectId = "friend:${friend.id}",
+                                subjectName = friend.name.ifBlank { "Friend" },
+                            )
+                        }
+                    }
                 }
-            }
         }
     }
 

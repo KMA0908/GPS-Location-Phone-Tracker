@@ -59,6 +59,11 @@
     <string name="remove_friend_desc">Bạn sẽ không còn nhìn thấy vị trí của họ.</string>
     <string name="remove_friend_success_title">Thành công</string>
     <string name="remove_friend_success_desc">Đã xóa bạn bè thành công</string>
+    <string name="friend_action_error_title">Không thể cập nhật bạn bè</string>
+    <string name="add_friend_error">Không thể thêm bạn bè. Hãy kiểm tra kết nối và quyền tài khoản rồi thử lại.</string>
+    <string name="remove_friend_error">Không thể xóa bạn bè. Hãy kiểm tra kết nối và quyền tài khoản rồi thử lại.</string>
+    <string name="friend_limit_title">Đã đạt giới hạn bạn bè</string>
+    <string name="friend_limit_message">Gói miễn phí hỗ trợ tối đa %1$d người bạn. Hãy nâng cấp Premium để thêm bạn.</string>
     <string name="cancel">Hủy</string>
     <string name="remove">Xóa</string>
     <string name="ok">OK</string>

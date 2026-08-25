@@ -6,6 +6,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
 import com.nhn.gps.location.phone.tracker.data.model.UserProfile
+import com.nhn.gps.location.phone.tracker.util.AvatarHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -73,7 +74,9 @@ class UserRepositoryImpl @Inject constructor(
                 "uid" to profileToSave.uid,
                 "name" to profileToSave.name,
                 "phone" to profileToSave.phone,
-                "avatarKey" to profileToSave.avatarKey,
+                // Local drawable resource IDs/URIs are not portable between devices.
+                // Store the stable key so every installation resolves the same bundled image.
+                "avatarKey" to AvatarHelper.normalizeKey(profileToSave.avatarKey),
             )
             usersRef.child(uid).child("profile").setValue(firebaseProfile).await()
         } catch (e: Exception) {

@@ -26,7 +26,7 @@ class AvatarSelectorBottomSheet : BottomSheetDialogFragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        selectedKey = arguments?.getString(ARG_SELECTED_KEY) ?: AvatarHelper.DEFAULT_AVATAR_KEY
+        selectedKey = AvatarHelper.normalizeKey(arguments?.getString(ARG_SELECTED_KEY))
     }
 
     override fun onCreateView(

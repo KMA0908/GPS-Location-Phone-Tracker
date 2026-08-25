@@ -31,6 +31,7 @@ data class GlobeMarker(
     val latitude: Double,
     val longitude: Double,
     val imageRes: Int = R.drawable.place_category_1,
+    val imageAssetName: String? = null,
     val isSelected: Boolean = false,
     internal val ux: Float = 0f,
     internal val uy: Float = 0f,

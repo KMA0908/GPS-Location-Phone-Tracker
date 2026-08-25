@@ -149,11 +149,13 @@ class ExploreFragment : BaseFragment<FragmentExploreBinding, ExploreViewModel>()
             // Handle Search Marker
             state.searchedPlace?.let { place ->
                 currentPlaceIds.add(place.id)
+                val imageAssetName = requireContext().firstAvailableFamousPlacePhoto(place)
                 markerMap[place.id] = GlobeMarker(
                     id = place.id,
                     latitude = place.latitude,
                     longitude = place.longitude,
                     imageRes = place.imageRes,
+                    imageAssetName = imageAssetName,
                     isSelected = place.id == state.selectedPlaceId
                 )
             }
@@ -161,15 +163,18 @@ class ExploreFragment : BaseFragment<FragmentExploreBinding, ExploreViewModel>()
             // Handle Famous Place Markers (Max 4 as enforced by ViewModel)
             state.places.forEach { place ->
                 currentPlaceIds.add(place.id)
+                val imageAssetName = requireContext().firstAvailableFamousPlacePhoto(place)
                 // Only update if selected state or coordinates changed, otherwise reuse
                 val existing = markerMap[place.id]
                 if (existing == null || existing.isSelected != (place.id == state.selectedPlaceId) || 
-                    existing.latitude != place.latitude || existing.longitude != place.longitude) {
+                    existing.latitude != place.latitude || existing.longitude != place.longitude ||
+                    existing.imageAssetName != imageAssetName) {
                     markerMap[place.id] = GlobeMarker(
                         id = place.id,
                         latitude = place.latitude,
                         longitude = place.longitude,
                         imageRes = place.imageRes,
+                        imageAssetName = imageAssetName,
                         isSelected = place.id == state.selectedPlaceId
                     )
                 }

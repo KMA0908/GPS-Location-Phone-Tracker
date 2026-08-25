@@ -50,7 +50,6 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
     @Inject lateinit var zoneRepository: ZoneRepository
     private var map: GoogleMap? = null
     private var circle: Circle? = null
-    private var center = LatLng(21.0285, 105.8542)
     private var selectedZoneLocation: LatLng? = null
     private var selectedFormattedAddress: String? = null
     private var selectedPlaceId: String? = null
@@ -68,6 +67,8 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
         with(binding) {
             editing = null
             hasAppliedInitialLocation = false
+            hasMovedCameraToSelf = false
+            userHasPannedMap = false
             selectedZoneLocation = null
             selectedFormattedAddress = null
             selectedPlaceId = null
@@ -161,15 +162,22 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 locationViewModel.selfLocation.collect { location ->
                     if (location != null &&
+                        ZoneEditorState.selectedZoneId == null &&
                         !hasAppliedInitialLocation &&
                         !hasMovedCameraToSelf &&
-                        !userHasPannedMap &&
+                        selectedZoneLocation == null &&
                         isValidCoordinate(location.latitude, location.longitude) &&
                         (location.latitude != 0.0 || location.longitude != 0.0)
                     ) {
-                        map?.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 15f))
+                        selectLocation(
+                            location = location,
+                            address = null,
+                            placeId = null,
+                            animateCamera = map != null && !userHasPannedMap,
+                        )
+                        hasAppliedInitialLocation = true
                         hasMovedCameraToSelf = true
-                        Log.d(TAG, "zone_camera_moved_to_self")
+                        Log.d(TAG, "zone_location_selected source=self")
                     }
                 }
             }
@@ -269,13 +277,14 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
     }
 
     private fun bindZone(zone: Zone) = with(binding) {
+        val zoneLocation = LatLng(zone.latitude, zone.longitude)
         selectLocation(
-            location = LatLng(zone.latitude, zone.longitude),
+            location = zoneLocation,
             address = zone.address,
             placeId = null,
             animateCamera = false,
         )
-        map?.moveCamera(CameraUpdateFactory.newLatLngZoom(center, 15f))
+        map?.moveCamera(CameraUpdateFactory.newLatLngZoom(zoneLocation, 15f))
         edtName.setText(zone.name)
         edtAddress.setText(zone.address)
         sliderRadius.value = zone.radiusMeters.toFloat().coerceIn(40f, 500f)
@@ -315,16 +324,29 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
         googleMap.uiSettings.isZoomControlsEnabled = false
-        
-        // Priority for camera placement:
-        // 1. Restore selection/initial location (handled in setupViews/bindZone)
-        // 2. Self location (handled in observeSelfLocation)
-        // 3. Fallback to Hanoi
-        if (!hasAppliedInitialLocation) {
-            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(center, 15f))
-        }
 
-        selectedZoneLocation?.let { pinMarker(it) }
+        selectedZoneLocation?.let { selected ->
+            pinMarker(selected)
+            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(selected, 15f))
+            hasAppliedInitialLocation = true
+        } ?: locationViewModel.selfLocation.value
+            ?.takeIf { location ->
+                ZoneEditorState.selectedZoneId == null &&
+                    isValidCoordinate(location.latitude, location.longitude) &&
+                    (location.latitude != 0.0 || location.longitude != 0.0)
+            }
+            ?.let { location ->
+                selectLocation(
+                    location = location,
+                    address = null,
+                    placeId = null,
+                    animateCamera = false,
+                )
+                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 15f))
+                hasAppliedInitialLocation = true
+                hasMovedCameraToSelf = true
+                Log.d(TAG, "zone_location_selected source=self")
+            }
 
         googleMap.setOnCameraMoveStartedListener { reason ->
             if (reason == GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE) {
@@ -350,7 +372,6 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
         selectedZoneLocation = selection.location
         selectedFormattedAddress = selection.address?.takeIf { it.isNotBlank() }
         selectedPlaceId = selection.placeId
-        center = selection.location
         selectedFormattedAddress?.let(binding.edtAddress::setText)
         pinMarker(location)
         drawCircle()
@@ -411,7 +432,7 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
                 zoneRepository.upsert(zone)
                 Log.d(TAG, "zone_saved_from_pinned_location")
                 ZoneMonitoringService.start(requireContext())
-                ZoneEditorState.selectedZoneId = null
+                ZoneEditorState.selectedZoneId = if (editing != null) existingId else null
                 Toast.makeText(requireContext(), R.string.zone_saved, Toast.LENGTH_SHORT).show()
                 navigationManager.navigateBack()
             } catch (cancelled: CancellationException) {
@@ -427,6 +448,7 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
     override fun onDestroyView() {
         viewModel.cancelZoneAddressSearch()
         map?.apply {
+            setOnCameraMoveStartedListener(null)
             setOnCameraIdleListener(null)
             clear()
         }

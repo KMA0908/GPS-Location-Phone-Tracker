@@ -52,6 +52,12 @@ class FriendListViewModel @Inject constructor(
     private val _removeSuccess = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val removeSuccess: SharedFlow<Unit> = _removeSuccess.asSharedFlow()
 
+    private val _removeError = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val removeError: SharedFlow<Unit> = _removeError.asSharedFlow()
+
+    private val _isRemoving = MutableStateFlow(false)
+    val isRemoving: StateFlow<Boolean> = _isRemoving.asStateFlow()
+
     init {
         viewModelScope.launch {
             appPreferences.userId.collect {
@@ -73,13 +79,25 @@ class FriendListViewModel @Inject constructor(
     }
 
     fun removeFriend() {
+        if (_isRemoving.value) return
         val friendId = _selectedFriend.value?.id ?: return
         val myUid = currentUserId.value ?: return
 
-        launchCatching {
-            repository.removeFriend(myUid, friendId).onSuccess {
-                _removeSuccess.emit(Unit)
-                _selectedFriend.value = null
+        viewModelScope.launch {
+            _isRemoving.value = true
+            try {
+                repository.removeFriend(myUid, friendId).fold(
+                    onSuccess = {
+                        _removeSuccess.emit(Unit)
+                        _selectedFriend.value = null
+                    },
+                    onFailure = { error ->
+                        Log.e("FriendDebug", "Failed to remove friend", error)
+                        _removeError.emit(Unit)
+                    },
+                )
+            } finally {
+                _isRemoving.value = false
             }
         }
     }

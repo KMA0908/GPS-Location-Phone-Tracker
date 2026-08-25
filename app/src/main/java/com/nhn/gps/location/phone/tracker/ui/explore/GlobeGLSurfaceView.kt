@@ -5,6 +5,7 @@ import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -60,7 +61,7 @@ class GlobeGLSurfaceView @JvmOverloads constructor(
     private val lookAt = LookAt()
     private var cameraAnimator: ValueAnimator? = null
     private var lastPickRequest: Deferred<PickedObjectList>? = null
-    private val markerImageCache = mutableMapOf<Long, ImageSource>()
+    private val markerImageCache = mutableMapOf<String, ImageSource>()
 
     val isSupported: Boolean = true
 
@@ -117,7 +118,11 @@ class GlobeGLSurfaceView @JvmOverloads constructor(
     fun updateMarkers(markers: List<GlobeMarker>) {
         placesLayer.clearRenderables()
         markers.forEach { marker ->
-            val imageSource = markerImageSource(marker.imageRes, marker.isSelected)
+            val imageSource = markerImageSource(
+                imageAssetName = marker.imageAssetName,
+                imageRes = marker.imageRes,
+                selected = marker.isSelected,
+            )
             val attributes = PlacemarkAttributes.createWithImage(imageSource).apply {
                 imageScale = 1.0
                 imageOffset = earth.worldwind.geom.Offset.bottomCenter()
@@ -142,16 +147,27 @@ class GlobeGLSurfaceView @JvmOverloads constructor(
         worldWindow.requestRedraw()
     }
 
-    private fun markerImageSource(imageRes: Int, selected: Boolean): ImageSource {
+    private fun markerImageSource(
+        imageAssetName: String?,
+        imageRes: Int,
+        selected: Boolean,
+    ): ImageSource {
         val safeImageRes = imageRes.takeIf { it != 0 }
             ?: com.nhn.gps.location.phone.tracker.R.drawable.place_category_1
-        val key = (safeImageRes.toLong() shl 1) or if (selected) 1L else 0L
+        val sourceKey = imageAssetName?.let { "asset:$it" } ?: "res:$safeImageRes"
+        val key = "$sourceKey:selected=$selected"
         return markerImageCache.getOrPut(key) {
-            ImageSource.fromBitmap(createPhotoMarkerBitmap(safeImageRes, selected))
+            ImageSource.fromBitmap(
+                createPhotoMarkerBitmap(imageAssetName, safeImageRes, selected),
+            )
         }
     }
 
-    private fun createPhotoMarkerBitmap(imageRes: Int, selected: Boolean): Bitmap {
+    private fun createPhotoMarkerBitmap(
+        imageAssetName: String?,
+        imageRes: Int,
+        selected: Boolean,
+    ): Bitmap {
         val density = resources.displayMetrics.density
         val size = ((if (selected) 52f else 46f) * density).toInt().coerceAtLeast(1)
         val border = (if (selected) 3.5f else 2.5f) * density
@@ -168,13 +184,54 @@ class GlobeGLSurfaceView @JvmOverloads constructor(
         }
         canvas.save()
         canvas.clipPath(path)
-        context.getDrawable(imageRes)?.mutate()?.apply {
-            setBounds(inner.left.toInt(), inner.top.toInt(), inner.right.toInt(), inner.bottom.toInt())
-            draw(canvas)
+        val assetBitmap = imageAssetName?.let { fileName ->
+            decodeMarkerAsset(fileName, size)
+        }
+        if (assetBitmap != null) {
+            val sourceAspect = assetBitmap.width.toFloat() / assetBitmap.height
+            val targetAspect = inner.width() / inner.height()
+            val source = if (sourceAspect > targetAspect) {
+                val sourceWidth = (assetBitmap.height * targetAspect).toInt()
+                val left = (assetBitmap.width - sourceWidth) / 2
+                android.graphics.Rect(left, 0, left + sourceWidth, assetBitmap.height)
+            } else {
+                val sourceHeight = (assetBitmap.width / targetAspect).toInt()
+                val top = (assetBitmap.height - sourceHeight) / 2
+                android.graphics.Rect(0, top, assetBitmap.width, top + sourceHeight)
+            }
+            canvas.drawBitmap(
+                assetBitmap,
+                source,
+                inner,
+                Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG),
+            )
+            assetBitmap.recycle()
+        } else {
+            context.getDrawable(imageRes)?.mutate()?.apply {
+                setBounds(inner.left.toInt(), inner.top.toInt(), inner.right.toInt(), inner.bottom.toInt())
+                draw(canvas)
+            }
         }
         canvas.restore()
         return bitmap
     }
+
+    private fun decodeMarkerAsset(fileName: String, targetSize: Int): Bitmap? = runCatching {
+        val assetPath = "$FAMOUS_PLACE_ASSET_DIRECTORY/$fileName"
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        context.assets.open(assetPath).use { BitmapFactory.decodeStream(it, null, bounds) }
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return@runCatching null
+
+        var sampleSize = 1
+        while (
+            bounds.outWidth / (sampleSize * 2) >= targetSize &&
+            bounds.outHeight / (sampleSize * 2) >= targetSize
+        ) {
+            sampleSize *= 2
+        }
+        val options = BitmapFactory.Options().apply { inSampleSize = sampleSize }
+        context.assets.open(assetPath).use { BitmapFactory.decodeStream(it, null, options) }
+    }.getOrNull()
 
     /** Matches the reference selection transition: fly to a place and reveal satellite detail. */
     fun animateTo(latitude: Double, longitude: Double) {

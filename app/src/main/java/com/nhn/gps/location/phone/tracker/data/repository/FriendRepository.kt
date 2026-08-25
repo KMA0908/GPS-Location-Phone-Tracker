@@ -29,6 +29,10 @@ interface FriendRepository {
     suspend fun isFriend(userId: String, friendId: String): Boolean
 }
 
+class FriendLimitReachedException(
+    val limit: Int,
+) : IllegalStateException("Friend limit reached")
+
 @Singleton
 class FriendRepositoryImpl @Inject constructor(
     private val database: FirebaseDatabase
@@ -142,6 +146,16 @@ class FriendRepositoryImpl @Inject constructor(
     ): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             Log.d("FriendRepo", "Adding friend atomically")
+
+            require(currentUserId.isNotBlank()) { "Current user ID is unavailable" }
+            require(friendId.isNotBlank()) { "Friend ID is unavailable" }
+            require(currentUserId != friendId) { "Cannot add the current user as a friend" }
+
+            val currentFriends = usersRef.child(currentUserId).child("friends").get().await()
+            val alreadyFriend = currentFriends.child(friendId).getValue(Boolean::class.java) == true
+            if (!alreadyFriend && currentFriends.childrenCount >= FREE_FRIEND_LIMIT.toLong()) {
+                return@withContext Result.failure(FriendLimitReachedException(FREE_FRIEND_LIMIT))
+            }
             
             val updates = mapOf<String, Any>(
                 "$currentUserId/friends/$friendId" to true,
@@ -161,6 +175,9 @@ class FriendRepositoryImpl @Inject constructor(
     override suspend fun removeFriend(currentUserId: String, friendId: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             Log.d("FriendRepo", "Removing friend atomically")
+            require(currentUserId.isNotBlank()) { "Current user ID is unavailable" }
+            require(friendId.isNotBlank()) { "Friend ID is unavailable" }
+
             val updates = mapOf<String, Any?>(
                 "$currentUserId/friends/$friendId" to null,
                 "$friendId/friends/$currentUserId" to null,
@@ -181,5 +198,9 @@ class FriendRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             false
         }
+    }
+
+    private companion object {
+        const val FREE_FRIEND_LIMIT = 3
     }
 }
