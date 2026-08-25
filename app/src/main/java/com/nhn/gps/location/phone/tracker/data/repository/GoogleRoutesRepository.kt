@@ -1,7 +1,6 @@
 package com.nhn.gps.location.phone.tracker.data.repository
 
 import com.google.android.gms.maps.model.LatLng
-import com.google.firebase.appcheck.FirebaseAppCheck
 import com.google.firebase.auth.FirebaseAuth
 import com.google.maps.android.PolyUtil
 import com.nhn.gps.location.phone.tracker.BuildConfig
@@ -40,7 +39,6 @@ class GoogleRoutesInvalidResponseException(message: String) : IOException(messag
 @Singleton
 class GoogleRoutesRepository @Inject constructor(
     private val auth: FirebaseAuth,
-    private val appCheck: FirebaseAppCheck,
 ) {
 
     suspend fun computeRoute(
@@ -49,7 +47,6 @@ class GoogleRoutesRepository @Inject constructor(
         travelMode: GoogleRouteTravelMode,
     ): GoogleRoute = withContext(Dispatchers.IO) {
         val idToken = authenticatedIdToken()
-        val appCheckToken = appCheckToken()
         val requestBody = JSONObject().put(
             "data",
             JSONObject()
@@ -65,7 +62,6 @@ class GoogleRoutesRepository @Inject constructor(
             connection.doOutput = true
             connection.setRequestProperty("Content-Type", "application/json; charset=UTF-8")
             connection.setRequestProperty("Authorization", "Bearer $idToken")
-            connection.setRequestProperty(APP_CHECK_HEADER, appCheckToken)
             connection.outputStream.bufferedWriter(Charsets.UTF_8).use { writer ->
                 writer.write(requestBody.toString())
             }
@@ -112,9 +108,6 @@ class GoogleRoutesRepository @Inject constructor(
             )
     }
 
-    private suspend fun appCheckToken(): String =
-        appCheck.getAppCheckToken(false).await().token
-
     private fun coordinate(point: LatLng): JSONObject = JSONObject()
         .put("latitude", point.latitude)
         .put("longitude", point.longitude)
@@ -122,7 +115,6 @@ class GoogleRoutesRepository @Inject constructor(
     private companion object {
         const val CONNECT_TIMEOUT_MS = 15_000
         const val READ_TIMEOUT_MS = 30_000
-        const val APP_CHECK_HEADER = "X-Firebase-AppCheck"
     }
 }
 

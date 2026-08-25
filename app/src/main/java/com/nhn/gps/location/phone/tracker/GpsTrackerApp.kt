@@ -9,9 +9,6 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.google.android.gms.ads.AdRequest
 import com.google.firebase.FirebaseApp
-import com.google.firebase.appcheck.FirebaseAppCheck
-import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
-import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory
 import com.leansoft.ads.AdManager
 import com.leansoft.ads.AdsApplication
 import com.nhn.gps.location.phone.tracker.analytics.GpsAnalyticsTracker
@@ -31,13 +28,6 @@ class GpsTrackerApp : AdsApplication() {
     override fun onCreate() {
         super.onCreate()
         FirebaseApp.initializeApp(this)
-        FirebaseAppCheck.getInstance().installAppCheckProviderFactory(
-            if (BuildConfig.DEBUG) {
-                DebugAppCheckProviderFactory.getInstance()
-            } else {
-                PlayIntegrityAppCheckProviderFactory.getInstance()
-            },
-        )
         GpsAnalyticsTracker.initialize(this)
         enableLeanSoftDebugAds()
         registerActivityLifecycleCallbacks(activityCallbacks)
