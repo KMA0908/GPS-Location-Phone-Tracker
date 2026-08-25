@@ -9,6 +9,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.google.android.gms.ads.AdRequest
 import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.FirebaseAuth
 import com.leansoft.ads.AdManager
 import com.leansoft.ads.AdsApplication
 import com.nhn.gps.location.phone.tracker.analytics.GpsAnalyticsTracker
@@ -28,12 +29,27 @@ class GpsTrackerApp : AdsApplication() {
     override fun onCreate() {
         super.onCreate()
         FirebaseApp.initializeApp(this)
+        initializeAnonymousFirebaseSession()
         GpsAnalyticsTracker.initialize(this)
         enableLeanSoftDebugAds()
         registerActivityLifecycleCallbacks(activityCallbacks)
         if (GpsAdConfig.ADS_ENABLED) {
             ProcessLifecycleOwner.get().lifecycle.addObserver(ResumeAdObserver())
         }
+    }
+
+    /**
+     * Friend/location data is protected by authenticated Realtime Database rules.
+     * Anonymous auth keeps that protection without adding a visible login flow.
+     */
+    private fun initializeAnonymousFirebaseSession() {
+        val auth = FirebaseAuth.getInstance()
+        if (auth.currentUser != null) return
+
+        auth.signInAnonymously()
+            .addOnFailureListener { error ->
+                android.util.Log.e("FirebaseAuth", "Anonymous session initialization failed", error)
+            }
     }
 
     /**

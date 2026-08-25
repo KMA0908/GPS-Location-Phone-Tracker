@@ -1,6 +1,5 @@
 package com.nhn.gps.location.phone.tracker.ui.setup_profile
 
-import android.net.Uri
 import androidx.lifecycle.viewModelScope
 import com.nhn.gps.location.phone.tracker.base.BaseViewModel
 import com.nhn.gps.location.phone.tracker.data.local.AppPreferences
@@ -15,7 +14,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
@@ -75,11 +73,24 @@ class SetUpProfileViewModel @Inject constructor(
             val phone = _phone.value
             val name = _name.value
 
-            // 1. Kiểm tra số điện thoại đã tồn tại chưa
+            // Database rules require auth for both phone lookup and profile writes.
+            val uid = try {
+                userRepository.signInAnonymously()
+            } catch (e: Exception) {
+                _uiState.value = SetUpProfileUiState.Error(e.message ?: "Authentication failed")
+                return@launchCatching
+            }
+
             val existingUser = userRepository.findUserByPhone(phone)
-            
+
+            if (existingUser != null && existingUser.uid != uid) {
+                // A phone number alone is not proof of account ownership. Without an
+                // OTP/login flow, never attach this installation to another auth UID.
+                _uiState.value = SetUpProfileUiState.PhoneAlreadyExists
+                return@launchCatching
+            }
+
             if (existingUser != null) {
-                // Nếu tồn tại: Tải thông tin về lưu local và đi tới Home (như đăng nhập)
                 appPreferences.setUserId(existingUser.uid)
                 appPreferences.setUserName(existingUser.name)
                 appPreferences.setUserPhone(existingUser.phone)
@@ -91,14 +102,6 @@ class SetUpProfileViewModel @Inject constructor(
                 return@launchCatching
             }
 
-            // 2. Nếu chưa tồn tại: Thực hiện tạo user mới (Sử dụng anonymous auth)
-            val uid = try {
-                userRepository.signInAnonymously()
-            } catch (e: Exception) {
-                _uiState.value = SetUpProfileUiState.Error(e.message ?: "Authentication failed")
-                return@launchCatching
-            }
-
             val profile = UserProfile(
                 uid = uid,
                 name = name,
@@ -107,17 +110,17 @@ class SetUpProfileViewModel @Inject constructor(
                 avatarKey = _avatarKey.value
             )
 
-            // 4. Lưu profile lên Firebase
+            // Save the profile under the authenticated anonymous UID.
             userRepository.saveUserProfile(uid, profile)
 
-            // 5. Lưu local preferences
+            // Save local preferences.
             appPreferences.setUserId(uid)
             appPreferences.setUserName(name)
             appPreferences.setUserPhone(phone)
             appPreferences.setUserAvatar("")
             appPreferences.setUserAvatarKey(_avatarKey.value)
 
-            // 6. Thành công và Điều hướng
+            // Finish and navigate.
             _uiState.value = SetUpProfileUiState.Success
             navigateAfterProfileCreated()
         }

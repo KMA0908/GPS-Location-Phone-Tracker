@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "555065026759",
+    "firebase_url": "https://gps-location-phone-default-rtdb.firebaseio.com",
     "project_id": "gps-location-phone",
     "storage_bucket": "gps-location-phone.firebasestorage.app"
   },
