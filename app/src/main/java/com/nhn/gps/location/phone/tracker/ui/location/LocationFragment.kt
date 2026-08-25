@@ -96,8 +96,6 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     private var googleMap: GoogleMap? = null
 
     private var selfMarker: Marker? = null
-    private var lastDisplayedNavigationSelfLocation: LatLng? = null
-    private val lastDisplayedNavigationFriendLocations = mutableMapOf<String, LatLng>()
     private var selectedDestinationMarker: Marker? = null
     private var routeOutline: Polyline? = null
     private var routeLine: Polyline? = null
@@ -140,7 +138,8 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     private var navigationEnabledCompass = false
     private var navigationArrivalAnnounced = false
     private var lastNavigationCameraUpdateAt = 0L
-    private var lastNavigationCameraLocation: LatLng? = null
+    private var lastDisplayedNavigationSelfLocation: LatLng? = null
+    private val lastDisplayedNavigationFriendLocations = mutableMapOf<String, LatLng>()
     private var isTwoWheelerOptionVisible = true
     private var consecutiveOffRouteUpdates = 0
     private var mapDisplayOptions = MapDisplayOptions()
@@ -657,10 +656,6 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                 launch {
                     mainViewModel.mapRouteRequest.collectLatest { request ->
                         if (request != null) {
-                            Log.d(
-                                TAG,
-                                "map_route_request_received source=${request.source} requestId=${request.requestId.take(8)}",
-                            )
                             pendingMapRouteRequest = request
                             tryStartPendingMapRoute()
                         }
@@ -711,35 +706,20 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         }
     }
 
-    private fun updateMarkersWithAvatars(
-        self: LatLng?,
-        friends: List<FriendLocation>,
-        selfAvatar: String,
-        selfName: String
-    ) {
-        if (googleMap == null) return
-
-        self?.let { latLng ->
-            showSelfMarker(latLng, selfAvatar, selfName)
-        }
-
-        showFriendMarkers(friends)
+    private fun shouldAcceptMovement(
+        previous: LatLng?,
+        current: LatLng,
+        thresholdMeters: Double = 100.0
+    ): Boolean {
+        if (!isValidRoutePoint(current)) return false
+        if (previous == null) return true
+        val distance = SphericalUtil.computeDistanceBetween(previous, current)
+        return distance >= thresholdMeters
     }
 
     private fun showSelfMarker(location: LatLng, avatarUrl: String, name: String) {
         val map = googleMap ?: return
         val displayName = name.ifBlank { "You" }
-        if (isInAppNavigationActive && selfMarker != null &&
-            !LocationMovementPolicy.shouldAccept(lastDisplayedNavigationSelfLocation, location)
-        ) {
-            if (selfAvatarUrl != avatarUrl || selfName != displayName) {
-                updateMarkerIcon(selfMarker!!, mainViewModel.userAvatarKey.value, avatarUrl, displayName)
-                selfAvatarUrl = avatarUrl
-                selfName = displayName
-            }
-            return
-        }
-        lastDisplayedNavigationSelfLocation = location
         if (selfMarker == null) {
             selfMarker = map.addMarker(
                 MarkerOptions()
@@ -774,77 +754,6 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
             directionOverlay?.position = location
         }
         directionOverlay?.isVisible = isCompassEnabled
-    }
-
-    private fun showFriendMarkers(friends: List<FriendLocation>) {
-        val map = googleMap ?: return
-        val validFriends = friends.filter { isValidRoutePoint(LatLng(it.latitude, it.longitude)) }
-
-        val friendIds = validFriends.map { it.id }.toSet()
-        val iterator = friendMarkers.entries.iterator()
-        while (iterator.hasNext()) {
-            val entry = iterator.next()
-            if (!friendIds.contains(entry.key)) {
-                entry.value.remove()
-                iterator.remove()
-                friendAvatars.remove(entry.key)
-                lastDisplayedNavigationFriendLocations.remove(entry.key)
-            }
-        }
-
-        validFriends.forEach { friend ->
-            val existingMarker = friendMarkers[friend.id]
-            val position = LatLng(friend.latitude, friend.longitude)
-            if (existingMarker == null) {
-                val marker = map.addMarker(
-                    MarkerOptions()
-                        .position(position)
-                        .title(friend.name)
-                        .snippet(friend.id)
-                        .anchor(0.5f, 1f)
-                        .flat(false)
-                        .rotation(0f)
-                )
-                if (marker != null) {
-                    friendMarkers[friend.id] = marker
-                    lastDisplayedNavigationFriendLocations[friend.id] = position
-                    marker.tag = friend
-                    val displayName = friend.name.ifBlank { "Friend" }
-                    updateMarkerIcon(marker, friend.avatarKey, friend.avatarUrl, displayName)
-                    friendNames[friend.id] = displayName
-                }
-            } else {
-                val shouldMove = !isInAppNavigationActive ||
-                    LocationMovementPolicy.shouldAccept(
-                        lastDisplayedNavigationFriendLocations[friend.id],
-                        position,
-                    )
-                if (shouldMove) {
-                    existingMarker.position = position
-                    lastDisplayedNavigationFriendLocations[friend.id] = position
-                }
-                existingMarker.title = friend.name
-                existingMarker.tag = friend
-                if (activeRouteFriendId == friend.id && shouldMove) {
-                    activeRoutePosition = position
-                    selectedDestinationMarker?.position = position
-                }
-                existingMarker.rotation = 0f
-                existingMarker.isFlat = false
-                val displayName = friend.name.ifBlank { "Friend" }
-                if (friendAvatars[friend.id] != friend.avatarUrl || friendNames[friend.id] != displayName) {
-                    updateMarkerIcon(
-                        existingMarker,
-                        friend.avatarKey,
-                        friend.avatarUrl,
-                        displayName
-                    )
-                }
-                friendNames[friend.id] = displayName
-            }
-            friendAvatars[friend.id] = friend.avatarUrl
-        }
-        applyMarkerSelection()
     }
 
     private fun renderSearchHistoryVisibility(
@@ -1176,12 +1085,13 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
 
     private fun tryStartPendingMapRoute() {
         val request = pendingMapRouteRequest ?: return
+        Log.d(TAG, "map_route_request_received source=${if (request.friendId != null) "friend" else "famous_place"} requestId=${request.requestId}")
         if (googleMap == null) {
-            Log.d(TAG, "map_route_waiting_for_map requestId=${request.requestId.take(8)}")
+            Log.d(TAG, "map_route_waiting_for_map")
             return
         }
         if (viewModel.selfLocation.value == null) {
-            Log.d(TAG, "map_route_waiting_for_origin requestId=${request.requestId.take(8)}")
+            Log.d(TAG, "map_route_waiting_for_origin")
             return
         }
         val started = showRouteTo(
@@ -1219,6 +1129,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
             Log.w(TAG, "Ignoring route request with invalid destination: $destination")
             return false
         }
+        Log.d(TAG, "map_route_destination_validated lat=${destination.latitude} lng=${destination.longitude}")
 
         val distanceMeters = SphericalUtil.computeDistanceBetween(origin, destination)
         if (distanceMeters < 1.0) {
@@ -1265,9 +1176,18 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     private fun refreshRouteIfNeeded(origin: LatLng, destination: LatLng) {
         val previousOrigin = lastRouteOrigin ?: return
         val previousDestination = lastRouteDestination ?: return
-        val originMoved = SphericalUtil.computeDistanceBetween(previousOrigin, origin)
-        val destinationMoved =
-            SphericalUtil.computeDistanceBetween(previousDestination, destination)
+        
+        // Use consistent accepted locations if in navigation
+        val acceptedOrigin = if (isInAppNavigationActive) lastDisplayedNavigationSelfLocation ?: origin else origin
+        val acceptedDestination = if (isInAppNavigationActive) {
+            activeRouteFriendId?.let { lastDisplayedNavigationFriendLocations[it] } ?: destination
+        } else {
+            destination
+        }
+
+        val originMoved = SphericalUtil.computeDistanceBetween(previousOrigin, acceptedOrigin)
+        val destinationMoved = SphericalUtil.computeDistanceBetween(previousDestination, acceptedDestination)
+        
         val selectedState = routeModeStates[viewModel.selectedTravelMode.value]
         val isOffRouteNow = isInAppNavigationActive &&
             selectedState is RouteModeState.Success &&
@@ -1282,6 +1202,9 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         } else {
             0
         }
+        
+        val confirmedOffRoute = consecutiveOffRouteUpdates >= NAVIGATION_OFF_ROUTE_CONFIRMATION_UPDATES
+        
         val elapsed = android.os.SystemClock.elapsedRealtime() - lastRouteRequestAt
         val refreshInterval = if (isInAppNavigationActive) {
             NAVIGATION_ROUTE_REFRESH_INTERVAL_MS
@@ -1291,19 +1214,31 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         if (elapsed < refreshInterval) return
 
         val shouldRefresh = if (isInAppNavigationActive) {
-            consecutiveOffRouteUpdates >= NAVIGATION_OFF_ROUTE_CONFIRMATION_UPDATES ||
-                destinationMoved >= ROUTE_DESTINATION_REFRESH_DISTANCE_METERS
+            confirmedOffRoute ||
+                originMoved >= ROUTE_ENDPOINT_UPDATE_THRESHOLD_METERS ||
+                destinationMoved >= ROUTE_ENDPOINT_UPDATE_THRESHOLD_METERS
         } else {
             originMoved >= ROUTE_REFRESH_DISTANCE_METERS ||
                 destinationMoved >= ROUTE_DESTINATION_REFRESH_DISTANCE_METERS
         }
+
         if (shouldRefresh) {
+            Log.d(TAG, "route_refresh_scheduled mode=${viewModel.selectedTravelMode.value} originChanged=${originMoved >= 100} destinationChanged=${destinationMoved >= 100} offRoute=$confirmedOffRoute")
             consecutiveOffRouteUpdates = 0
             val requestGeneration = routeRequestGeneration.next()
             val selectedMode = viewModel.selectedTravelMode.value
+            
+            // Invalidate other modes as they are now stale
+            DirectionTravelMode.entries.forEach { mode ->
+                if (mode != selectedMode) {
+                    routeModeStates[mode] = RouteModeState.Idle
+                    renderRouteOptionLabel(mode)
+                }
+            }
+
             requestRouteMode(
-                origin,
-                destination,
+                acceptedOrigin,
+                acceptedDestination,
                 selectedMode,
                 fitBounds = false,
                 requestGeneration = requestGeneration,
@@ -1400,26 +1335,35 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         if (viewModel.selectedTravelMode.value == mode) renderSelectedRouteMode(mode)
         routeJobs[mode] = viewLifecycleOwner.lifecycleScope.launch {
             try {
-                Log.d(TAG, "route_request_started mode=${mode.name}")
+                Log.d(TAG, "route_request_started mode=${mode.name} generation=$requestGeneration")
                 val route = routesRepository.computeRoute(origin, destination, mode.routeApiMode)
+                
                 val currentDestination = activeRoutePosition ?: return@launch
-                if (!routeRequestGeneration.isCurrent(requestGeneration) ||
-                    SphericalUtil.computeDistanceBetween(currentDestination, destination) >
-                    ROUTE_RESPONSE_STALE_DISTANCE_METERS
-                ) {
-                    Log.d(TAG, "route_response_ignored_stale mode=${mode.name}")
+                val acceptedOrigin = if (isInAppNavigationActive) lastDisplayedNavigationSelfLocation ?: origin else origin
+                val acceptedDestination = if (isInAppNavigationActive) {
+                    activeRouteFriendId?.let { lastDisplayedNavigationFriendLocations[it] } ?: currentDestination
+                } else {
+                    currentDestination
+                }
+
+                val originStale = SphericalUtil.computeDistanceBetween(origin, acceptedOrigin) >= ROUTE_ENDPOINT_UPDATE_THRESHOLD_METERS
+                val destinationStale = SphericalUtil.computeDistanceBetween(destination, acceptedDestination) >= ROUTE_ENDPOINT_UPDATE_THRESHOLD_METERS
+
+                if (!routeRequestGeneration.isCurrent(requestGeneration) || originStale || destinationStale) {
+                    Log.d(TAG, "route_response_ignored_stale mode=${mode.name} originStale=$originStale destinationStale=$destinationStale")
                     return@launch
                 }
                 routeModeStates[mode] = RouteModeState.Success(route, origin, destination)
                 Log.d(
                     TAG,
-                    "route_request_success mode=${mode.name} distanceMeters=${route.distanceMeters} durationSeconds=${route.durationSeconds}",
+                    "route_refresh_success mode=${mode.name} distanceMeters=${route.distanceMeters} durationSeconds=${route.durationSeconds}",
                 )
                 renderRouteOptionLabel(mode)
                 if (viewModel.selectedTravelMode.value == mode) {
                     consecutiveOffRouteUpdates = 0
                     drawRouteLine(route, fitBounds)
                     showDirectionPanels(mode, route.distanceMeters, route.durationSeconds)
+                    Log.d(TAG, "route_line_rendered mode=${mode.name} generation=$requestGeneration")
                 }
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -1449,6 +1393,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                     renderRouteOptionLabel(mode)
                     if (viewModel.selectedTravelMode.value == mode) {
                         showRouteUnavailable(failureMessage)
+                        Log.d(TAG, "route_ui_rendered mode=${mode.name} state=FAILURE")
                     }
                 }
             }
@@ -1577,13 +1522,13 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         DirectionTravelMode.entries.forEach(::renderRouteOptionLabel)
     }
 
-    private fun setTwoWheelerOptionVisible(visible: Boolean) {
-        isTwoWheelerOptionVisible = visible
+    private fun setTwoWheelerOptionVisible(bool: Boolean) {
+        isTwoWheelerOptionVisible = bool
         val motorcycleOption = binding.directionTopPanel.layoutRoutes
             .getChildAt(DirectionTravelMode.MOTORCYCLE.ordinal)
-        motorcycleOption?.visibility = if (visible) View.VISIBLE else View.GONE
+        motorcycleOption?.visibility = if (bool) View.VISIBLE else View.GONE
 
-        if (!visible && viewModel.selectedTravelMode.value == DirectionTravelMode.MOTORCYCLE) {
+        if (!bool && viewModel.selectedTravelMode.value == DirectionTravelMode.MOTORCYCLE) {
             viewModel.selectTravelMode(DirectionTravelMode.CAR)
             renderSelectedTravelMode(DirectionTravelMode.CAR)
             renderSelectedRouteMode(DirectionTravelMode.CAR)
@@ -1780,13 +1725,11 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         }
 
         isInAppNavigationActive = true
-        lastDisplayedNavigationSelfLocation = selfMarker?.position ?: origin
-        friendMarkers.forEach { (id, marker) ->
-            lastDisplayedNavigationFriendLocations[id] = marker.position
-        }
         navigationArrivalAnnounced = false
         lastNavigationCameraUpdateAt = 0L
         consecutiveOffRouteUpdates = 0
+        lastDisplayedNavigationSelfLocation = origin
+        lastDisplayedNavigationFriendLocations.clear()
         if (!isCompassEnabled) {
             navigationEnabledCompass = true
             toggleCompass()
@@ -1831,7 +1774,11 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         }
 
         refreshRouteIfNeeded(origin, destination)
-        followNavigationCamera(origin, compassManager.bearing.value)
+        
+        val lastCameraLoc = lastDisplayedNavigationSelfLocation
+        if (lastCameraLoc != null) {
+            followNavigationCamera(lastCameraLoc, compassManager.bearing.value)
+        }
     }
 
     private fun followNavigationCamera(
@@ -1840,11 +1787,9 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         force: Boolean = false,
     ) {
         val map = googleMap ?: return
-        if (!force && !LocationMovementPolicy.shouldAccept(lastNavigationCameraLocation, location)) return
         val now = android.os.SystemClock.elapsedRealtime()
         if (!force && now - lastNavigationCameraUpdateAt < NAVIGATION_CAMERA_INTERVAL_MS) return
         lastNavigationCameraUpdateAt = now
-        lastNavigationCameraLocation = location
         val cameraPosition = CameraPosition.Builder()
             .target(location)
             .zoom(maxOf(map.cameraPosition.zoom, NAVIGATION_ZOOM).coerceAtMost(NAVIGATION_MAX_ZOOM))
@@ -1864,12 +1809,11 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     ) {
         if (!isInAppNavigationActive) return
         isInAppNavigationActive = false
-        lastDisplayedNavigationSelfLocation = null
-        lastDisplayedNavigationFriendLocations.clear()
         navigationArrivalAnnounced = false
         lastNavigationCameraUpdateAt = 0L
-        lastNavigationCameraLocation = null
         consecutiveOffRouteUpdates = 0
+        lastDisplayedNavigationSelfLocation = null
+        lastDisplayedNavigationFriendLocations.clear()
         if (navigationEnabledCompass && isCompassEnabled) {
             toggleCompass()
         }
@@ -1905,6 +1849,125 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         )
     }
 
+    private fun updateMarkersWithAvatars(
+        self: LatLng?,
+        friends: List<FriendLocation>,
+        selfAvatar: String,
+        selfName: String
+    ) {
+        if (googleMap == null) return
+
+        self?.let { latLng ->
+            val shouldUpdate = if (isInAppNavigationActive) {
+                val previous = lastDisplayedNavigationSelfLocation
+                if (shouldAcceptMovement(previous, latLng)) {
+                    lastDisplayedNavigationSelfLocation = latLng
+                    Log.d(TAG, "route_endpoint_update_accepted type=origin movedMeters=${previous?.let { SphericalUtil.computeDistanceBetween(it, latLng) } ?: 0.0}")
+                    true
+                } else {
+                    false
+                }
+            } else {
+                lastDisplayedNavigationSelfLocation = null
+                true
+            }
+            if (shouldUpdate) {
+                showSelfMarker(latLng, selfAvatar, selfName)
+            } else {
+                Log.v(TAG, "route_endpoint_update_ignored_below_threshold type=origin")
+            }
+        }
+
+        showFriendMarkers(friends)
+    }
+
+    private fun showFriendMarkers(friends: List<FriendLocation>) {
+        val map = googleMap ?: return
+        val validFriends = friends.filter { isValidRoutePoint(LatLng(it.latitude, it.longitude)) }
+
+        val friendIds = validFriends.map { it.id }.toSet()
+        val iterator = friendMarkers.entries.iterator()
+        while (iterator.hasNext()) {
+            val entry = iterator.next()
+            if (!friendIds.contains(entry.key)) {
+                entry.value.remove()
+                iterator.remove()
+                friendAvatars.remove(entry.key)
+                friendNames.remove(entry.key)
+                lastDisplayedNavigationFriendLocations.remove(entry.key)
+            }
+        }
+
+        validFriends.forEach { friend ->
+            val existingMarker = friendMarkers[friend.id]
+            val position = LatLng(friend.latitude, friend.longitude)
+
+            val shouldUpdate = if (isInAppNavigationActive) {
+                val previous = lastDisplayedNavigationFriendLocations[friend.id]
+                if (shouldAcceptMovement(previous, position)) {
+                    lastDisplayedNavigationFriendLocations[friend.id] = position
+                    true
+                } else {
+                    // Update avatar/name anyway if they changed, even if location didn't move 100m
+                    if (existingMarker != null && (friendAvatars[friend.id] != friend.avatarUrl || friendNames[friend.id] != friend.name)) {
+                        updateMarkerIcon(existingMarker, friend.avatarKey, friend.avatarUrl, friend.name.ifBlank { "Friend" })
+                    }
+                    false
+                }
+            } else {
+                lastDisplayedNavigationFriendLocations.remove(friend.id)
+                true
+            }
+
+            if (shouldUpdate) {
+                if (existingMarker == null) {
+                    val marker = map.addMarker(
+                        MarkerOptions()
+                            .position(position)
+                            .title(friend.name)
+                            .snippet(friend.id)
+                            .anchor(0.5f, 1f)
+                            .flat(false)
+                            .rotation(0f)
+                    )
+                    if (marker != null) {
+                        friendMarkers[friend.id] = marker
+                        marker.tag = friend
+                        val displayName = friend.name.ifBlank { "Friend" }
+                        updateMarkerIcon(marker, friend.avatarKey, friend.avatarUrl, displayName)
+                        friendNames[friend.id] = displayName
+                    }
+                } else {
+                    existingMarker.position = position
+                    existingMarker.title = friend.name
+                    existingMarker.tag = friend
+                    existingMarker.rotation = 0f
+                    existingMarker.isFlat = false
+                    val displayName = friend.name.ifBlank { "Friend" }
+                    if (friendAvatars[friend.id] != friend.avatarUrl || friendNames[friend.id] != displayName) {
+                        updateMarkerIcon(
+                            existingMarker,
+                            friend.avatarKey,
+                            friend.avatarUrl,
+                            displayName
+                        )
+                    }
+                    friendNames[friend.id] = displayName
+                }
+
+                if (activeRouteFriendId == friend.id) {
+                    Log.d(TAG, "route_endpoint_update_accepted type=destination movedMeters=${lastDisplayedNavigationFriendLocations[friend.id]?.let { SphericalUtil.computeDistanceBetween(it, position) } ?: 0.0}")
+                    activeRoutePosition = position
+                    selectedDestinationMarker?.position = position
+                }
+            } else {
+                Log.v(TAG, "route_endpoint_update_ignored_below_threshold type=destination")
+            }
+            friendAvatars[friend.id] = friend.avatarUrl
+        }
+        applyMarkerSelection()
+    }
+
     private sealed interface RouteModeState {
         data object Idle : RouteModeState
         data object Loading : RouteModeState
@@ -1929,6 +1992,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
         private const val NAVIGATION_OFF_ROUTE_CONFIRMATION_UPDATES = 2
         private const val NAVIGATION_ARRIVAL_DISTANCE_METERS = 30.0
         private const val NAVIGATION_ARRIVAL_RESET_DISTANCE_METERS = 60.0
+        private const val ROUTE_ENDPOINT_UPDATE_THRESHOLD_METERS = 100.0
         private const val NAVIGATION_CAMERA_INTERVAL_MS = 750L
         private const val NAVIGATION_CAMERA_ANIMATION_MS = 650
         private const val NAVIGATION_ZOOM = 17.5f

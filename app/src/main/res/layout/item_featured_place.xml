@@ -103,7 +103,7 @@
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/d_140"
+            android:layout_marginStart="@dimen/d_60"
             android:gravity="center_vertical"
             android:background="@drawable/bg_distance"
             android:padding="@dimen/d_4"

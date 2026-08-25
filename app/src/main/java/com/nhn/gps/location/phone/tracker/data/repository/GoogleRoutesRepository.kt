@@ -4,6 +4,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.FirebaseAuth
 import com.google.maps.android.PolyUtil
 import com.nhn.gps.location.phone.tracker.BuildConfig
+import android.util.Log
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
@@ -87,7 +88,9 @@ class GoogleRoutesRepository @Inject constructor(
                 ?: throw GoogleRoutesInvalidResponseException(
                     "The route function returned an invalid response",
                 )
-            GoogleRoutesCodec.parseRoute(result)
+            val route = GoogleRoutesCodec.parseRoute(result)
+            Log.d("RoutesRepo", "route_request_success mode=${travelMode.apiValue} distanceMeters=${route.distanceMeters} durationSeconds=${route.durationSeconds}")
+            route
         } finally {
             connection.disconnect()
         }

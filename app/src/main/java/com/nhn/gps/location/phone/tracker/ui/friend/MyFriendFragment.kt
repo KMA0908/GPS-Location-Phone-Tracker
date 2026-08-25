@@ -3,7 +3,6 @@ package com.nhn.gps.location.phone.tracker.ui.friend
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import android.widget.Toast
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -52,6 +51,9 @@ class MyFriendFragment : BaseFragment<FragmentMyFriendBinding, FriendListViewMod
         }
 
         layoutFriendList.rvFriends.layoutManager = LinearLayoutManager(requireContext())
+        val emptyCount = getString(R.string.friends_count, 0)
+        layoutFriendList.tvFriendCount.text = emptyCount
+        layoutNoFriend.tvFriendCount.text = emptyCount
 
         // btnAddFriend is part of the layout_no_friend include
         layoutNoFriend.btnAddFriend.setOnClickListener {
@@ -59,9 +61,6 @@ class MyFriendFragment : BaseFragment<FragmentMyFriendBinding, FriendListViewMod
                 navigationManager.navigateTo(AppDestination.AddFriend)
             }
         }
-
-        layoutNoFriend.tvFriendCount.text = getString(R.string.friends_count, 0)
-        layoutFriendList.tvFriendCount.text = getString(R.string.friends_count, 0)
 
         layoutFriendProfile.ivBack.setOnClickListener {
             hideProfile()
@@ -214,9 +213,8 @@ class MyFriendFragment : BaseFragment<FragmentMyFriendBinding, FriendListViewMod
             }
         }
         layoutFriendList.rvFriends.adapter = ConcatAdapter(adapters)
-        val countText = getString(R.string.friends_count, friends.size)
-        layoutFriendList.tvFriendCount.text = countText
-        layoutNoFriend.tvFriendCount.text = countText
+        layoutFriendList.tvFriendCount.text = getString(R.string.friends_count, friends.size)
+        layoutNoFriend.tvFriendCount.text = getString(R.string.friends_count, friends.size)
         
         if (friends.isEmpty()) {
             layoutNoFriend.root.visibility = View.VISIBLE

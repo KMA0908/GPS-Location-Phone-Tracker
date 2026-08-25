@@ -267,11 +267,8 @@ class MainViewModel @Inject constructor(
             longitude = longitude,
             friendId = friendId,
         )
+        Log.d(TAG, "map_route_request_created source=${if (friendId != null) "friend" else "famous_place"} requestId=${request.requestId}")
         _mapRouteRequest.value = request
-        android.util.Log.d(
-            "MainViewModel",
-            "map_route_request_created source=${request.source} requestId=${request.requestId.take(8)}",
-        )
         navigationManager.navigateTo(AppDestination.Map)
     }
 

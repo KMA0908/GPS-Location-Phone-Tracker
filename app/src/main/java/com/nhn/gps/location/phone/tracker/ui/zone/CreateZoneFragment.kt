@@ -11,8 +11,8 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.core.content.ContextCompat
-import androidx.fragment.app.viewModels
 import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -34,9 +34,9 @@ import com.nhn.gps.location.phone.tracker.data.model.ZoneType
 import com.nhn.gps.location.phone.tracker.data.repository.ZoneRepository
 import com.nhn.gps.location.phone.tracker.data.notification.ZoneMonitoringService
 import com.nhn.gps.location.phone.tracker.databinding.FragmentCreateZoneLocalBinding
+import com.nhn.gps.location.phone.tracker.ui.location.LocationViewModel
 import com.nhn.gps.location.phone.tracker.ui.main.MainViewModel
 import com.nhn.gps.location.phone.tracker.ui.main.ZoneAddressSearchState
-import com.nhn.gps.location.phone.tracker.ui.location.LocationViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.CancellationException
@@ -50,15 +50,15 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
     @Inject lateinit var zoneRepository: ZoneRepository
     private var map: GoogleMap? = null
     private var circle: Circle? = null
-    private var center: LatLng? = null
+    private var center = LatLng(21.0285, 105.8542)
     private var selectedZoneLocation: LatLng? = null
     private var selectedFormattedAddress: String? = null
     private var selectedPlaceId: String? = null
     private var selectedMapMarker: Marker? = null
     private var editing: Zone? = null
     private var hasAppliedInitialLocation = false
-    private var hasInitializedCamera = false
-    private var hasUserMovedCamera = false
+    private var hasMovedCameraToSelf = false
+    private var userHasPannedMap = false
     private val radius get() = binding.sliderRadius.value.toInt()
 
     override fun createBinding(inflater: LayoutInflater, container: ViewGroup?) =
@@ -77,6 +77,7 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
             btnBack.setOnClickListener { handleToolbarBack() }
             btnCancel.setOnClickListener { handleToolbarBack() }
             btnSave.setOnClickListener { saveZone() }
+            tvRadius.text = getString(R.string.radius_meters, sliderRadius.value.toInt())
             sliderRadius.addOnChangeListener { _, value, _ ->
                 tvRadius.text = getString(R.string.radius_meters, value.toInt())
                 drawCircle()
@@ -129,7 +130,6 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
             // Initial UI state
             updateSwitchUi(switchEnter, switchEnter.isChecked)
             updateSwitchUi(switchLeave, switchLeave.isChecked)
-            tvRadius.text = getString(R.string.radius_meters, sliderRadius.value.toInt())
 
             val restoredSelection = restoreSelection(savedInstanceState)
             ZoneEditorState.selectedZoneId?.takeUnless { restoredSelection }?.let { id ->
@@ -152,7 +152,27 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
             }
 
             observeSearchState()
-            observeSelfLocationForInitialCamera()
+            observeSelfLocation()
+        }
+    }
+
+    private fun observeSelfLocation() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                locationViewModel.selfLocation.collect { location ->
+                    if (location != null &&
+                        !hasAppliedInitialLocation &&
+                        !hasMovedCameraToSelf &&
+                        !userHasPannedMap &&
+                        isValidCoordinate(location.latitude, location.longitude) &&
+                        (location.latitude != 0.0 || location.longitude != 0.0)
+                    ) {
+                        map?.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 15f))
+                        hasMovedCameraToSelf = true
+                        Log.d(TAG, "zone_camera_moved_to_self")
+                    }
+                }
+            }
         }
     }
 
@@ -255,7 +275,7 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
             placeId = null,
             animateCamera = false,
         )
-        center?.let { map?.moveCamera(CameraUpdateFactory.newLatLngZoom(it, 15f)) }
+        map?.moveCamera(CameraUpdateFactory.newLatLngZoom(center, 15f))
         edtName.setText(zone.name)
         edtAddress.setText(zone.address)
         sliderRadius.value = zone.radiusMeters.toFloat().coerceIn(40f, 500f)
@@ -295,21 +315,26 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
         googleMap.uiSettings.isZoomControlsEnabled = false
-        selectedZoneLocation?.let {
-            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(it, 15f))
-            hasInitializedCamera = true
-        } ?: moveCameraToSelfLocationIfEligible(locationViewModel.selfLocation.value)
         
+        // Priority for camera placement:
+        // 1. Restore selection/initial location (handled in setupViews/bindZone)
+        // 2. Self location (handled in observeSelfLocation)
+        // 3. Fallback to Hanoi
+        if (!hasAppliedInitialLocation) {
+            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(center, 15f))
+        }
+
         selectedZoneLocation?.let { pinMarker(it) }
+
+        googleMap.setOnCameraMoveStartedListener { reason ->
+            if (reason == GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE) {
+                userHasPannedMap = true
+            }
+        }
 
         // Camera movement only changes the viewport. It must never change the selected zone.
         googleMap.setOnCameraIdleListener {
             Log.v(TAG, "zone_camera_idle selectionPinned=${selectedZoneLocation != null}")
-        }
-        googleMap.setOnCameraMoveStartedListener { reason ->
-            if (reason == GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE) {
-                hasUserMovedCamera = true
-            }
         }
 
         drawCircle()
@@ -330,26 +355,6 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
         pinMarker(location)
         drawCircle()
         if (animateCamera) map?.animateCamera(CameraUpdateFactory.newLatLngZoom(location, 15f))
-    }
-
-    private fun observeSelfLocationForInitialCamera() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                locationViewModel.selfLocation.collect(::moveCameraToSelfLocationIfEligible)
-            }
-        }
-    }
-
-    private fun moveCameraToSelfLocationIfEligible(location: LatLng?) {
-        val target = location ?: return
-        if (map == null || hasInitializedCamera || hasUserMovedCamera ||
-            selectedZoneLocation != null || editing != null || hasAppliedInitialLocation ||
-            !isValidCoordinate(target.latitude, target.longitude) ||
-            (target.latitude == 0.0 && target.longitude == 0.0)
-        ) return
-        map?.moveCamera(CameraUpdateFactory.newLatLngZoom(target, 15f))
-        hasInitializedCamera = true
-        Log.d(TAG, "zone_camera_initialized source=self_location")
     }
 
     private fun pinMarker(location: LatLng) {
@@ -423,7 +428,6 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
         viewModel.cancelZoneAddressSearch()
         map?.apply {
             setOnCameraIdleListener(null)
-            setOnCameraMoveStartedListener(null)
             clear()
         }
         map = null

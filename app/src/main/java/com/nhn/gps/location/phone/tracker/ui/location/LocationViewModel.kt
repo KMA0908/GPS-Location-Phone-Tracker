@@ -9,6 +9,7 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.SphericalUtil
 import com.nhn.gps.location.phone.tracker.base.BaseViewModel
 import com.nhn.gps.location.phone.tracker.data.local.AppPreferences
 import com.nhn.gps.location.phone.tracker.data.model.FriendLocation
@@ -18,6 +19,8 @@ import com.nhn.gps.location.phone.tracker.data.repository.GoogleRouteTravelMode
 import com.nhn.gps.location.phone.tracker.data.repository.LocationRepository
 import com.nhn.gps.location.phone.tracker.data.repository.ZoneRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,8 +28,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 
 enum class DirectionTravelMode(
@@ -48,11 +49,12 @@ class LocationViewModel @Inject constructor(
 
     private val _selfLocation = MutableStateFlow<LatLng?>(null)
     val selfLocation: StateFlow<LatLng?> = _selfLocation.asStateFlow()
-    private var lastSyncedLocation: LatLng? = null
-    private val locationSyncMutex = Mutex()
 
     private val _friendsLocations = MutableStateFlow<List<FriendLocation>>(emptyList())
     val friendsLocations: StateFlow<List<FriendLocation>> = _friendsLocations.asStateFlow()
+
+    private var lastSyncedLocation: LatLng? = null
+    private val syncMutex = Mutex()
 
     private val _isFriendsDataLoaded = MutableStateFlow(false)
     val isFriendsDataLoaded: StateFlow<Boolean> = _isFriendsDataLoaded.asStateFlow()
@@ -163,16 +165,24 @@ class LocationViewModel @Inject constructor(
 
     private fun syncLocationWithFirebase(latLng: LatLng) {
         viewModelScope.launch {
-            locationSyncMutex.withLock {
-                if (!appPreferences.isLocationSharingEnabled.first()) return@withLock
-                if (!LocationMovementPolicy.shouldAccept(lastSyncedLocation, latLng)) return@withLock
-                val uid = appPreferences.userId.first() ?: return@withLock
-                val userLocation = UserLocation(
-                    latitude = latLng.latitude,
-                    longitude = latLng.longitude,
-                    updatedAt = System.currentTimeMillis()
-                )
-                repository.updateSelfLocation(uid, userLocation).onSuccess {
+            if (!appPreferences.isLocationSharingEnabled.first()) return@launch
+            val uid = appPreferences.userId.first() ?: return@launch
+            
+            syncMutex.withLock {
+                val previous = lastSyncedLocation
+                val shouldSync = if (previous == null) {
+                    true
+                } else {
+                    SphericalUtil.computeDistanceBetween(previous, latLng) >= 100.0
+                }
+
+                if (shouldSync) {
+                    val userLocation = UserLocation(
+                        latitude = latLng.latitude,
+                        longitude = latLng.longitude,
+                        updatedAt = System.currentTimeMillis()
+                    )
+                    repository.updateSelfLocation(uid, userLocation)
                     lastSyncedLocation = latLng
                 }
             }

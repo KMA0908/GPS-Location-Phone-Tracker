@@ -85,10 +85,10 @@
         android:id="@+id/tvUserId"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text=""
         android:textSize="14sp"
         android:textColor="#777"
         android:layout_marginTop="4dp"
+        tools:text="ID: #12345"
         app:layout_constraintTop_toBottomOf="@id/tvName"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>

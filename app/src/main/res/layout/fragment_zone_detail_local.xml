@@ -230,7 +230,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text=""
+                        tools:text="500 m"
                         android:textColor="@color/text_primary"
                         android:textSize="16sp" />
 
