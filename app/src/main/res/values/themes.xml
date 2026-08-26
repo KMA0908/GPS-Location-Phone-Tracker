@@ -34,6 +34,13 @@
         <item name="android:background">@drawable/bg_card</item>
         <item name="android:textColor">@color/text_secondary</item>
     </style>
+
+    <style name="AlertFilterChoiceChip" parent="Widget.MaterialComponents.Chip.Choice">
+        <item name="chipBackgroundColor">@color/selector_alert_filter_chip_background</item>
+        <item name="android:textColor">@color/selector_alert_filter_chip_text</item>
+        <item name="checkedIconTint">@color/white</item>
+        <item name="chipStrokeWidth">0dp</item>
+    </style>
     <style name="CustomAlertDialog" parent="Theme.Material3.DayNight.Dialog">
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:backgroundDimEnabled">true</item>
@@ -44,5 +51,13 @@
         <item name="android:layout_height">1dp</item>
         <item name="android:layout_marginStart">68dp</item>
         <item name="android:background">#F5F5F5</item>
+    </style>
+
+    <style name="CustomBottomSheetDialogTheme" parent="Theme.MaterialComponents.Light.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/CustomBottomSheetStyle</item>
+    </style>
+
+    <style name="CustomBottomSheetStyle" parent="Widget.MaterialComponents.BottomSheet.Modal">
+        <item name="android:background">@android:color/transparent</item>
     </style>
 </resources>

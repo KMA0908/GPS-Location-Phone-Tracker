@@ -418,4 +418,19 @@
     <string name="profile_updated">Đã cập nhật hồ sơ</string>
     <string name="profile_edit_device_mismatch_title">Không thể chỉnh sửa hồ sơ</string>
     <string name="profile_edit_device_mismatch_message">Hồ sơ này đã được đăng nhập trên thiết bị khác. UID Firebase trên thiết bị hiện tại không khớp nên bạn không thể chỉnh sửa hồ sơ tại đây.</string>
+    <string name="last_7_days">7 ngày qua</string>
+    <string name="last_30_days">30 ngày qua</string>
+    <string name="all_time">Mọi thời điểm</string>
+    <string name="sort_az">Sắp xếp A-Z</string>
+    <string name="sort_za">Sắp xếp Z-A</string>
+    <string name="all_zones">Tất cả vùng</string>
+    <string name="all_friends">Tất cả bạn bè</string>
+    <string name="all_status">Tất cả trạng thái</string>
+    <string name="sort_by">Sắp xếp theo</string>
+    <string name="newest_first">Mới nhất trước</string>
+    <string name="apply">Áp dụng</string>
+    <string name="reset">Đặt lại</string>
+    <string name="time">Thời gian</string>
+    <string name="no_matching_notifications">Không có thông báo phù hợp</string>
+    <string name="notification_filter_title">Lọc và sắp xếp</string>
 </resources>

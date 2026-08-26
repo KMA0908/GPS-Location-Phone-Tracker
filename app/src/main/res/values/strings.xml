@@ -279,14 +279,14 @@
     <string name="route_destination_unavailable">This friend has not shared a valid location yet.</string>
     <string name="route_approximate_description">Showing a direct-line estimate. Tap Start navigation to follow the road route inside the app.</string>
     <string name="route_fastest_driving">Fastest driving route</string>
-    <string name="route_end_navigation" translatable="false">End navigation</string>
-    <string name="route_navigation_title" translatable="false">Navigation</string>
-    <string name="route_navigation_started" translatable="false">Navigation started</string>
-    <string name="route_navigation_stopped" translatable="false">Navigation ended</string>
-    <string name="route_navigation_active_description" translatable="false">Following the route inside the app</string>
-    <string name="route_navigation_route_required" translatable="false">Wait for the route to finish calculating</string>
-    <string name="route_arrived" translatable="false">Arrived</string>
-    <string name="route_arrived_description" translatable="false">You have reached your destination</string>
+    <string name="route_end_navigation">End navigation</string>
+    <string name="route_navigation_title">Navigation</string>
+    <string name="route_navigation_started">Navigation started</string>
+    <string name="route_navigation_stopped">Navigation ended</string>
+    <string name="route_navigation_active_description">Following the route inside the app</string>
+    <string name="route_navigation_route_required">Wait for the route to finish calculating</string>
+    <string name="route_arrived">Arrived</string>
+    <string name="route_arrived_description">You have reached your destination</string>
     <string name="route_duration_and_distance">%1$s (%2$s)</string>
     <string name="route_distance_meters">%1$d m</string>
     <string name="route_distance_kilometers_decimal">%1$.1f km</string>
@@ -398,25 +398,40 @@
     <string name="dialog_type_map_traffic">Traffic</string>
     <string name="map_type_3d" translatable="false">3D</string>
     <!-- Vietnamese is localized explicitly; other supported locales intentionally use English fallback. -->
-    <string name="zone_monitoring_active_title" tools:ignore="MissingTranslation">Zone monitoring active</string>
-    <string name="zone_monitoring_active_text" tools:ignore="MissingTranslation">GPS Location is watching your saved zones</string>
-    <string name="zone_alert_enter_title" tools:ignore="MissingTranslation">Entered %1$s</string>
-    <string name="zone_alert_leave_title" tools:ignore="MissingTranslation">Left %1$s</string>
-    <string name="zone_alert_enter_text" tools:ignore="MissingTranslation">You entered this zone</string>
-    <string name="zone_alert_leave_text" tools:ignore="MissingTranslation">You left this zone</string>
-    <string name="zone_alert_near_dangerous_title" tools:ignore="MissingTranslation">Near dangerous zone %1$s</string>
-    <string name="zone_alert_returned_safe_title" tools:ignore="MissingTranslation">Returned safe from %1$s</string>
-    <string name="zone_alert_near_dangerous_text" tools:ignore="MissingTranslation">You are near this dangerous zone</string>
-    <string name="zone_alert_returned_safe_text" tools:ignore="MissingTranslation">You have left this dangerous zone</string>
-    <string name="zone_event_entered" tools:ignore="MissingTranslation">%1$s entered %2$s</string>
-    <string name="zone_event_left" tools:ignore="MissingTranslation">%1$s left %2$s</string>
-    <string name="zone_event_near_dangerous" tools:ignore="MissingTranslation">%1$s is near dangerous zone %2$s</string>
-    <string name="zone_event_returned_safe" tools:ignore="MissingTranslation">%1$s returned to safe from %2$s</string>
-    <string name="today" tools:ignore="MissingTranslation">Today</string>
-    <string name="yesterday" tools:ignore="MissingTranslation">Yesterday</string>
-    <string name="zone_alert_removed" tools:ignore="MissingTranslation">Zone notification removed</string>
-    <string name="zone_alert_remove_failed" tools:ignore="MissingTranslation">Unable to remove this zone notification</string>
-    <string name="profile_updated" tools:ignore="MissingTranslation">Profile updated</string>
-    <string name="profile_edit_device_mismatch_title" tools:ignore="MissingTranslation">Profile cannot be edited</string>
-    <string name="profile_edit_device_mismatch_message" tools:ignore="MissingTranslation">This profile was signed in on another device. The Firebase UID on this device does not match, so you cannot edit this profile here.</string>
+    <string name="zone_monitoring_active_title">Zone monitoring active</string>
+    <string name="zone_monitoring_active_text">GPS Location is watching your saved zones</string>
+    <string name="zone_alert_enter_title">Entered %1$s</string>
+    <string name="zone_alert_leave_title">Left %1$s</string>
+    <string name="zone_alert_enter_text">You entered this zone</string>
+    <string name="zone_alert_leave_text">You left this zone</string>
+    <string name="zone_alert_near_dangerous_title">Near dangerous zone %1$s</string>
+    <string name="zone_alert_returned_safe_title">Returned safe from %1$s</string>
+    <string name="zone_alert_near_dangerous_text">You are near this dangerous zone</string>
+    <string name="zone_alert_returned_safe_text">You have left this dangerous zone</string>
+    <string name="zone_event_entered">%1$s entered %2$s</string>
+    <string name="zone_event_left">%1$s left %2$s</string>
+    <string name="zone_event_near_dangerous">%1$s is near dangerous zone %2$s</string>
+    <string name="zone_event_returned_safe">%1$s returned to safe from %2$s</string>
+    <string name="today">Today</string>
+    <string name="yesterday">Yesterday</string>
+    <string name="last_7_days">Last 7 days</string>
+    <string name="last_30_days">Last 30 days</string>
+    <string name="all_time">All time</string>
+    <string name="sort_az">Sort A-Z</string>
+    <string name="sort_za">Sort Z-A</string>
+    <string name="all_zones">All zones</string>
+    <string name="all_friends">All friends</string>
+    <string name="all_status">All status</string>
+    <string name="sort_by">Sort by</string>
+    <string name="newest_first">Newest first</string>
+    <string name="apply">Apply</string>
+    <string name="reset">Reset</string>
+    <string name="time">Time</string>
+    <string name="no_matching_notifications">No matching notifications</string>
+    <string name="zone_alert_removed">Zone notification removed</string>
+    <string name="zone_alert_remove_failed">Unable to remove this zone notification</string>
+    <string name="profile_updated">Profile updated</string>
+    <string name="profile_edit_device_mismatch_title">Profile cannot be edited</string>
+    <string name="profile_edit_device_mismatch_message">This profile was signed in on another device. The Firebase UID on this device does not match, so you cannot edit this profile here.</string>
+    <string name="notification_filter_title">Filter and sort</string>
 </resources>

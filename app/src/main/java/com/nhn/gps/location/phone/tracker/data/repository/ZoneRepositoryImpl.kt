@@ -56,6 +56,9 @@ class ZoneRepositoryImpl @Inject constructor(
     }
 
     override suspend fun clearAlerts() = mutex.withLock {
+        decodeAlerts(preferences.zoneAlertsJson.first()).forEach { alert ->
+            notificationManager.get().cancel(alert.id)
+        }
         preferences.setZoneAlertsJson("[]")
     }
 
