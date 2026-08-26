@@ -32,7 +32,6 @@ import com.nhn.gps.location.phone.tracker.data.model.Zone
 import com.nhn.gps.location.phone.tracker.data.model.ZoneStatus
 import com.nhn.gps.location.phone.tracker.data.model.ZoneType
 import com.nhn.gps.location.phone.tracker.data.repository.ZoneRepository
-import com.nhn.gps.location.phone.tracker.data.notification.ZoneMonitoringService
 import com.nhn.gps.location.phone.tracker.databinding.FragmentCreateZoneLocalBinding
 import com.nhn.gps.location.phone.tracker.ui.location.LocationViewModel
 import com.nhn.gps.location.phone.tracker.ui.main.MainViewModel
@@ -431,7 +430,6 @@ class CreateZoneFragment : BaseFragment<FragmentCreateZoneLocalBinding, MainView
             try {
                 zoneRepository.upsert(zone)
                 Log.d(TAG, "zone_saved_from_pinned_location")
-                ZoneMonitoringService.start(requireContext())
                 ZoneEditorState.selectedZoneId = if (editing != null) existingId else null
                 Toast.makeText(requireContext(), R.string.zone_saved, Toast.LENGTH_SHORT).show()
                 navigationManager.navigateBack()

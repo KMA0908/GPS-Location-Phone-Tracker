@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.content.Context
+import android.widget.Toast
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -16,6 +17,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.nhn.gps.location.phone.tracker.R
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
 import com.nhn.gps.location.phone.tracker.data.model.ZoneAlert
+import com.nhn.gps.location.phone.tracker.data.model.ZoneAlertType
 import com.nhn.gps.location.phone.tracker.data.model.ZoneStatus
 import com.nhn.gps.location.phone.tracker.data.repository.ZoneRepository
 import com.nhn.gps.location.phone.tracker.databinding.FragmentZoneAlertsLocalBinding
@@ -23,6 +25,7 @@ import com.nhn.gps.location.phone.tracker.ui.main.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -44,7 +47,7 @@ class ZoneAlertsFragment : BaseFragment<FragmentZoneAlertsLocalBinding, MainView
         FragmentZoneAlertsLocalBinding.inflate(inflater, container, false)
 
     override fun setupViews(savedInstanceState: Bundle?) = with(binding) {
-        adapter = ZoneAlertAdapter(::showDetails)
+        adapter = ZoneAlertAdapter(::showDetails, ::deleteAlert)
         recyclerAlerts.adapter = adapter
         btnBack.setOnClickListener { handleToolbarBack() }
         btnClear.setOnClickListener { confirmClear() }
@@ -96,8 +99,10 @@ class ZoneAlertsFragment : BaseFragment<FragmentZoneAlertsLocalBinding, MainView
         if (!isAdded) return
         var filtered = when (filter) {
             Filter.ALL -> current
-            Filter.ENTERED -> current.filter { it.isEnter }
-            Filter.LEFT -> current.filterNot { it.isEnter }
+            Filter.ENTERED -> current.filter { it.type == ZoneAlertType.ENTER }
+            Filter.LEFT -> current.filter {
+                it.type == ZoneAlertType.LEAVE || it.type == ZoneAlertType.RETURNED_SAFE
+            }
             Filter.DANGEROUS -> current.filter { it.status == ZoneStatus.DANGEROUS }
         }
         
@@ -123,8 +128,8 @@ class ZoneAlertsFragment : BaseFragment<FragmentZoneAlertsLocalBinding, MainView
             val yesterday = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }
             
             when {
-                isSameDay(calendar, today) -> "Today"
-                isSameDay(calendar, yesterday) -> "Yesterday"
+                isSameDay(calendar, today) -> getString(R.string.today)
+                isSameDay(calendar, yesterday) -> getString(R.string.yesterday)
                 else -> SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(alert.time))
             }
         }
@@ -166,6 +171,19 @@ class ZoneAlertsFragment : BaseFragment<FragmentZoneAlertsLocalBinding, MainView
     private fun showDetails(alert: ZoneAlert) {
         AlertDetailState.selectedAlert = alert
         navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.AlertDetail)
+    }
+
+    private fun deleteAlert(alert: ZoneAlert) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                zoneRepository.deleteAlert(alert.id)
+                Toast.makeText(requireContext(), R.string.zone_alert_removed, Toast.LENGTH_SHORT).show()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                Toast.makeText(requireContext(), R.string.zone_alert_remove_failed, Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     companion object { fun newInstance() = ZoneAlertsFragment() }

@@ -1,5 +1,6 @@
 package com.nhn.gps.location.phone.tracker.ui.main
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.widget.Toast
@@ -24,6 +25,7 @@ import com.nhn.gps.location.phone.tracker.ui.friend.AddFriendFragment
 import com.nhn.gps.location.phone.tracker.ui.friend.MyFriendFragment
 import com.nhn.gps.location.phone.tracker.ui.friend.ShowQrFriendFragment
 import com.nhn.gps.location.phone.tracker.ui.location.LocationFragment
+import com.nhn.gps.location.phone.tracker.ui.location.LocationViewModel
 import com.nhn.gps.location.phone.tracker.ui.permission.PermissionFragment
 import com.nhn.gps.location.phone.tracker.ui.phone_number_locator.PhoneLocatorFragment
 import com.nhn.gps.location.phone.tracker.ui.setup_profile.SetUpProfileFragment
@@ -36,17 +38,25 @@ import com.nhn.gps.location.phone.tracker.ui.zone.MyZonesFragment
 import com.nhn.gps.location.phone.tracker.ui.zone.NotificationsFragment
 import com.nhn.gps.location.phone.tracker.ui.zone.ZoneAlertsFragment
 import com.nhn.gps.location.phone.tracker.ui.zone.ZoneDetailFragment
+import com.nhn.gps.location.phone.tracker.ui.zone.AlertDetailState
+import com.nhn.gps.location.phone.tracker.data.notification.ZoneNotificationManager
+import com.nhn.gps.location.phone.tracker.data.repository.ZoneRepository
 import com.nhn.gps.location.phone.tracker.ui.explore.FamousPlaceFragment
 import com.nhn.gps.location.phone.tracker.ui.explore.ExploreFragment
 import com.nhn.gps.location.phone.tracker.ui.explore.PlaceDetailFragment
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>() {
 
+    @Inject lateinit var zoneRepository: ZoneRepository
+
     override val viewModel: MainViewModel by viewModels()
+    private val locationViewModel: LocationViewModel by viewModels()
     private var renderedRoute: String? = null
     private var pendingRoute: String? = null
     private var queuedState: MainUiState? = null
@@ -57,8 +67,7 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>() {
         ActivityMainBinding.inflate(inflater)
 
     override fun setupViews(savedInstanceState: Bundle?) {
-        val target = intent.getStringExtra("TARGET_DESTINATION")
-        viewModel.handleIntent(target)
+        handleNavigationIntent(intent)
         setupBackPress()
         if (GpsAdConfig.ADS_ENABLED) {
             runCatching { AdManager.instance.preloadAppOpenAd(GpsAdPlacement.AOA_RESUME) }
@@ -86,6 +95,54 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>() {
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleNavigationIntent(intent)
+    }
+
+    private fun handleNavigationIntent(intent: Intent) {
+        val target = intent.getStringExtra(ZoneNotificationManager.EXTRA_TARGET_DESTINATION)
+        val alertId = intent.getLongExtra(ZoneNotificationManager.EXTRA_ZONE_ALERT_ID, Long.MIN_VALUE)
+        if (target == ZoneNotificationManager.DESTINATION_ALERT_DETAIL && alertId != Long.MIN_VALUE) {
+            lifecycleScope.launch {
+                val alert = zoneRepository.alerts.first().firstOrNull { it.id == alertId }
+                if (alert != null) {
+                    AlertDetailState.selectedAlert = alert
+                    if (viewModel.uiState.value.currentDestination == AppDestination.AlertDetail) {
+                        replaceFragment(AlertDetailFragment.newInstance())
+                        renderedRoute = AppDestination.AlertDetail.route
+                        restoreCurrentScreenAd()
+                    } else {
+                        viewModel.handleIntent(ZoneNotificationManager.DESTINATION_ALERT_DETAIL)
+                    }
+                } else {
+                    viewModel.handleIntent(ZoneNotificationManager.DESTINATION_ZONE_ALERTS)
+                }
+            }
+        } else {
+            viewModel.handleIntent(target)
+        }
+        intent.removeExtra(ZoneNotificationManager.EXTRA_TARGET_DESTINATION)
+        intent.removeExtra(ZoneNotificationManager.EXTRA_ZONE_ALERT_ID)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        locationViewModel.startForegroundLocationUpdates()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Permission may have been granted while the Activity remained started.
+        locationViewModel.startForegroundLocationUpdates()
+    }
+
+    override fun onStop() {
+        locationViewModel.stopForegroundLocationUpdates()
+        super.onStop()
     }
 
     private fun render(state: MainUiState) {

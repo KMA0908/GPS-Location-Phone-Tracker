@@ -33,7 +33,12 @@ class ZoneMonitoringService : Service() {
     private val callback = object : LocationCallback() {
         override fun onLocationResult(result: LocationResult) {
             result.lastLocation?.let { location ->
-                scope.launch { zoneRepository.processLocation(LatLng(location.latitude, location.longitude)) }
+                scope.launch {
+                    zoneRepository.processLocation(
+                        LatLng(location.latitude, location.longitude),
+                        accuracyMeters = location.accuracy,
+                    )
+                }
             }
         }
     }
@@ -51,7 +56,9 @@ class ZoneMonitoringService : Service() {
         val coarse = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
         if (!fine && !coarse) { stopSelf(); return }
         val request = LocationRequest.Builder(Priority.PRIORITY_BALANCED_POWER_ACCURACY, 30_000)
-            .setMinUpdateIntervalMillis(15_000).build()
+            .setMinUpdateIntervalMillis(15_000)
+            .setMinUpdateDistanceMeters(100f)
+            .build()
         fusedLocationClient.requestLocationUpdates(request, callback, mainLooper)
     }
 

@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -18,6 +19,7 @@ sealed interface EditProfileUiState {
     object Idle : EditProfileUiState
     object Loading : EditProfileUiState
     object Success : EditProfileUiState
+    object IdentityMismatch : EditProfileUiState
     data class Error(val message: String) : EditProfileUiState
 }
 
@@ -38,6 +40,9 @@ class EditProfileViewModel @Inject constructor(
     private val _currentAvatarKey = MutableStateFlow("")
     val currentAvatarKey: StateFlow<String> = _currentAvatarKey.asStateFlow()
 
+    private val _canEditProfile = MutableStateFlow(false)
+    val canEditProfile: StateFlow<Boolean> = _canEditProfile.asStateFlow()
+
     val isChanged: MutableStateFlow<Boolean> = MutableStateFlow(false)
 
     init {
@@ -50,6 +55,8 @@ class EditProfileViewModel @Inject constructor(
             
             _initialAvatarKey.value = avatarKey
             _currentAvatarKey.value = avatarKey
+
+            updateIdentityState(appPreferences.userId.first())
         }
     }
 
@@ -81,33 +88,52 @@ class EditProfileViewModel @Inject constructor(
         val newAvatarKey = AvatarHelper.normalizeKey(_currentAvatarKey.value)
         if (newName.isBlank() || !isChanged.value) return
 
-        launchCatching {
+        viewModelScope.launch {
+            val uid = appPreferences.userId.first()
+            if (!updateIdentityState(uid)) return@launch
+
             _uiState.value = EditProfileUiState.Loading
-            val uid = appPreferences.userId.first() ?: return@launchCatching
+            try {
+                val verifiedUid = checkNotNull(uid)
 
-            val updatedProfile = UserProfile(
-                uid = uid,
-                name = newName,
-                phone = appPreferences.userPhone.first(),
-                avatarUrl = appPreferences.userAvatar.first(),
-                avatarKey = newAvatarKey
-            )
+                val updatedProfile = UserProfile(
+                    uid = verifiedUid,
+                    name = newName,
+                    phone = appPreferences.userPhone.first(),
+                    avatarUrl = appPreferences.userAvatar.first(),
+                    avatarKey = newAvatarKey
+                )
 
-            // Update Firebase
-            userRepository.saveUserProfile(uid, updatedProfile)
-            
-            // Update Local Preferences
-            appPreferences.setUserName(newName)
-            appPreferences.setUserAvatarKey(newAvatarKey)
-            appPreferences.setLocalAvatarPath(null)
-            
-            // Update Initial State
-            _initialName.value = newName
-            _initialAvatarKey.value = newAvatarKey
-            
-            isChanged.value = false
-            _uiState.value = EditProfileUiState.Success
+                // Update Firebase before committing the local cache.
+                userRepository.saveUserProfile(verifiedUid, updatedProfile)
+
+                appPreferences.setUserName(newName)
+                appPreferences.setUserAvatarKey(newAvatarKey)
+                appPreferences.setLocalAvatarPath(null)
+
+                _initialName.value = newName
+                _initialAvatarKey.value = newAvatarKey
+                isChanged.value = false
+                _uiState.value = EditProfileUiState.Success
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (error: Exception) {
+                _uiState.value = EditProfileUiState.Error(
+                    error.localizedMessage ?: error.javaClass.simpleName
+                )
+            }
         }
+    }
+
+    private fun updateIdentityState(localUid: String?): Boolean {
+        val authUid = userRepository.getCurrentUserId()
+        val matches = !localUid.isNullOrBlank() && !authUid.isNullOrBlank() && localUid == authUid
+        _canEditProfile.value = matches
+        if (!matches) {
+            isChanged.value = false
+            _uiState.value = EditProfileUiState.IdentityMismatch
+        }
+        return matches
     }
 
     fun resetState() {

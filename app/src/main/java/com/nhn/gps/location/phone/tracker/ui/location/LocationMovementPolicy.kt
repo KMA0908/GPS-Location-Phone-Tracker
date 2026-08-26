@@ -22,4 +22,11 @@ internal object LocationMovementPolicy {
         if (previous == null || !isValid(previous)) return true
         return SphericalUtil.computeDistanceBetween(previous, current) >= thresholdMeters
     }
+
+    fun distanceMeters(previous: LatLng?, current: LatLng): Double =
+        if (previous == null || !isValid(previous) || !isValid(current)) {
+            0.0
+        } else {
+            SphericalUtil.computeDistanceBetween(previous, current)
+        }
 }

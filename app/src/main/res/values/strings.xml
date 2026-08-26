@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">GPS Location Phone Tracker</string>
     <string name="app_logo">Application logo</string>
     <string name="base_ready">Base Android project is ready for feature development.</string>
@@ -397,4 +397,26 @@
     <string name="dialog_type_map_title_map_details">Map Details</string>
     <string name="dialog_type_map_traffic">Traffic</string>
     <string name="map_type_3d" translatable="false">3D</string>
+    <!-- Vietnamese is localized explicitly; other supported locales intentionally use English fallback. -->
+    <string name="zone_monitoring_active_title" tools:ignore="MissingTranslation">Zone monitoring active</string>
+    <string name="zone_monitoring_active_text" tools:ignore="MissingTranslation">GPS Location is watching your saved zones</string>
+    <string name="zone_alert_enter_title" tools:ignore="MissingTranslation">Entered %1$s</string>
+    <string name="zone_alert_leave_title" tools:ignore="MissingTranslation">Left %1$s</string>
+    <string name="zone_alert_enter_text" tools:ignore="MissingTranslation">You entered this zone</string>
+    <string name="zone_alert_leave_text" tools:ignore="MissingTranslation">You left this zone</string>
+    <string name="zone_alert_near_dangerous_title" tools:ignore="MissingTranslation">Near dangerous zone %1$s</string>
+    <string name="zone_alert_returned_safe_title" tools:ignore="MissingTranslation">Returned safe from %1$s</string>
+    <string name="zone_alert_near_dangerous_text" tools:ignore="MissingTranslation">You are near this dangerous zone</string>
+    <string name="zone_alert_returned_safe_text" tools:ignore="MissingTranslation">You have left this dangerous zone</string>
+    <string name="zone_event_entered" tools:ignore="MissingTranslation">%1$s entered %2$s</string>
+    <string name="zone_event_left" tools:ignore="MissingTranslation">%1$s left %2$s</string>
+    <string name="zone_event_near_dangerous" tools:ignore="MissingTranslation">%1$s is near dangerous zone %2$s</string>
+    <string name="zone_event_returned_safe" tools:ignore="MissingTranslation">%1$s returned to safe from %2$s</string>
+    <string name="today" tools:ignore="MissingTranslation">Today</string>
+    <string name="yesterday" tools:ignore="MissingTranslation">Yesterday</string>
+    <string name="zone_alert_removed" tools:ignore="MissingTranslation">Zone notification removed</string>
+    <string name="zone_alert_remove_failed" tools:ignore="MissingTranslation">Unable to remove this zone notification</string>
+    <string name="profile_updated" tools:ignore="MissingTranslation">Profile updated</string>
+    <string name="profile_edit_device_mismatch_title" tools:ignore="MissingTranslation">Profile cannot be edited</string>
+    <string name="profile_edit_device_mismatch_message" tools:ignore="MissingTranslation">This profile was signed in on another device. The Firebase UID on this device does not match, so you cannot edit this profile here.</string>
 </resources>

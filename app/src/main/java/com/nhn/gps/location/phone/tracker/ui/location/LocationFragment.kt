@@ -570,9 +570,7 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                         tryStartPendingMapRoute()
                         activeRoutePosition?.let { destination ->
                             data.self?.let { origin ->
-                                if (isInAppNavigationActive) {
-                                    updateInAppNavigation(origin, destination)
-                                } else {
+                                if (!isInAppNavigationActive) {
                                     refreshRouteIfNeeded(origin, destination)
                                 }
                             }
@@ -580,6 +578,17 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
                         tryAutoZoom()
                         if (isCompassEnabled) {
                             updateDirectionUI(compassManager.bearing.value)
+                        }
+                    }
+                }
+
+                // Arrival and off-route safety use every valid raw GPS sample. Marker,
+                // camera and Firebase still use the accepted 100 m public location.
+                launch {
+                    viewModel.rawSelfLocation.collectLatest { origin ->
+                        val destination = activeRoutePosition
+                        if (origin != null && destination != null && isInAppNavigationActive) {
+                            updateInAppNavigation(origin, destination)
                         }
                     }
                 }

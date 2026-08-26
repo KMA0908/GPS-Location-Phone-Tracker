@@ -231,6 +231,8 @@ class MainViewModel @Inject constructor(
                         val userId = preferences.userId.first()
                         if (userId.isNullOrBlank()) AppDestination.SetUpProfile else AppDestination.Home
                     }
+                    AppDestination.AlertDetail.route -> AppDestination.AlertDetail
+                    AppDestination.ZoneAlerts.route -> AppDestination.ZoneAlerts
 
                     else -> AppDestination.Home
                 }

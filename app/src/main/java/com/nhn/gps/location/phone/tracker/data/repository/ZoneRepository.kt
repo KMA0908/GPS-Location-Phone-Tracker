@@ -11,6 +11,12 @@ interface ZoneRepository {
 
     suspend fun upsert(zone: Zone)
     suspend fun delete(zoneId: Long)
+    suspend fun deleteAlert(alertId: Long)
     suspend fun clearAlerts()
-    suspend fun processLocation(location: LatLng, subjectId: String = "self", subjectName: String = "You")
+    suspend fun processLocation(
+        location: LatLng,
+        subjectId: String = "self",
+        subjectName: String = "You",
+        accuracyMeters: Float? = null,
+    )
 }

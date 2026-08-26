@@ -3,6 +3,9 @@ package com.nhn.gps.location.phone.tracker.ui.zone
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import android.widget.Toast
+import androidx.appcompat.widget.PopupMenu
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -18,23 +21,31 @@ import com.nhn.gps.location.phone.tracker.R
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
 import com.nhn.gps.location.phone.tracker.data.model.Zone
 import com.nhn.gps.location.phone.tracker.data.model.ZoneAlert
+import com.nhn.gps.location.phone.tracker.data.model.ZoneAlertType
 import com.nhn.gps.location.phone.tracker.data.model.ZoneStatus
 import com.nhn.gps.location.phone.tracker.data.repository.ZoneRepository
+import com.nhn.gps.location.phone.tracker.data.repository.UserRepository
 import com.nhn.gps.location.phone.tracker.databinding.FragmentAlertDetailLocalBinding
 import com.nhn.gps.location.phone.tracker.ui.main.MainViewModel
+import com.nhn.gps.location.phone.tracker.ui.location.LocationViewModel
+import com.nhn.gps.location.phone.tracker.navigation.AppDestination
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
+import com.nhn.gps.location.phone.tracker.util.loadAvatar
 
 @AndroidEntryPoint
 class AlertDetailFragment : BaseFragment<FragmentAlertDetailLocalBinding, MainViewModel>(), OnMapReadyCallback {
     override val viewModel: MainViewModel by viewModels({ requireActivity() })
+    private val locationViewModel: LocationViewModel by activityViewModels()
     
     @Inject lateinit var zoneRepository: ZoneRepository
+    @Inject lateinit var userRepository: UserRepository
     
     private var map: GoogleMap? = null
     private var currentAlert: ZoneAlert? = null
@@ -47,6 +58,7 @@ class AlertDetailFragment : BaseFragment<FragmentAlertDetailLocalBinding, MainVi
         currentAlert = AlertDetailState.selectedAlert
         with(binding) {
             btnBack.setOnClickListener { handleToolbarBack() }
+            btnMenu.setOnClickListener { showAlertMenu() }
             
             val mapFragment = childFragmentManager.findFragmentById(R.id.mapFragment) as? SupportMapFragment
             mapFragment?.getMapAsync(this@AlertDetailFragment)
@@ -66,12 +78,80 @@ class AlertDetailFragment : BaseFragment<FragmentAlertDetailLocalBinding, MainVi
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 currentAlert?.let { alert ->
-                    zoneRepository.zones.collectLatest { zones ->
-                        targetZone = zones.find { it.id == alert.zoneId }
-                        updateZoneUI()
-                        drawOnMap()
+                    launch {
+                        zoneRepository.zones.collectLatest { zones ->
+                            targetZone = zones.find { it.id == alert.zoneId }
+                            updateZoneUI()
+                            drawOnMap()
+                        }
+                    }
+                    launch {
+                        val currentUid = userRepository.getCurrentUserId().orEmpty()
+                        val shouldResolveFriend = alert.userId.isNotBlank() && alert.userId != currentUid ||
+                            alert.userId.isBlank() && alert.userName != "You"
+
+                        if (shouldResolveFriend) {
+                            locationViewModel.friendsLocations.collectLatest { friends ->
+                                val friend = if (alert.userId.isNotBlank()) {
+                                    friends.firstOrNull { it.id == alert.userId }
+                                } else {
+                                    friends.filter { it.name.equals(alert.userName, ignoreCase = true) }
+                                        .singleOrNull()
+                                }
+                                friend?.let {
+                                    binding.imgAvatar.loadAvatar(
+                                        avatarKey = it.avatarKey,
+                                        avatarUrl = it.avatarUrl,
+                                        fallbackRes = R.drawable.ic_avt,
+                                    )
+                                }
+                            }
+                        } else {
+                            val profileUid = alert.userId.ifBlank { currentUid }
+                            val profile = runCatching {
+                                userRepository.getUserProfile(profileUid)
+                            }.getOrNull()
+                            if (profile != null) {
+                                binding.imgAvatar.loadAvatar(
+                                    avatarKey = profile.avatarKey,
+                                    avatarUrl = profile.avatarUrl,
+                                    fallbackRes = R.drawable.ic_avt,
+                                )
+                            }
+                        }
                     }
                 }
+            }
+        }
+    }
+
+    private fun showAlertMenu() {
+        val alert = currentAlert ?: return
+        PopupMenu(requireContext(), binding.btnMenu).apply {
+            menu.add(0, MENU_DELETE, 0, R.string.remove)
+            setOnMenuItemClickListener { item ->
+                if (item.itemId == MENU_DELETE) {
+                    deleteAlert(alert)
+                    true
+                } else {
+                    false
+                }
+            }
+            show()
+        }
+    }
+
+    private fun deleteAlert(alert: ZoneAlert) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                zoneRepository.deleteAlert(alert.id)
+                AlertDetailState.selectedAlert = null
+                Toast.makeText(requireContext(), R.string.zone_alert_removed, Toast.LENGTH_SHORT).show()
+                navigationManager.navigateTo(AppDestination.ZoneAlerts)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                Toast.makeText(requireContext(), R.string.zone_alert_remove_failed, Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -80,8 +160,16 @@ class AlertDetailFragment : BaseFragment<FragmentAlertDetailLocalBinding, MainVi
         val alert = currentAlert ?: return@withBinding
         val zone = targetZone
         
-        val action = if (alert.isEnter) "Entered" else "Left"
-        tvUserName.text = getString(R.string.alert_status_msg, alert.userName, action, alert.zoneName)
+        tvUserName.text = getString(
+            when (alert.type) {
+                ZoneAlertType.ENTER -> R.string.zone_event_entered
+                ZoneAlertType.LEAVE -> R.string.zone_event_left
+                ZoneAlertType.NEAR_DANGEROUS -> R.string.zone_event_near_dangerous
+                ZoneAlertType.RETURNED_SAFE -> R.string.zone_event_returned_safe
+            },
+            alert.userName,
+            alert.zoneName,
+        )
         
         zone?.let {
             tvZoneName.text = it.name
@@ -122,13 +210,14 @@ class AlertDetailFragment : BaseFragment<FragmentAlertDetailLocalBinding, MainVi
 
         googleMap.addMarker(MarkerOptions()
             .position(alertPos)
-            .title(if (alert.isEnter) "Entry Point" else "Exit Point")
+            .title(alert.zoneName)
             .snippet(SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(alert.time))))
 
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(alertPos, 15f))
     }
 
     companion object {
+        private const val MENU_DELETE = 1
         fun newInstance() = AlertDetailFragment()
     }
 }

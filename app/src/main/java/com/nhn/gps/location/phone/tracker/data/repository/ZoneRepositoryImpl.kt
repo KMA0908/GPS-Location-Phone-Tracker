@@ -1,10 +1,13 @@
 package com.nhn.gps.location.phone.tracker.data.repository
 
+import android.util.Log
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.SphericalUtil
+import com.nhn.gps.location.phone.tracker.BuildConfig
 import com.nhn.gps.location.phone.tracker.data.local.AppPreferences
 import com.nhn.gps.location.phone.tracker.data.model.Zone
 import com.nhn.gps.location.phone.tracker.data.model.ZoneAlert
+import com.nhn.gps.location.phone.tracker.data.model.ZoneAlertType
 import com.nhn.gps.location.phone.tracker.data.model.ZoneStatus
 import com.nhn.gps.location.phone.tracker.data.model.ZoneType
 import com.nhn.gps.location.phone.tracker.data.notification.ZoneNotificationManager
@@ -56,7 +59,21 @@ class ZoneRepositoryImpl @Inject constructor(
         preferences.setZoneAlertsJson("[]")
     }
 
-    override suspend fun processLocation(location: LatLng, subjectId: String, subjectName: String) = mutex.withLock {
+    override suspend fun deleteAlert(alertId: Long) = mutex.withLock {
+        val current = decodeAlerts(preferences.zoneAlertsJson.first())
+        val updated = current.filterNot { it.id == alertId }
+        if (updated.size != current.size) {
+            preferences.setZoneAlertsJson(encodeAlerts(updated))
+            notificationManager.get().cancel(alertId)
+        }
+    }
+
+    override suspend fun processLocation(
+        location: LatLng,
+        subjectId: String,
+        subjectName: String,
+        accuracyMeters: Float?,
+    ) = mutex.withLock {
         val zones = decodeZones(preferences.zonesJson.first())
         if (zones.isEmpty()) return@withLock
         
@@ -67,14 +84,68 @@ class ZoneRepositoryImpl @Inject constructor(
 
         zones.forEach { zone ->
             val distance = SphericalUtil.computeDistanceBetween(location, LatLng(zone.latitude, zone.longitude))
-            val inside = distance <= zone.radiusMeters
             val key = "$subjectId:${zone.id}"
             val previous = states[key]
+            val decision = ZoneTransitionPolicy.evaluate(
+                previousInside = previous,
+                distanceMeters = distance,
+                radiusMeters = zone.radiusMeters.toDouble(),
+                accuracyMeters = accuracyMeters,
+            )
 
-            if (previous != inside) {
+            if (!decision.accepted) {
+                if (BuildConfig.DEBUG && subjectId == "self") {
+                    Log.d(TAG, "zone_exit_ignored_low_accuracy zoneId=${zone.id}")
+                }
+                return@forEach
+            }
+
+            val inside = decision.inside ?: return@forEach
+            val nearKey = "near:$key"
+            val previousNear = states[nearKey]
+            val nearDangerous = ZoneNearPolicy.isNearDangerousZone(
+                isDangerous = zone.status == ZoneStatus.DANGEROUS,
+                isInside = inside,
+                distanceMeters = distance,
+                radiusMeters = zone.radiusMeters.toDouble(),
+            )
+
+            if (previousNear == null || previousNear != nearDangerous) {
+                states[nearKey] = nearDangerous
+                changed = true
+            }
+
+            // A near alert represents approaching a dangerous zone from outside.
+            // Initial detection and leaving a dangerous zone only initialize the state.
+            if (ZoneNearPolicy.shouldAlert(previous, decision.stateChanged, previousNear, nearDangerous)) {
+                val alert = ZoneAlert(
+                    id = System.currentTimeMillis(),
+                    zoneId = zone.id,
+                    zoneName = zone.name,
+                    isEnter = false,
+                    status = zone.status,
+                    time = System.currentTimeMillis(),
+                    latitude = location.latitude,
+                    longitude = location.longitude,
+                    userName = subjectName,
+                    type = ZoneAlertType.NEAR_DANGEROUS,
+                    userId = subjectId.toAlertUserId(),
+                )
+                alerts.add(0, alert)
+                alertsChanged = true
+                notificationManager.get().notify(alert)
+            }
+
+            if (decision.stateChanged) {
                 states[key] = inside
                 changed = true
-                
+
+                if (BuildConfig.DEBUG) {
+                    val from = previous?.let { if (it) "INSIDE" else "OUTSIDE" } ?: "UNKNOWN"
+                    val to = if (inside) "INSIDE" else "OUTSIDE"
+                    Log.d(TAG, "zone_transition zoneId=${zone.id} from=$from to=$to")
+                }
+
                 // Only alert if we had a previous known state (avoid alert on first detection)
                 if (previous != null) {
                     val isEnter = inside
@@ -89,11 +160,22 @@ class ZoneRepositoryImpl @Inject constructor(
                             latitude = location.latitude,
                             longitude = location.longitude,
                             userName = subjectName,
+                            type = when {
+                                isEnter -> ZoneAlertType.ENTER
+                                zone.status == ZoneStatus.DANGEROUS -> ZoneAlertType.RETURNED_SAFE
+                                else -> ZoneAlertType.LEAVE
+                            },
+                            userId = subjectId.toAlertUserId(),
                         )
                         alerts.add(0, alert)
                         alertsChanged = true
                         notificationManager.get().notify(alert)
+                        if (BuildConfig.DEBUG && !isEnter) {
+                            Log.d(TAG, "zone_exit_notification_sent zoneId=${zone.id}")
+                        }
                     }
+                } else if (BuildConfig.DEBUG) {
+                    Log.d(TAG, "zone_state_initialized zoneId=${zone.id} state=${if (inside) "INSIDE" else "OUTSIDE"}")
                 }
             }
         }
@@ -159,6 +241,8 @@ class ZoneRepositoryImpl @Inject constructor(
                 put("latitude", alert.latitude)
                 put("longitude", alert.longitude)
                 put("userName", alert.userName)
+                put("eventType", alert.type.name)
+                put("userId", alert.userId)
             })
         }
     }.toString()
@@ -178,7 +262,17 @@ class ZoneRepositoryImpl @Inject constructor(
                     time = item.optLong("time"),
                     latitude = item.optDouble("latitude"),
                     longitude = item.optDouble("longitude"),
-                    userName = item.optString("userName", "You")
+                    userName = item.optString("userName", "You"),
+                    type = runCatching {
+                        ZoneAlertType.valueOf(item.optString("eventType"))
+                    }.getOrElse {
+                        when {
+                            item.optBoolean("isEnter") -> ZoneAlertType.ENTER
+                            ZoneStatus.fromCode(item.optInt("status")) == ZoneStatus.DANGEROUS -> ZoneAlertType.RETURNED_SAFE
+                            else -> ZoneAlertType.LEAVE
+                        }
+                    },
+                    userId = item.optString("userId"),
                 ))
             }
         }
@@ -196,7 +290,12 @@ class ZoneRepositoryImpl @Inject constructor(
         }
     }.getOrDefault(emptyMap())
 
+    private fun String.toAlertUserId(): String = removePrefix("friend:")
+        .takeUnless { it == "self" }
+        .orEmpty()
+
     private companion object {
+        const val TAG = "ZoneRepository"
         const val MAX_ALERTS = 100
     }
 }

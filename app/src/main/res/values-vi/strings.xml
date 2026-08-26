@@ -397,4 +397,25 @@
     <string name="dialog_type_map_satellite_map">Bản đồ vệ tinh</string>
     <string name="dialog_type_map_title_map_details">Chi tiết bản đồ</string>
     <string name="dialog_type_map_traffic">Giao thông</string>
+    <string name="zone_monitoring_active_title">Đang theo dõi vùng</string>
+    <string name="zone_monitoring_active_text">GPS Location đang theo dõi các vùng đã lưu</string>
+    <string name="zone_alert_enter_title">Đã vào %1$s</string>
+    <string name="zone_alert_leave_title">Đã rời khỏi %1$s</string>
+    <string name="zone_alert_enter_text">Bạn đã đi vào vùng này</string>
+    <string name="zone_alert_leave_text">Bạn đã rời khỏi vùng này</string>
+    <string name="zone_alert_near_dangerous_title">Đang ở gần vùng nguy hiểm %1$s</string>
+    <string name="zone_alert_returned_safe_title">Đã an toàn sau khi rời %1$s</string>
+    <string name="zone_alert_near_dangerous_text">Bạn đang ở gần vùng nguy hiểm này</string>
+    <string name="zone_alert_returned_safe_text">Bạn đã rời khỏi vùng nguy hiểm này</string>
+    <string name="zone_event_entered">%1$s đã vào %2$s</string>
+    <string name="zone_event_left">%1$s đã rời %2$s</string>
+    <string name="zone_event_near_dangerous">%1$s đang ở gần vùng nguy hiểm %2$s</string>
+    <string name="zone_event_returned_safe">%1$s đã trở về vùng an toàn từ %2$s</string>
+    <string name="today">Hôm nay</string>
+    <string name="yesterday">Hôm qua</string>
+    <string name="zone_alert_removed">Đã xóa thông báo vùng</string>
+    <string name="zone_alert_remove_failed">Không thể xóa thông báo vùng này</string>
+    <string name="profile_updated">Đã cập nhật hồ sơ</string>
+    <string name="profile_edit_device_mismatch_title">Không thể chỉnh sửa hồ sơ</string>
+    <string name="profile_edit_device_mismatch_message">Hồ sơ này đã được đăng nhập trên thiết bị khác. UID Firebase trên thiết bị hiện tại không khớp nên bạn không thể chỉnh sửa hồ sơ tại đây.</string>
 </resources>

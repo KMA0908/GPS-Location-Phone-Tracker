@@ -19,6 +19,7 @@ import com.nhn.gps.location.phone.tracker.navigation.AppDestination
 import com.nhn.gps.location.phone.tracker.ui.friend.FriendCodeDisplayMode
 import com.nhn.gps.location.phone.tracker.ui.main.MainViewModel
 import com.nhn.gps.location.phone.tracker.util.loadAvatar
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
@@ -98,8 +99,21 @@ class EditProfileFragment : BaseFragment<FragmentEditProfileBinding, EditProfile
                     }
                 }
                 launch {
-                    viewModel.isChanged.collectLatest { changed ->
-                        binding.btnSave.visibility = if (changed) View.VISIBLE else View.GONE
+                    combine(
+                        viewModel.isChanged,
+                        viewModel.canEditProfile,
+                    ) { changed, canEdit -> changed && canEdit }
+                        .collectLatest { showSave ->
+                            binding.btnSave.visibility = if (showSave) View.VISIBLE else View.GONE
+                        }
+                }
+                launch {
+                    viewModel.canEditProfile.collectLatest { canEdit ->
+                        binding.etName.isEnabled = canEdit
+                        binding.ivEditName.isEnabled = canEdit
+                        binding.btnChangeAvatar.isEnabled = canEdit
+                        binding.ivEditName.alpha = if (canEdit) 1f else 0.45f
+                        binding.btnChangeAvatar.alpha = if (canEdit) 1f else 0.45f
                     }
                 }
                 launch {
@@ -136,7 +150,16 @@ class EditProfileFragment : BaseFragment<FragmentEditProfileBinding, EditProfile
                             }
                             is EditProfileUiState.Success -> {
                                 binding.btnSave.isEnabled = true
-                                Toast.makeText(requireContext(), "Profile updated", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(requireContext(), R.string.profile_updated, Toast.LENGTH_SHORT).show()
+                                viewModel.resetState()
+                            }
+                            is EditProfileUiState.IdentityMismatch -> {
+                                binding.btnSave.isEnabled = false
+                                MaterialAlertDialogBuilder(requireContext())
+                                    .setTitle(R.string.profile_edit_device_mismatch_title)
+                                    .setMessage(R.string.profile_edit_device_mismatch_message)
+                                    .setPositiveButton(R.string.ok, null)
+                                    .show()
                                 viewModel.resetState()
                             }
                             is EditProfileUiState.Error -> {

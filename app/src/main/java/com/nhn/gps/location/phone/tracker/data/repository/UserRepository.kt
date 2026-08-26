@@ -15,6 +15,7 @@ import javax.inject.Singleton
 
 interface UserRepository {
     suspend fun findUserByPhone(phone: String): UserProfile?
+    suspend fun getUserProfile(uid: String): UserProfile?
     suspend fun signInAnonymously(): String
     suspend fun saveUserProfile(uid: String, profile: UserProfile)
     suspend fun uploadAvatar(uid: String, imageUri: Uri): String
@@ -31,6 +32,13 @@ class UserRepositoryImpl @Inject constructor(
     private val usersRef = database.getReference("users")
 
     override fun getCurrentUserId(): String? = auth.currentUser?.uid
+
+    override suspend fun getUserProfile(uid: String): UserProfile? = withContext(Dispatchers.IO) {
+        if (uid.isBlank()) return@withContext null
+        usersRef.child(uid).child("profile").get().await()
+            .getValue(UserProfile::class.java)
+            ?.copy(uid = uid)
+    }
 
     override suspend fun findUserByPhone(phone: String): UserProfile? = withContext(Dispatchers.IO) {
         val query = usersRef.orderByChild("profile/phone").equalTo(phone).limitToFirst(1)

@@ -7,7 +7,9 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.content.Context
+import android.widget.Toast
 import androidx.core.widget.doAfterTextChanged
+import com.nhn.gps.location.phone.tracker.R
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -21,6 +23,7 @@ import com.nhn.gps.location.phone.tracker.ui.main.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -40,10 +43,13 @@ class NotificationsFragment : BaseFragment<FragmentNotificationsLocalBinding, Ma
         FragmentNotificationsLocalBinding.inflate(inflater, container, false)
 
     override fun setupViews(savedInstanceState: Bundle?) = with(binding) {
-        adapter = ZoneAlertAdapter { alert ->
-            AlertDetailState.selectedAlert = alert
-            navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.AlertDetail)
-        }
+        adapter = ZoneAlertAdapter(
+            onClick = { alert ->
+                AlertDetailState.selectedAlert = alert
+                navigationManager.navigateTo(com.nhn.gps.location.phone.tracker.navigation.AppDestination.AlertDetail)
+            },
+            onDelete = ::deleteAlert,
+        )
         recyclerNotifications.adapter = adapter
         btnBack.setOnClickListener { handleToolbarBack() }
         
@@ -111,8 +117,8 @@ class NotificationsFragment : BaseFragment<FragmentNotificationsLocalBinding, Ma
             val yesterday = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }
             
             when {
-                isSameDay(calendar, today) -> "Today"
-                isSameDay(calendar, yesterday) -> "Yesterday"
+                isSameDay(calendar, today) -> getString(R.string.today)
+                isSameDay(calendar, yesterday) -> getString(R.string.yesterday)
                 else -> SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(alert.time))
             }
         }
@@ -128,6 +134,19 @@ class NotificationsFragment : BaseFragment<FragmentNotificationsLocalBinding, Ma
     private fun isSameDay(cal1: Calendar, cal2: Calendar): Boolean {
         return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
                cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
+    }
+
+    private fun deleteAlert(alert: ZoneAlert) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                zoneRepository.deleteAlert(alert.id)
+                Toast.makeText(requireContext(), R.string.zone_alert_removed, Toast.LENGTH_SHORT).show()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                Toast.makeText(requireContext(), R.string.zone_alert_remove_failed, Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     companion object { fun newInstance() = NotificationsFragment() }

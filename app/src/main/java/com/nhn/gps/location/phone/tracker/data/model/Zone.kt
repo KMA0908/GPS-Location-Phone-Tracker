@@ -20,6 +20,13 @@ enum class ZoneStatus(val code: Int, val label: String) {
     }
 }
 
+enum class ZoneAlertType {
+    ENTER,
+    LEAVE,
+    NEAR_DANGEROUS,
+    RETURNED_SAFE,
+}
+
 data class Zone(
     val id: Long,
     val name: String,
@@ -44,4 +51,6 @@ data class ZoneAlert(
     val latitude: Double,
     val longitude: Double,
     val userName: String = "You",
+    val type: ZoneAlertType = if (isEnter) ZoneAlertType.ENTER else ZoneAlertType.LEAVE,
+    val userId: String = "",
 )
