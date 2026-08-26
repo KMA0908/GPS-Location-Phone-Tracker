@@ -171,6 +171,7 @@
                 android:layout_width="0dp"
                 android:layout_height="56dp"
                 android:layout_weight="1"
+                android:backgroundTint="@color/bg_switch_permission"
                 android:text="@string/apply"
                 app:cornerRadius="28dp" />
 
