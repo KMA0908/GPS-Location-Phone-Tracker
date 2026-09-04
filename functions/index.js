@@ -18,6 +18,8 @@ const auth = new GoogleAuth({scopes: [GOOGLE_CLOUD_SCOPE]});
 
 const OWNER_FUNCTION_OPTIONS = {
   region: "asia-southeast1",
+  // Mobile callers use App Check and ownerSecret, not Google Cloud IAM tokens.
+  invoker: "public",
   timeoutSeconds: 15,
   memory: "256MiB",
   minInstances: 0,
@@ -385,6 +387,7 @@ exports.removeFriend = onCall(OWNER_FUNCTION_OPTIONS, async (request) => {
 exports.computeRoute = onCall(
     {
       region: "asia-southeast1",
+      invoker: "public",
       timeoutSeconds: 30,
       memory: "256MiB",
       minInstances: 0,

@@ -69,6 +69,14 @@ client-writable Premium flag.
 
 6. Verify profile creation plus the `computeRoute` callable function succeed
    from a release build.
+   Gen 2 callable Cloud Run services must grant `roles/run.invoker` to
+   `allUsers`: mobile clients send App Check tokens, not Google Cloud IAM
+   identity tokens. This does not grant access to profile data; App Check and
+   the per-profile owner proof are still enforced by the callable handler.
+   After an interrupted deployment, check this IAM binding separately: the
+   current Firebase CLI may not repair a missing binding when updating an
+   existing callable. A request without App Check should reach the handler and
+   return HTTP 401 `UNAUTHENTICATED`, not an IAM-level HTML 403 response.
 7. Enable App Check enforcement for Realtime Database and Cloud Functions. The
    callable functions already request enforcement, and unsupported older builds
    cannot write after the new Database Rules are deployed.

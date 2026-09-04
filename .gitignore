@@ -17,6 +17,8 @@
 captures/
 .DS_Store
 database-debug.log
+firebase-debug.log
+firebase-debug.*.log
 
 # Local reference/decompiled materials; not part of the Android project.
 /GPS Location/
