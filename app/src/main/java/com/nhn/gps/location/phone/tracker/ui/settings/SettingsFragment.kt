@@ -1,24 +1,28 @@
 package com.nhn.gps.location.phone.tracker.ui.settings
 
+import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.content.res.ColorStateList
-import android.graphics.Color
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.nhn.gps.location.phone.tracker.R
+import com.nhn.gps.location.phone.tracker.ads.ResumeAdGuard
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
 import com.nhn.gps.location.phone.tracker.databinding.DialogTurnOffLocationSharingBinding
 import com.nhn.gps.location.phone.tracker.databinding.FragmentSettingsBinding
-import com.nhn.gps.location.phone.tracker.databinding.ItemSettingsMenuBinding
 import com.nhn.gps.location.phone.tracker.navigation.AppDestination
 import com.nhn.gps.location.phone.tracker.ui.main.MainViewModel
 import com.nhn.gps.location.phone.tracker.util.LanguageHelper
@@ -31,6 +35,20 @@ import kotlinx.coroutines.launch
 @AndroidEntryPoint
 class SettingsFragment : BaseFragment<FragmentSettingsBinding, MainViewModel>() {
     override val viewModel: MainViewModel by activityViewModels()
+
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        ResumeAdGuard.onSystemDialogFinished()
+        viewModel.setNotificationEnabled(granted)
+        if (!granted && isAdded) {
+            Toast.makeText(
+                requireContext(),
+                R.string.notification_permission_required,
+                Toast.LENGTH_SHORT,
+            ).show()
+        }
+    }
 
     override fun createBinding(inflater: LayoutInflater, container: ViewGroup?) =
         FragmentSettingsBinding.inflate(inflater, container, false)
@@ -80,7 +98,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding, MainViewModel>() 
                     swMenu.isChecked = true
                     showTurnOffNotificationDialog()
                 } else if (isChecked && !viewModel.isNotificationEnabled.value) {
-                    viewModel.setNotificationEnabled(true)
+                    requestNotificationPermissionOrEnable()
                 }
             }
             root.setOnClickListener { swMenu.toggle() }
@@ -124,6 +142,29 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding, MainViewModel>() 
         }
 
         dialog.show()
+    }
+
+    private fun requestNotificationPermissionOrEnable() {
+        if (canPostNotifications()) {
+            viewModel.setNotificationEnabled(true)
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ResumeAdGuard.onSystemDialogRequested()
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
+    private fun canPostNotifications(): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) == PackageManager.PERMISSION_GRANTED
+
+    override fun onResume() {
+        super.onResume()
+        if (viewModel.isNotificationEnabled.value && !canPostNotifications()) {
+            viewModel.setNotificationEnabled(false)
+        }
     }
 
     private fun showTurnOffLocationDialog() {
@@ -180,9 +221,16 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding, MainViewModel>() 
                     }
                 }
                 launch {
-                    viewModel.isLocationSharingEnabled.collectLatest { enabled ->
-                        binding.switchLocationSharing.isChecked = enabled
-                    }
+                    combine(
+                        viewModel.isLocationSharingEnabled,
+                        viewModel.isLocationSharingUpdating,
+                    ) { enabled, updating -> enabled to updating }
+                        .collectLatest { (enabled, updating) ->
+                            binding.switchLocationSharing.isEnabled = !updating
+                            if (binding.switchLocationSharing.isChecked != enabled) {
+                                binding.switchLocationSharing.isChecked = enabled
+                            }
+                        }
                 }
                 launch {
                     viewModel.isNotificationEnabled.collectLatest { enabled ->
@@ -213,7 +261,6 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding, MainViewModel>() 
 
     companion object {
         private const val PRIVACY_POLICY_URL = "https://stech.io.vn/privacyPolicy.html"
-        private const val TERMS_URL = "https://stech.io.vn/termofuse.html"
         fun newInstance() = SettingsFragment()
     }
 }

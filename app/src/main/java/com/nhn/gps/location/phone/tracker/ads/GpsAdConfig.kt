@@ -27,9 +27,9 @@ class GpsAdConfig @Inject constructor() : AdConfig() {
     override fun blockRootedDevice(): Boolean = !BuildConfig.DEBUG && super.blockRootedDevice()
 
     companion object {
-        // Debug builds use Google's official test units below. Release builds
-        // still obey the server-side placement switches from Remote Config.
-        const val ADS_ENABLED = true
+        // Only official test units are configured. Keep release ads off until
+        // real unit IDs and consent/data-safety configuration are provided.
+        val ADS_ENABLED = BuildConfig.DEBUG
         const val TEST_APP_OPEN_ID = "ca-app-pub-3940256099942544/9257395921"
         const val TEST_BANNER_ID = "ca-app-pub-3940256099942544/6300978111"
         const val TEST_INTERSTITIAL_ID = "ca-app-pub-3940256099942544/1033173712"

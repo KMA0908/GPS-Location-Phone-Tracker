@@ -40,6 +40,7 @@
     <string name="img_name">صورة الاسم</string>
     <string name="img_phone">صورة الهاتف</string>
     <string name="your_phone">هاتفك</string>
+    <string name="your_phone_optional">هاتفك (اختياري)</string>
     <string name="enter_your_phone">أدخل رقم هاتفك</string>
     <string name="realtime_tracker_needs_access_to_your_location_to_show_your_position_and_friends_around_you_in_real_time">يحتاج المتتبع في الوقت الفعلي إلى الوصول لموقعك لإظهار موقعك وأصدقائك من حولك</string>
     <string name="allow_while_using_app">السماح أثناء استخدام التطبيق</string>
@@ -403,7 +404,7 @@
     <string name="add_friend_error">تعذر إضافة الصديق. تحقق من اتصالك وأذونات الحساب، ثم حاول مرة أخرى.</string>
     <string name="remove_friend_error">تعذر إزالة الصديق. تحقق من اتصالك وأذونات الحساب، ثم حاول مرة أخرى.</string>
     <string name="friend_limit_title">تم الوصول إلى حد الأصدقاء</string>
-    <string name="friend_limit_message">تدعم الخطة المجانية ما يصل إلى %1$d من الأصدقاء. قم بالترقية إلى Premium لإضافة المزيد.</string>
+    <string name="friend_limit_message">يدعم هذا الإصدار ما يصل إلى %1$d من الأصدقاء.</string>
     <string name="route_end_navigation">إنهاء الملاحة</string>
     <string name="route_navigation_title">ملاحة</string>
     <string name="route_navigation_started">بدأت الملاحة</string>
@@ -414,6 +415,7 @@
     <string name="route_arrived_description">لقد وصلت إلى وجهتك</string>
     <string name="zone_monitoring_active_title">مراقبة المنطقة نشطة</string>
     <string name="zone_monitoring_active_text">موقع GPS يراقب مناطقك المحفوظة</string>
+    <string name="location_monitoring_channel">مشاركة الموقع ومراقبة المناطق</string>
     <string name="zone_alert_enter_title">دخل %1$s</string>
     <string name="zone_alert_leave_title">غادر %1$s</string>
     <string name="zone_alert_enter_text">لقد دخلت هذه المنطقة</string>

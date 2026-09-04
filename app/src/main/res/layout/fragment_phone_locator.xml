@@ -120,7 +120,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/trusted_by_millions"
+                            android:text="@string/phone_locator_index_title"
                             android:textColor="#FFFFFF"
                             android:textSize="15sp"
                             android:textStyle="bold"/>
@@ -128,7 +128,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/fast_secure"
+                            android:text="@string/phone_locator_privacy_subtitle"
                             android:textColor="#E9FFF1"
                             android:textSize="13sp"/>
 
@@ -232,6 +232,9 @@
                         app:boxCornerRadiusTopStart="16dp"
                         app:boxStrokeColor="#D3F6FC"
                         app:startIconDrawable="@drawable/ic_phone_number_locator"
+                        app:endIconMode="custom"
+                        app:endIconDrawable="@drawable/ic_phone_find_frend"
+                        app:endIconContentDescription="@string/select_phone_from_contacts"
                         app:errorEnabled="true">
 
                         <com.google.android.material.textfield.TextInputEditText

@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -39,65 +40,65 @@ class AddFriendViewModel @Inject constructor(
     private val _alreadyFriend = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val alreadyFriend: SharedFlow<Unit> = _alreadyFriend.asSharedFlow()
 
-    private val _premiumRequired = MutableSharedFlow<Int>(extraBufferCapacity = 1)
-    val premiumRequired: SharedFlow<Int> = _premiumRequired.asSharedFlow()
+    private val _friendLimitReached = MutableSharedFlow<Int>(extraBufferCapacity = 1)
+    val friendLimitReached: SharedFlow<Int> = _friendLimitReached.asSharedFlow()
 
     private val _addError = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val addError: SharedFlow<Unit> = _addError.asSharedFlow()
+    private var findJob: Job? = null
 
     fun findFriend(input: String) {
-        val normalizedInput = input.trim()
-        if (normalizedInput.isBlank()) return
-        Log.d("AddFriendVM", "Processing friend code")
-        
-        val prefix = "gps_friend:"
-        val friendUid = if (normalizedInput.startsWith(prefix)) {
-            normalizedInput.substring(prefix.length).trim()
-        } else {
-            // Nếu không có prefix, có thể là nhập tay ID trực tiếp (tùy nhu cầu UI)
-            // Theo yêu cầu "Xử lý QR không hợp lệ", nếu scan QR không có prefix thì không add.
-            // Để đảm bảo tính năng nhập tay vẫn chạy, ta cho phép nếu input không chứa ":"
-            if (normalizedInput.contains(":")) {
-                Log.d("AddFriendVM", "Invalid QR format")
-                _friendNotFound.tryEmit(Unit)
-                return
-            }
-            normalizedInput
+        findJob?.cancel()
+        findJob = null
+        _friendFound.value = null
+        _isLoading.value = false
+
+        val friendUid = FriendCode.parse(input)
+        if (friendUid == null) {
+            _friendNotFound.tryEmit(Unit)
+            return
         }
+        Log.d("AddFriendVM", "Processing friend code")
 
-        if (friendUid.isBlank()) return
-
-        viewModelScope.launch {
-            val myUid = appPreferences.userId.first()
-            if (friendUid == myUid) {
-                Log.d("AddFriendVM", "Cannot add yourself")
-                _friendNotFound.emit(Unit) // Hoặc hiển thị thông báo riêng nếu cần
-                return@launch
-            }
-
-            if (myUid != null && repository.isFriend(myUid, friendUid)) {
-                Log.d("AddFriendVM", "Already friends")
-                _alreadyFriend.emit(Unit)
-                return@launch
-            }
-
+        findJob = viewModelScope.launch {
             _isLoading.value = true
-            repository.findFriendById(friendUid).fold(
-                onSuccess = { profile ->
-                    Log.d("AddFriendVM", "Friend found: ${profile.name}")
-                    _friendFound.value = FriendLocation(
-                        id = profile.uid,
-                        name = profile.name,
-                        avatarUrl = profile.avatarUrl,
-                        avatarKey = profile.avatarKey,
-                    )
-                },
-                onFailure = {
-                    Log.d("AddFriendVM", "Friend not found or error: ${it.message}")
-                    _friendNotFound.emit(Unit)
+            try {
+                val myUid = appPreferences.userId.first()
+                if (myUid.isNullOrBlank()) {
+                    _addError.emit(Unit)
+                    return@launch
                 }
-            )
-            _isLoading.value = false
+                if (friendUid.equals(myUid, ignoreCase = true)) {
+                    Log.d("AddFriendVM", "Cannot add yourself")
+                    _friendNotFound.emit(Unit)
+                    return@launch
+                }
+
+                if (repository.isFriend(myUid, friendUid)) {
+                    Log.d("AddFriendVM", "Already friends")
+                    _alreadyFriend.emit(Unit)
+                    return@launch
+                }
+
+                repository.findFriendById(friendUid).fold(
+                    onSuccess = { profile ->
+                        Log.d("AddFriendVM", "Friend found: ${profile.name}")
+                        _friendFound.value = FriendLocation(
+                            id = profile.uid,
+                            name = profile.name,
+                            phone = profile.phone,
+                            avatarUrl = profile.avatarUrl,
+                            avatarKey = profile.avatarKey,
+                        )
+                    },
+                    onFailure = {
+                        Log.d("AddFriendVM", "Friend not found or error: ${it.message}")
+                        _friendNotFound.emit(Unit)
+                    },
+                )
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
 
@@ -124,7 +125,7 @@ class AddFriendViewModel @Inject constructor(
                     onFailure = { error ->
                         Log.e("AddFriendVM", "Failed to add friend", error)
                         if (error is FriendLimitReachedException) {
-                            _premiumRequired.emit(error.limit)
+                            _friendLimitReached.emit(error.limit)
                         } else {
                             _addError.emit(Unit)
                         }

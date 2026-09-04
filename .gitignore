@@ -4,6 +4,7 @@
 .kotlin/
 /local.properties
 /secrets.properties
+/key/
 /.idea/caches/
 /.idea/libraries/
 /.idea/modules.xml
@@ -15,6 +16,7 @@
 **/.externalNativeBuild/
 captures/
 .DS_Store
+database-debug.log
 
 # Local reference/decompiled materials; not part of the Android project.
 /GPS Location/

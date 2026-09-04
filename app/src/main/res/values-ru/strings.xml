@@ -40,6 +40,7 @@
     <string name="img_name">изображение имени</string>
     <string name="img_phone">изображение телефона</string>
     <string name="your_phone">Ваш телефон</string>
+    <string name="your_phone_optional">Ваш телефон (необязательно)</string>
     <string name="enter_your_phone">Введите ваш телефон</string>
     <string name="realtime_tracker_needs_access_to_your_location_to_show_your_position_and_friends_around_you_in_real_time">Трекеру в реальном времени нужен доступ к местоположению, чтобы показывать вас и ваших друзей</string>
     <string name="allow_while_using_app">Разрешить при использовании приложения</string>
@@ -403,7 +404,7 @@
     <string name="add_friend_error">Не удалось добавить друга. Проверьте подключение и разрешения аккаунта, а затем повторите попытку.</string>
     <string name="remove_friend_error">Не удалось удалить друга. Проверьте подключение и разрешения аккаунта, а затем повторите попытку.</string>
     <string name="friend_limit_title">Лимит друзей достигнут</string>
-    <string name="friend_limit_message">Бесплатный план поддерживает до %1$d друзей. Перейдите на Premium, чтобы добавить больше.</string>
+    <string name="friend_limit_message">В этой версии можно добавить до %1$d друзей.</string>
     <string name="route_end_navigation">Завершить навигацию</string>
     <string name="route_navigation_title">Навигация</string>
     <string name="route_navigation_started">Навигация запущена</string>
@@ -414,6 +415,7 @@
     <string name="route_arrived_description">Вы прибыли в пункт назначения</string>
     <string name="zone_monitoring_active_title">Мониторинг зон активен</string>
     <string name="zone_monitoring_active_text">GPS Location следит за вашими сохраненными зонами</string>
+    <string name="location_monitoring_channel">Обмен геопозицией и мониторинг зон</string>
     <string name="zone_alert_enter_title">Вход в %1$s</string>
     <string name="zone_alert_leave_title">Выход из %1$s</string>
     <string name="zone_alert_enter_text">Вы вошли в эту зону</string>

@@ -6,36 +6,34 @@ import javax.inject.Singleton
 @Singleton
 class PhoneNumberFormatter @Inject constructor() {
 
-    /**
-     * Chuẩn hóa số điện thoại về định dạng nội địa để tìm kiếm trong Database.
-     * Ví dụ: 
-     * - dialCode: "+84", input: "912345678" -> "0912345678"
-     * - dialCode: "+84", input: "0912345678" -> "0912345678"
-     * 
-     * Thiết kế này dễ dàng mở rộng cho các quốc gia khác bằng cách thêm logic 
-     * kiểm tra theo dialCode hoặc ISO code.
-     */
+    /** Stores and searches every phone number in one E.164-compatible format. */
     fun normalize(dialCode: String, phone: String): String {
-        val cleanPhone = phone.trim().replace(" ", "").replace("-", "")
-        
-        // Hiện tại Database đang lưu theo định dạng số 0 ở đầu (Việt Nam)
-        return when (dialCode) {
-            "+84" -> {
-                if (cleanPhone.startsWith("0")) {
-                    cleanPhone
-                } else if (cleanPhone.startsWith("+84")) {
-                    "0" + cleanPhone.substring(3)
-                } else if (cleanPhone.startsWith("84")) {
-                    "0" + cleanPhone.substring(2)
-                } else {
-                    "0$cleanPhone"
-                }
-            }
-            // Mở rộng thêm các quốc gia khác ở đây
-            else -> {
-                // Mặc định nếu không phải +84, có thể giữ nguyên hoặc xử lý theo quy tắc chung
-                if (cleanPhone.startsWith("+")) cleanPhone else "$dialCode$cleanPhone"
-            }
+        val raw = phone.trim()
+        val normalizedDialCode = "+" + dialCode.filter(Char::isDigit).trimStart('0')
+        val digits = raw.filter(Char::isDigit)
+        val canonical = when {
+            raw.startsWith("+") -> "+$digits"
+            raw.startsWith("00") -> "+${digits.drop(2)}"
+            else -> normalizedDialCode + digits.trimStart('0')
         }
+        require(E164.matches(canonical)) { "Invalid phone number" }
+        return canonical
+    }
+
+    fun isValid(dialCode: String, phone: String): Boolean =
+        phone.isNotBlank() && runCatching { normalize(dialCode, phone) }.isSuccess
+
+    fun toNationalNumber(dialCode: String, phone: String): String {
+        val canonicalDialCode = "+" + dialCode.filter(Char::isDigit).trimStart('0')
+        val canonicalPhone = phone.trim()
+        return if (canonicalPhone.startsWith(canonicalDialCode)) {
+            canonicalPhone.removePrefix(canonicalDialCode)
+        } else {
+            canonicalPhone
+        }
+    }
+
+    private companion object {
+        val E164 = Regex("^\\+[1-9]\\d{6,14}$")
     }
 }

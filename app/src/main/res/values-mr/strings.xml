@@ -40,6 +40,7 @@
     <string name="img_name">नावाची प्रतिमा</string>
     <string name="img_phone">फोनची प्रतिमा</string>
     <string name="your_phone">तुमचा फोन</string>
+    <string name="your_phone_optional">तुमचा फोन (पर्यायी)</string>
     <string name="enter_your_phone">तुमचा फोन प्रविष्ट करा</string>
     <string name="realtime_tracker_needs_access_to_your_location_to_show_your_position_and_friends_around_you_in_real_time">रिअल-टाइममध्ये तुमचे स्थान आणि तुमच्या सभोवतालचे मित्र दाखवण्यासाठी रिअल-टाइम ट्रॅकरला तुमच्या स्थानामध्ये प्रवेश आवश्यक आहे</string>
     <string name="allow_while_using_app">ॲप वापरताना परवानगी द्या</string>
@@ -403,7 +404,7 @@
     <string name="add_friend_error">मित्र जोडता आला नाही. तुमचे कनेक्शन आणि खाते परवानग्या तपासा, नंतर पुन्हा प्रयत्न करा.</string>
     <string name="remove_friend_error">मित्र काढता आला नाही. तुमचे कनेक्शन आणि खाते परवानग्या तपासा, नंतर पुन्हा प्रयत्न करा.</string>
     <string name="friend_limit_title">मित्र मर्यादा संपली</string>
-    <string name="friend_limit_message">विनामूल्य प्लॅन %1$d मित्रांपर्यंत समर्थन देतो. अधिक जोडण्यासाठी प्रीमियमवर अपग्रेड करा.</string>
+    <string name="friend_limit_message">या आवृत्तीमध्ये जास्तीत जास्त %1$d मित्र जोडता येतात.</string>
     <string name="route_end_navigation">नेव्हिगेशन समाप्त करा</string>
     <string name="route_navigation_title">नेव्हिगेशन</string>
     <string name="route_navigation_started">नेव्हिगेशन सुरू झाले</string>
@@ -414,6 +415,7 @@
     <string name="route_arrived_description">तुम्ही तुमच्या गंतव्यस्थानी पोहोचला आहात</string>
     <string name="zone_monitoring_active_title">झोन मॉनिटरिंग सक्रिय</string>
     <string name="zone_monitoring_active_text">जीपीएस लोकेशन तुमच्या सेव्ह केलेल्या झोनवर लक्ष ठेवून आहे</string>
+    <string name="location_monitoring_channel">स्थान शेअरिंग आणि झोन मॉनिटरिंग</string>
     <string name="zone_alert_enter_title">%1$s मध्ये प्रवेश केला</string>
     <string name="zone_alert_leave_title">%1$s मधून बाहेर पडले</string>
     <string name="zone_alert_enter_text">तुम्ही या झोनमध्ये प्रवेश केला आहे</string>

@@ -35,6 +35,7 @@ class MyFriendFragment : BaseFragment<FragmentMyFriendBinding, FriendListViewMod
 
     override val viewModel: FriendListViewModel by viewModels()
     private val locationViewModel: com.nhn.gps.location.phone.tracker.ui.location.LocationViewModel by activityViewModels()
+    private var displayedFriend: com.nhn.gps.location.phone.tracker.data.model.FriendLocation? = null
 
     override fun createBinding(
         inflater: LayoutInflater,
@@ -123,6 +124,7 @@ class MyFriendFragment : BaseFragment<FragmentMyFriendBinding, FriendListViewMod
     }
 
     private fun showProfile(friend: com.nhn.gps.location.phone.tracker.data.model.FriendLocation) = with(binding) {
+        displayedFriend = friend
         (activity as? MainActivity)?.showScreenNative(
             GpsAdPlacement.NATIVE_FRIEND_DETAIL,
             GpsAdViewBinder.NativeFormat.MEDIUM,
@@ -130,7 +132,7 @@ class MyFriendFragment : BaseFragment<FragmentMyFriendBinding, FriendListViewMod
         (activity as? MainActivity)?.overrideNextRouteInterstitial(GpsAdPlacement.INTER_FRIEND_DETAIL)
         layoutFriendProfile.tvName.text = friend.name
         layoutFriendProfile.tvUserId.text = getString(R.string.user_id_prefix, friend.id)
-        layoutFriendProfile.tvPhoneNumber.text = "+84 000 0000"
+        layoutFriendProfile.tvPhoneNumber.text = friend.phone.ifBlank { "-" }
 
         layoutFriendProfile.imgAvatar.loadAvatar(friend.avatarKey, friend.avatarUrl, fallbackRes = R.drawable.ic_avt_location )
 
@@ -143,6 +145,7 @@ class MyFriendFragment : BaseFragment<FragmentMyFriendBinding, FriendListViewMod
     }
 
     private fun hideProfile() = with(binding) {
+        displayedFriend = null
         viewDim.visibility = View.GONE
         layoutFriendProfile.root.visibility = View.GONE
         (activity as? MainActivity)?.clearScreenAd()
@@ -150,7 +153,7 @@ class MyFriendFragment : BaseFragment<FragmentMyFriendBinding, FriendListViewMod
     }
 
     private fun shareProfile() {
-        val userId = "00000000" 
+        val userId = displayedFriend?.id ?: return
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_SUBJECT, "My Friend Profile")

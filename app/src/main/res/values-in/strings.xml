@@ -40,6 +40,7 @@
     <string name="img_name">img nama</string>
     <string name="img_phone">img telepon</string>
     <string name="your_phone">Telepon Anda</string>
+    <string name="your_phone_optional">Telepon Anda (opsional)</string>
     <string name="enter_your_phone">Masukkan telepon Anda</string>
     <string name="realtime_tracker_needs_access_to_your_location_to_show_your_position_and_friends_around_you_in_real_time">Pelacak waktu nyata memerlukan akses ke lokasi Anda untuk menunjukkan posisi Anda dan teman di sekitar Anda secara waktu nyata</string>
     <string name="allow_while_using_app">Izinkan saat menggunakan aplikasi</string>
@@ -403,7 +404,7 @@
     <string name="add_friend_error">Teman tidak dapat ditambahkan. Periksa koneksi dan izin akun Anda, lalu coba lagi.</string>
     <string name="remove_friend_error">Teman tidak dapat dihapus. Periksa koneksi dan izin akun Anda, lalu coba lagi.</string>
     <string name="friend_limit_title">Batas teman tercapai</string>
-    <string name="friend_limit_message">Paket gratis mendukung hingga %1$d teman. Tingkatkan ke Premium untuk menambah lebih banyak.</string>
+    <string name="friend_limit_message">Versi ini mendukung hingga %1$d teman.</string>
     <string name="route_end_navigation">Selesaikan navigasi</string>
     <string name="route_navigation_title">Navigasi</string>
     <string name="route_navigation_started">Navigasi dimulai</string>
@@ -414,6 +415,7 @@
     <string name="route_arrived_description">Anda telah sampai di tujuan</string>
     <string name="zone_monitoring_active_title">Pemantauan zona aktif</string>
     <string name="zone_monitoring_active_text">Lokasi GPS sedang mengawasi zona yang Anda simpan</string>
+    <string name="location_monitoring_channel">Berbagi lokasi dan pemantauan zona</string>
     <string name="zone_alert_enter_title">Masuk ke %1$s</string>
     <string name="zone_alert_leave_title">Keluar dari %1$s</string>
     <string name="zone_alert_enter_text">Anda memasuki zona ini</string>

@@ -1,105 +1,120 @@
 package com.nhn.gps.location.phone.tracker.data.repository
 
 import android.net.Uri
-import com.google.firebase.auth.AuthResult
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.storage.FirebaseStorage
+import com.nhn.gps.location.phone.tracker.data.local.InstallationIdentity
 import com.nhn.gps.location.phone.tracker.data.model.UserProfile
 import com.nhn.gps.location.phone.tracker.util.AvatarHelper
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
 interface UserRepository {
-    suspend fun findUserByPhone(phone: String): UserProfile?
     suspend fun getUserProfile(uid: String): UserProfile?
-    suspend fun signInAnonymously(): String
+    suspend fun getOrCreateInstallationId(): String
+    suspend fun createReplacementInstallationId(): String
     suspend fun saveUserProfile(uid: String, profile: UserProfile)
+    suspend fun updateAvailability(uid: String, hasOnline: Boolean)
+    suspend fun setLocationSharing(uid: String, enabled: Boolean)
     suspend fun uploadAvatar(uid: String, imageUri: Uri): String
-    fun getCurrentUserId(): String?
 }
 
 @Singleton
 class UserRepositoryImpl @Inject constructor(
-    private val database: FirebaseDatabase,
-    private val auth: FirebaseAuth,
-    private val storage: FirebaseStorage
+    private val installationIdentity: InstallationIdentity,
+    private val ownerFunctions: OwnerFunctionClient,
 ) : UserRepository {
 
-    private val usersRef = database.getReference("users")
-
-    override fun getCurrentUserId(): String? = auth.currentUser?.uid
-
     override suspend fun getUserProfile(uid: String): UserProfile? = withContext(Dispatchers.IO) {
-        if (uid.isBlank()) return@withContext null
-        usersRef.child(uid).child("profile").get().await()
-            .getValue(UserProfile::class.java)
-            ?.copy(uid = uid)
+        if (!FirebasePathKey.isValid(uid)) return@withContext null
+        val data = ownerFunctions.call("getOwnProfile", uid) as? Map<*, *>
+            ?: return@withContext null
+        val profile = data["profile"] as? Map<*, *> ?: return@withContext null
+        UserProfile(
+            uid = profile.string("uid"),
+            name = profile.string("name"),
+            phone = profile.string("phone"),
+            avatarUrl = profile.string("avatarUrl"),
+            avatarKey = profile.string("avatarKey"),
+            friendIds = (profile["friendIds"] as? List<*>)
+                .orEmpty()
+                .mapNotNull { it as? String },
+            hasOnline = profile["hasOnline"] == true,
+            trackingAvailable = profile["trackingAvailable"] == true,
+            secondaryPhones = (profile["secondaryPhones"] as? Map<*, *>)
+                .orEmpty()
+                .mapNotNull { (key, value) ->
+                    val keyString = key as? String ?: return@mapNotNull null
+                    val valueString = value as? String ?: return@mapNotNull null
+                    keyString to valueString
+                }.toMap(),
+        )
     }
 
-    override suspend fun findUserByPhone(phone: String): UserProfile? = withContext(Dispatchers.IO) {
-        val query = usersRef.orderByChild("profile/phone").equalTo(phone).limitToFirst(1)
-        val snapshot = query.get().await()
-
-        if (snapshot.exists() && snapshot.childrenCount > 0) {
-            val userSnapshot = snapshot.children.first()
-            val profile = userSnapshot.child("profile").getValue(UserProfile::class.java)
-            profile?.copy(uid = userSnapshot.key ?: profile.uid)
-        } else {
-            null
-        }
+    override suspend fun getOrCreateInstallationId(): String = withContext(Dispatchers.IO) {
+        installationIdentity.getOrCreateId()
     }
 
-    override suspend fun signInAnonymously(): String = withContext(Dispatchers.IO) {
-        try {
-            val currentUid = auth.currentUser?.uid
-            if (currentUid != null) return@withContext currentUid
-            
-            val result = auth.signInAnonymously().await()
-            result.user?.uid ?: throw Exception("Auth succeeded but UID is null")
-        } catch (e: Exception) {
-            android.util.Log.e("UserRepository", "Anonymous sign-in failed", e)
-            val errorMsg = e.localizedMessage ?: "Unknown error"
-            
-            val friendlyMessage = when {
-                errorMsg.contains("CONFIGURATION_NOT_FOUND", true) -> 
-                    "Firebase Auth Error: Please check if 'Anonymous' provider is ENABLED in Firebase Console AND your Package Name matches in google-services.json"
-                errorMsg.contains("app-not-authorized", true) || errorMsg.contains("Play Integrity", true) ->
-                    "Unable to verify this device. Please update Google Play services and try again."
-                else -> "Sign-in failed: $errorMsg"
-            }
-            throw Exception(friendlyMessage, e)
-        }
+    override suspend fun createReplacementInstallationId(): String = withContext(Dispatchers.IO) {
+        installationIdentity.rotateForNewProfile()
     }
 
     override suspend fun saveUserProfile(uid: String, profile: UserProfile): Unit = withContext(Dispatchers.IO) {
-        try {
-            val profileToSave = profile.copy(uid = uid)
-            val firebaseProfile = mapOf(
-                "uid" to profileToSave.uid,
-                "name" to profileToSave.name,
-                "phone" to profileToSave.phone,
-                // Local drawable resource IDs/URIs are not portable between devices.
-                // Store the stable key so every installation resolves the same bundled image.
-                "avatarKey" to AvatarHelper.normalizeKey(profileToSave.avatarKey),
-            )
-            usersRef.child(uid).child("profile").setValue(firebaseProfile).await()
-        } catch (e: Exception) {
-            if (e is kotlinx.coroutines.CancellationException) throw e
-            throw e
-        }
+        FirebasePathKey.requireValid(uid, "Installation ID")
+        val name = profile.name.trim()
+        val phone = profile.phone.trim()
+        require(name.isNotBlank()) { "Profile name is required" }
+        require(name.length <= MAX_PROFILE_NAME_LENGTH) { "Profile name is too long" }
+        require(phone.length <= MAX_PHONE_LENGTH) { "Phone number is too long" }
+        ownerFunctions.call(
+            functionName = "upsertProfile",
+            uid = uid,
+            values = mapOf(
+                "profile" to mapOf(
+                    "name" to name,
+                    "phone" to phone,
+                    "avt" to profile.avatarUrl.trim(),
+                    "avatarKey" to AvatarHelper.normalizeKey(profile.avatarKey),
+                    "secondaryPhones" to profile.secondaryPhones,
+                ),
+            ),
+        )
     }
 
-    override suspend fun uploadAvatar(uid: String, imageUri: Uri): String = withContext(Dispatchers.IO) {
-        try {
-            val storageRef = storage.reference.child("avatars/$uid/profile.jpg")
-            storageRef.putFile(imageUri).await()
-            storageRef.downloadUrl.await().toString()
-        } catch (e: Exception) {
-            throw Exception("Avatar Upload Error: ${e.localizedMessage}. Check your Firebase Storage Rules.")
-        }
+    override suspend fun updateAvailability(uid: String, hasOnline: Boolean): Unit =
+        withContext(Dispatchers.IO) {
+        FirebasePathKey.requireValid(uid, "Installation ID")
+        ownerFunctions.call(
+            functionName = "updateAvailability",
+            uid = uid,
+            values = mapOf("hasOnline" to hasOnline),
+        )
     }
+
+    override suspend fun setLocationSharing(uid: String, enabled: Boolean): Unit =
+        withContext(Dispatchers.IO) {
+            FirebasePathKey.requireValid(uid, "Installation ID")
+            ownerFunctions.call(
+                functionName = "setLocationSharing",
+                uid = uid,
+                values = mapOf("enabled" to enabled),
+            )
+        }
+
+    override suspend fun uploadAvatar(uid: String, imageUri: Uri): String = withContext(Dispatchers.IO) {
+        FirebasePathKey.requireValid(uid, "Installation ID")
+        @Suppress("UNUSED_VARIABLE") val ignored = imageUri
+        throw UnsupportedOperationException(
+            "Custom avatar upload is disabled until an owner-verified upload endpoint is available",
+        )
+    }
+
+    private companion object {
+        const val MAX_PROFILE_NAME_LENGTH = 100
+        const val MAX_PHONE_LENGTH = 32
+    }
+
+    private fun Map<*, *>.string(key: String): String =
+        get(key)?.toString().orEmpty()
+
 }

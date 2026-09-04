@@ -1,0 +1,101 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "users": {
+      "$uid": {
+        ".read": false,
+        ".write": false,
+        ".validate": "newData.hasChildren(['userId', 'name', 'phone', 'avt'])",
+        "userId": {
+          ".validate": "newData.isString() && newData.val() === $uid && newData.val().length > 0 && newData.val().length <= 128"
+        },
+        "name": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+        },
+        "phone": {
+          ".validate": "newData.isString() && newData.val().length <= 32"
+        },
+        "avt": {
+          ".validate": "newData.isString() && newData.val().length <= 2048"
+        },
+        "avatarKey": {
+          ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 64)"
+        },
+        "friendIds": {
+          "$friendIndex": {
+            ".validate": "$friendIndex.matches(/^[0-4]$/) && newData.isString() && newData.val() !== $uid && root.child('users').child(newData.val()).exists()"
+          }
+        },
+        "hasOnline": {
+          ".validate": "!newData.exists() || newData.isBoolean()"
+        },
+        "trackingAvailable": {
+          ".validate": "!newData.exists() || newData.isBoolean()"
+        },
+        "secondaryPhones": {
+          "$ownerUid": {
+            ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 32"
+          }
+        },
+        "friends": {
+          ".validate": "!newData.exists()"
+        },
+        "profile": {
+          ".validate": "!newData.exists()"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "locations": {
+      "$uid": {
+        ".read": false,
+        ".write": false,
+        ".validate": "root.child('users').child($uid).exists() && newData.hasChildren(['lat', 'lng', 'last_location_update_time'])",
+        "lat": {
+          ".validate": "newData.isNumber() && newData.val() >= -90 && newData.val() <= 90"
+        },
+        "lng": {
+          ".validate": "newData.isNumber() && newData.val() >= -180 && newData.val() <= 180"
+        },
+        "last_location_update_time": {
+          ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() < 100000000000"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "phoneToUidMap": {
+      "$phone": {
+        ".read": false,
+        "$uid": {
+          ".write": false,
+          ".validate": "!newData.exists() || newData.hasChildren(['type', 'addedBy', 'addedTime'])",
+          "type": {
+            ".validate": "newData.val() === 'primary' || newData.val() === 'secondary'"
+          },
+          "addedBy": {
+            ".validate": "newData.val() === $uid"
+          },
+          "addedTime": {
+            ".validate": "newData.isNumber() && newData.val() > 0"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+    "owners": {
+      ".read": false,
+      ".write": false
+    },
+    "presence": {
+      ".read": false,
+      ".write": false
+    }
+  }
+}

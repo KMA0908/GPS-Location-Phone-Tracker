@@ -9,7 +9,6 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.google.android.gms.ads.AdRequest
 import com.google.firebase.FirebaseApp
-import com.google.firebase.auth.FirebaseAuth
 import com.leansoft.ads.AdManager
 import com.leansoft.ads.AdsApplication
 import com.nhn.gps.location.phone.tracker.analytics.GpsAnalyticsTracker
@@ -17,19 +16,35 @@ import com.nhn.gps.location.phone.tracker.ads.GpsAdConfig
 import com.nhn.gps.location.phone.tracker.ads.GpsAdPlacement
 import com.nhn.gps.location.phone.tracker.ads.GpsAds
 import com.nhn.gps.location.phone.tracker.ads.ResumeAdGuard
+import com.nhn.gps.location.phone.tracker.data.local.AppPreferences
+import com.nhn.gps.location.phone.tracker.data.model.UserProfile
+import com.nhn.gps.location.phone.tracker.data.repository.UserRepository
+import com.nhn.gps.location.phone.tracker.security.AppCheckInstaller
 import com.nhn.gps.location.phone.tracker.ui.main.MainActivity
 import com.nhn.gps.location.phone.tracker.ui.splash.SplashActivity
+import com.nhn.gps.location.phone.tracker.util.AvatarHelper
 import dagger.hilt.android.HiltAndroidApp
 import java.lang.ref.WeakReference
+import javax.inject.Inject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 @HiltAndroidApp
 class GpsTrackerApp : AdsApplication() {
+    @Inject lateinit var appPreferences: AppPreferences
+    @Inject lateinit var userRepository: UserRepository
+
     private var currentActivityRef: WeakReference<Activity>? = null
+    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onCreate() {
         super.onCreate()
         FirebaseApp.initializeApp(this)
-        initializeAnonymousFirebaseSession()
+        AppCheckInstaller.install()
+        migrateLegacyProfileSchema()
         GpsAnalyticsTracker.initialize(this)
         enableLeanSoftDebugAds()
         registerActivityLifecycleCallbacks(activityCallbacks)
@@ -39,17 +54,39 @@ class GpsTrackerApp : AdsApplication() {
     }
 
     /**
-     * Friend/location data is protected by authenticated Realtime Database rules.
-     * Anonymous auth keeps that protection without adding a visible login flow.
+     * Versions before the device-profile flow nested data under users/{uid}/profile.
+     * Re-saving the local profile registers its private ownership proof when
+     * the remote UID is new. Pre-release records without an owner hash are
+     * deliberately not claimable and must be cleared or migrated by an admin.
      */
-    private fun initializeAnonymousFirebaseSession() {
-        val auth = FirebaseAuth.getInstance()
-        if (auth.currentUser != null) return
+    private fun migrateLegacyProfileSchema() {
+        applicationScope.launch {
+            val uid = appPreferences.userId.first().orEmpty()
+            if (uid.isBlank()) return@launch
+            val sharingEnabled = appPreferences.isLocationSharingEnabled.first()
 
-        auth.signInAnonymously()
-            .addOnFailureListener { error ->
-                android.util.Log.e("FirebaseAuth", "Anonymous session initialization failed", error)
+            runCatching {
+                userRepository.saveUserProfile(
+                    uid = uid,
+                    profile = UserProfile(
+                        uid = uid,
+                        name = appPreferences.userName.first(),
+                        phone = appPreferences.userPhone.first(),
+                        avatarUrl = appPreferences.userAvatar.first(),
+                        avatarKey = AvatarHelper.normalizeKey(
+                            appPreferences.userAvatarKey.first(),
+                        ),
+                    ),
+                )
+                userRepository.setLocationSharing(uid, sharingEnabled)
+            }.onFailure { error ->
+                android.util.Log.w(
+                    "ProfileMigration",
+                    "Profile schema migration will retry on the next app start",
+                    error,
+                )
             }
+        }
     }
 
     /**

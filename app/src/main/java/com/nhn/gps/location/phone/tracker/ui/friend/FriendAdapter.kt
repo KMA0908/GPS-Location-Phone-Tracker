@@ -40,7 +40,11 @@ class FriendAdapter(
             } else {
                 btnMore.visibility = android.view.View.GONE
                 tvLastSeen.visibility = android.view.View.VISIBLE
-                tvLastSeen.text = com.nhn.gps.location.phone.tracker.util.TimeAgo.format(friend.updatedAt)
+                tvLastSeen.text = com.nhn.gps.location.phone.tracker.util.TimeAgo.formatPresence(
+                    timestamp = friend.updatedAt,
+                    hasOnline = friend.hasOnline,
+                    trackingAvailable = friend.trackingAvailable,
+                )
             }
 
             root.setOnClickListener { onItemClick(friend) }

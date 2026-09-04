@@ -221,7 +221,7 @@ class AppPreferences @Inject constructor(
     }
 
     val isLocationSharingEnabled: Flow<Boolean> = context.appDataStore.safeData.map { preferences ->
-        preferences[LOCATION_SHARING_ENABLED] ?: true
+        preferences[LOCATION_SHARING_ENABLED] ?: false
     }
 
     suspend fun setLocationSharingEnabled(enabled: Boolean) {

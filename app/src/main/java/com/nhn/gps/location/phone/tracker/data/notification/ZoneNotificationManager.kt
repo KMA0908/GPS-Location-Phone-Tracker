@@ -24,27 +24,15 @@ import javax.inject.Singleton
 class ZoneNotificationManager @Inject constructor(
     @ApplicationContext private val context: Context,
 ) {
-    private val channelId = "zone_alerts"
-
-    fun buildMonitoringNotification(): android.app.Notification {
-        ensureChannel()
-        return NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(R.drawable.ic_zone_bottom)
-            .setContentTitle(context.getString(R.string.zone_monitoring_active_title))
-            .setContentText(context.getString(R.string.zone_monitoring_active_text))
-            .setContentIntent(contentIntent(destination = DESTINATION_ZONE_ALERTS))
-            .setOngoing(true)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .build()
-    }
+    private val alertChannelId = "zone_alerts"
 
     fun notify(alert: ZoneAlert) {
-        ensureChannel()
+        ensureChannels()
         if (Build.VERSION.SDK_INT >= 33 &&
             context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
         ) return
 
-        val notification = NotificationCompat.Builder(context, channelId)
+        val notification = NotificationCompat.Builder(context, alertChannelId)
             .setSmallIcon(R.drawable.ic_zone_bottom)
             .setLargeIcon(BitmapFactory.decodeResource(context.resources, alert.iconRes()))
             .setContentTitle(
@@ -90,7 +78,7 @@ class ZoneNotificationManager @Inject constructor(
             putExtra(EXTRA_TARGET_DESTINATION, destination)
             alertId?.let { putExtra(EXTRA_ZONE_ALERT_ID, it) }
         }
-        val requestCode = alertId?.hashCode() ?: MONITORING_REQUEST_CODE
+        val requestCode = alertId?.hashCode() ?: DEFAULT_REQUEST_CODE
         return PendingIntent.getActivity(
             context,
             requestCode,
@@ -99,12 +87,12 @@ class ZoneNotificationManager @Inject constructor(
         )
     }
 
-    private fun ensureChannel() {
+    private fun ensureChannels() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val manager = context.getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(
                 NotificationChannel(
-                    channelId,
+                    alertChannelId,
                     context.getString(R.string.zone_alerts),
                     NotificationManager.IMPORTANCE_HIGH,
                 )
@@ -117,6 +105,6 @@ class ZoneNotificationManager @Inject constructor(
         const val EXTRA_ZONE_ALERT_ID = "ZONE_ALERT_ID"
         const val DESTINATION_ALERT_DETAIL = "alert_detail"
         const val DESTINATION_ZONE_ALERTS = "zone_alerts"
-        private const val MONITORING_REQUEST_CODE = 4101
+        private const val DEFAULT_REQUEST_CODE = 4101
     }
 }

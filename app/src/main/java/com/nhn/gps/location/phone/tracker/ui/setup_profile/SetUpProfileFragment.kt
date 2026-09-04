@@ -6,17 +6,19 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.os.BundleCompat
 import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.nhn.gps.location.phone.tracker.R
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
 import com.nhn.gps.location.phone.tracker.base.UiMessage
 import com.nhn.gps.location.phone.tracker.databinding.FragmentSetUpProfileBinding
+import com.nhn.gps.location.phone.tracker.data.model.Country
+import com.nhn.gps.location.phone.tracker.ui.phone_number_locator.CountrySelectorBottomSheet
 import com.nhn.gps.location.phone.tracker.util.loadAvatar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
@@ -40,6 +42,22 @@ class SetUpProfileFragment : BaseFragment<FragmentSetUpProfileBinding, SetUpProf
                 .show(parentFragmentManager, AvatarSelectorBottomSheet.TAG)
         }
 
+        cardPhone.txtDialCode.setOnClickListener {
+            CountrySelectorBottomSheet.newInstance(viewModel.selectedCountry.value.iso)
+                .show(parentFragmentManager, CountrySelectorBottomSheet.TAG)
+        }
+
+        parentFragmentManager.setFragmentResultListener(
+            CountrySelectorBottomSheet.REQUEST_KEY,
+            viewLifecycleOwner,
+        ) { _, bundle ->
+            BundleCompat.getParcelable(
+                bundle,
+                CountrySelectorBottomSheet.EXTRA_COUNTRY,
+                Country::class.java,
+            )?.let(viewModel::onCountryChanged)
+        }
+
         parentFragmentManager.setFragmentResultListener(
             AvatarSelectorBottomSheet.REQUEST_KEY,
             viewLifecycleOwner
@@ -57,7 +75,7 @@ class SetUpProfileFragment : BaseFragment<FragmentSetUpProfileBinding, SetUpProf
         cardPhone.edtValue.addTextChangedListener {
             val phone = it?.toString()?.trim() ?: ""
             viewModel.onPhoneChanged(phone)
-            if (phone.isNotEmpty() && !viewModel.isValidVietnamPhone(phone)) {
+            if (phone.isNotEmpty() && !viewModel.isValidPhone(phone)) {
                 cardPhone.edtValue.error = getString(R.string.invalid_phone)
             } else {
                 cardPhone.edtValue.error = null
@@ -66,7 +84,7 @@ class SetUpProfileFragment : BaseFragment<FragmentSetUpProfileBinding, SetUpProf
 
         btnSave.setOnClickListener {
             val phone = cardPhone.edtValue.text?.toString()?.trim() ?: ""
-            if (viewModel.isValidVietnamPhone(phone)) {
+            if (phone.isBlank() || viewModel.isValidPhone(phone)) {
                 viewModel.onSaveClicked()
             } else {
                 cardPhone.edtValue.error = getString(R.string.invalid_phone)
@@ -77,6 +95,12 @@ class SetUpProfileFragment : BaseFragment<FragmentSetUpProfileBinding, SetUpProf
     override fun observeData() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel.selectedCountry.collectLatest { country ->
+                        binding.cardPhone.txtDialCode.text =
+                            getString(R.string.phone_country_prefix, country.emoji, country.dialCode)
+                    }
+                }
                 launch {
                     viewModel.isSaveEnabled.collect { isEnabled ->
                         updateSaveButtonState(isEnabled)
@@ -108,12 +132,8 @@ class SetUpProfileFragment : BaseFragment<FragmentSetUpProfileBinding, SetUpProf
             is SetUpProfileUiState.Loading -> {
                 btnSave.isEnabled = false
             }
-            is SetUpProfileUiState.PhoneAlreadyExists -> {
-                showPhoneExistsDialog()
-                viewModel.resetState()
-            }
             is SetUpProfileUiState.Success -> {
-                Toast.makeText(requireContext(), "Glad to see you again!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), R.string.profile_updated, Toast.LENGTH_SHORT).show()
                 // Navigation is handled by ViewModel/NavigationManager
             }
             is SetUpProfileUiState.Error -> {
@@ -124,16 +144,6 @@ class SetUpProfileFragment : BaseFragment<FragmentSetUpProfileBinding, SetUpProf
                 btnSave.isEnabled = viewModel.isSaveEnabled.value
             }
         }
-    }
-
-    private fun showPhoneExistsDialog() {
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.exit_title) // Reusing existing or should use specific string
-            .setMessage("This phone number already exists.")
-            .setPositiveButton(R.string.ok) { dialog, _ ->
-                dialog.dismiss()
-            }
-            .show()
     }
 
     private fun updateSaveButtonState(isEnabled: Boolean) = with(binding) {

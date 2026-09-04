@@ -29,6 +29,7 @@
     <string name="back">Back</string>
     <string name="save_continue"><![CDATA[Save & Continue]]></string>
     <string name="your_information_is_secure_and_protected">Your information is secure and protected</string>
+    <string name="profile_friend_code_notice" tools:ignore="MissingTranslation">Your profile ID is used to connect with friends</string>
     <string name="img_bottom">img bottom</string>
     <string name="permissions">Permissions</string>
     <string name="allow_permissions_to_use_all_nearby_app_10_features_smoothly">Allow permissions to use all Nearby app\nfeatures smoothly</string>
@@ -41,11 +42,14 @@
     <string name="img_phone">img phone</string>
     <string name="your_phone">Your phone</string>
     <string name="enter_your_phone">Enter your phone</string>
+    <string name="your_phone_optional">Your phone (Optional)</string>
     <string name="realtime_tracker_needs_access_to_your_location_to_show_your_position_and_friends_around_you_in_real_time">Realtime tracker needs access to your location to show your position and friends around you in real-time</string>
     <string name="allow_while_using_app">Allow while using app</string>
     <string name="allow_once">Allow once</string>
     <string name="not_now">Not now</string>
     <string name="allow_location_access">Allow location access</string>
+    <string name="location_data_disclosure_title" tools:ignore="MissingTranslation">How location data is used</string>
+    <string name="location_data_disclosure_message" tools:ignore="MissingTranslation">GPS Location Phone Tracker uses precise location while the app is open to show your position, share your current location when you enable sharing, and evaluate zone alerts. Location updates stop when the app is closed or not in use. Sharing is off by default and can be stopped in Settings.</string>
     <string name="realtime_tracker">Realtime tracker</string>
     <string name="todo">TODO</string>
     <string name="search">Search</string>
@@ -63,7 +67,7 @@
     <string name="add_friend_error">Friend could not be added. Check your connection and account permissions, then try again.</string>
     <string name="remove_friend_error">Friend could not be removed. Check your connection and account permissions, then try again.</string>
     <string name="friend_limit_title">Friend limit reached</string>
-    <string name="friend_limit_message">The free plan supports up to %1$d friends. Upgrade to Premium to add more.</string>
+    <string name="friend_limit_message">This version supports up to %1$d friends.</string>
     <string name="cancel">Cancel</string>
     <string name="remove">Remove</string>
     <string name="ok">OK</string>
@@ -159,6 +163,8 @@
     <string name="zone_alerts">Zone alerts</string>
     <string name="my_friend">My friend</string>
     <string name="phone_number_locator">Phone number locator</string>
+    <string name="phone_locator_index_title" tools:ignore="MissingTranslation">Find registered app users</string>
+    <string name="phone_locator_privacy_subtitle" tools:ignore="MissingTranslation">Exact location appears only for friends while sharing and the app is open</string>
     <string name="trusted_by_millions">Trusted by millions</string>
     <string name="fast_secure">Fast Secure</string>
     <string name="country">Country</string>
@@ -178,9 +184,16 @@
 
     <!-- Phone Locator -->
     <string name="err_enter_phone">Please enter phone number</string>
-    <string name="err_location_not_available">User found, but their location is not available.</string>
+    <string name="err_location_not_available">User found. Their location is available only to friends while sharing and the app is open.</string>
     <string name="err_no_user_found">No user found with this number.</string>
     <string name="country_format">%1$s %2$s (%3$s)</string>
+    <string name="phone_country_prefix" tools:ignore="MissingTranslation">%1$s %2$s</string>
+    <string name="default_phone_country_prefix" tools:ignore="MissingTranslation">🇻🇳 +84</string>
+    <string name="select_phone_from_contacts" tools:ignore="MissingTranslation">Select from contacts</string>
+    <string name="multiple_phone_users_title" tools:ignore="MissingTranslation">Multiple users found</string>
+    <string name="multiple_phone_users_message" tools:ignore="MissingTranslation">Choose the profile you want to locate.</string>
+    <string name="contact_picker_unavailable" tools:ignore="MissingTranslation">Contact picker is unavailable</string>
+    <string name="unnamed_user" tools:ignore="MissingTranslation">Unnamed user</string>
     <string name="country_region">Country / Region</string>
     <string name="updating">Updating...</string>
     <string name="carrier">Carrier</string>
@@ -398,8 +411,9 @@
     <string name="dialog_type_map_traffic">Traffic</string>
     <string name="map_type_3d" translatable="false">3D</string>
     <!-- Vietnamese is localized explicitly; other supported locales intentionally use English fallback. -->
-    <string name="zone_monitoring_active_title">Zone monitoring active</string>
-    <string name="zone_monitoring_active_text">GPS Location is watching your saved zones</string>
+    <string name="zone_monitoring_active_title">Location service active</string>
+    <string name="zone_monitoring_active_text">GPS Location is sharing location and monitoring zones when enabled</string>
+    <string name="location_monitoring_channel">Location sharing and zone monitoring</string>
     <string name="zone_alert_enter_title">Entered %1$s</string>
     <string name="zone_alert_leave_title">Left %1$s</string>
     <string name="zone_alert_enter_text">You entered this zone</string>
@@ -434,4 +448,6 @@
     <string name="profile_edit_device_mismatch_title">Profile cannot be edited</string>
     <string name="profile_edit_device_mismatch_message">This profile was signed in on another device. The Firebase UID on this device does not match, so you cannot edit this profile here.</string>
     <string name="notification_filter_title">Filter and sort</string>
+    <string name="camera_permission_required" tools:ignore="MissingTranslation">Camera permission is required to scan a QR code.</string>
+    <string name="notification_permission_required" tools:ignore="MissingTranslation">Allow notification permission to enable notifications.</string>
 </resources>

@@ -25,6 +25,29 @@ val mapsApiKey = (
             "or set MAPS_API_KEY in the build environment.",
     )
 
+val releaseStoreFilePath = (
+    providers.environmentVariable("RELEASE_STORE_FILE").orNull
+        ?: localSecrets.getProperty("RELEASE_STORE_FILE")
+).orEmpty()
+val releaseStorePassword = (
+    providers.environmentVariable("RELEASE_STORE_PASSWORD").orNull
+        ?: localSecrets.getProperty("RELEASE_STORE_PASSWORD")
+).orEmpty()
+val releaseKeyAlias = (
+    providers.environmentVariable("RELEASE_KEY_ALIAS").orNull
+        ?: localSecrets.getProperty("RELEASE_KEY_ALIAS")
+).orEmpty()
+val releaseKeyPassword = (
+    providers.environmentVariable("RELEASE_KEY_PASSWORD").orNull
+        ?: localSecrets.getProperty("RELEASE_KEY_PASSWORD")
+).orEmpty()
+val releaseSigningConfigured = listOf(
+    releaseStoreFilePath,
+    releaseStorePassword,
+    releaseKeyAlias,
+    releaseKeyPassword,
+).all(String::isNotBlank)
+
 android {
     namespace = "com.nhn.gps.location.phone.tracker"
     compileSdk = 36
@@ -59,12 +82,24 @@ android {
         }
     }
 
+    signingConfigs {
+        if (releaseSigningConfigured) {
+            create("release") {
+                storeFile = rootProject.file(releaseStoreFilePath)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         debug {
             isDebuggable = true
             signingConfig = signingConfigs.getByName("debug")
         }
         release {
+            signingConfigs.findByName("release")?.let { signingConfig = it }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -116,11 +151,10 @@ dependencies {
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
-    implementation(libs.firebase.firestore)
-    implementation(libs.firebase.database)
-    implementation(libs.firebase.storage)
-    implementation(libs.firebase.auth)
+    implementation(libs.firebase.functions)
     implementation(libs.firebase.config)
+    implementation(libs.firebase.app.check.play.integrity)
+    debugImplementation(libs.firebase.app.check.debug)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

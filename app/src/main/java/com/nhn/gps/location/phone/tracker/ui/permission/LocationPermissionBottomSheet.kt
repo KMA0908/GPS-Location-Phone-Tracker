@@ -10,6 +10,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.viewModels
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.nhn.gps.location.phone.tracker.R
+import com.nhn.gps.location.phone.tracker.ads.ResumeAdGuard
 import com.nhn.gps.location.phone.tracker.databinding.BottomSheetPermissionBinding
 import com.nhn.gps.location.phone.tracker.navigation.AppDestination
 import com.nhn.gps.location.phone.tracker.navigation.NavigationManager
@@ -29,19 +30,15 @@ class LocationPermissionBottomSheet : BottomSheetDialogFragment() {
     @Inject
     lateinit var navigationManager: NavigationManager
 
-    private var isPermanent = false
-
     private val locationLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { results ->
-        val granted = results.values.all { it }
+        ResumeAdGuard.onSystemDialogFinished()
+        val granted = results[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+            results[Manifest.permission.ACCESS_COARSE_LOCATION] == true
         if (granted) {
-            if (isPermanent) {
-                viewModel.updatePermission(PermissionType.LOCATION, true)
-            } else {
-                // Session-based permission
-                mainViewModel.setSessionLocationGranted(true)
-            }
+            viewModel.updatePermission(PermissionType.LOCATION, true)
+            mainViewModel.setSessionLocationGranted(true)
             dismiss()
             navigationManager.navigateTo(AppDestination.Map)
         }
@@ -79,24 +76,20 @@ class LocationPermissionBottomSheet : BottomSheetDialogFragment() {
 
     private fun setupViews() = with(binding) {
         btnAllowWhileUsing.setOnClickListener {
-            isPermanent = true
-            locationLauncher.launch(
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
+            showLocationDisclosure {
+                ResumeAdGuard.onSystemDialogRequested()
+                locationLauncher.launch(
+                    arrayOf(
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION,
+                    ),
                 )
-            )
+            }
         }
 
-        btnAllowOnce.setOnClickListener {
-            isPermanent = false
-            locationLauncher.launch(
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                )
-            )
-        }
+        // Android's own permission dialog offers a one-time option where
+        // supported; a custom second button cannot enforce that distinction.
+        btnAllowOnce.visibility = View.GONE
 
         txtNotNow.setOnClickListener {
             dismiss()

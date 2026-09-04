@@ -1,20 +1,25 @@
 package com.nhn.gps.location.phone.tracker.data.repository
 
-import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.functions.FirebaseFunctionsException
+import com.nhn.gps.location.phone.tracker.data.local.InstallationIdentity
 import com.nhn.gps.location.phone.tracker.data.model.UserLocation
 import com.nhn.gps.location.phone.tracker.data.model.UserProfile
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.resume
 
 interface PhoneLocatorRepository {
-    suspend fun findUserByPhone(phone: String): Result<Pair<UserProfile, UserLocation?>>
+    suspend fun findUserByPhone(phone: String): Result<List<PhoneLocatorMatch>>
     suspend fun getAddressFromLocation(lat: Double, lng: Double): String?
     suspend fun getLocationFromAddress(query: String): Result<GeocodedLocation?>
 }
+
+data class PhoneLocatorMatch(
+    val profile: UserProfile,
+    val location: UserLocation?,
+)
 
 data class GeocodedLocation(
     val latitude: Double,
@@ -27,47 +32,46 @@ class GeocoderUnavailableException : Exception("Geocoder not available")
 
 @Singleton
 class PhoneLocatorRepositoryImpl @Inject constructor(
-    private val database: FirebaseDatabase,
-    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
+    private val ownerFunctions: OwnerFunctionClient,
+    private val installationIdentity: InstallationIdentity,
+    @param:dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context,
 ) : PhoneLocatorRepository {
 
-    private val usersRef = database.getReference("users")
-
-    override suspend fun findUserByPhone(phone: String): Result<Pair<UserProfile, UserLocation?>> = withContext(Dispatchers.IO) {
+    override suspend fun findUserByPhone(phone: String): Result<List<PhoneLocatorMatch>> = withContext(Dispatchers.IO) {
         try {
             // 1. Check internet connection
             if (!isNetworkAvailable()) {
                 return@withContext Result.failure(Exception("No internet connection. Please check your network."))
             }
 
-            val query = usersRef.orderByChild("profile/phone").equalTo(phone).limitToFirst(1)
-            val snapshot = query.get().await()
-
-            if (snapshot.exists() && snapshot.childrenCount > 0) {
-                val userSnapshot = snapshot.children.first()
-
-                // 2. Validate UserProfile exists
-                val profile = userSnapshot.child("profile").getValue(UserProfile::class.java)
-                    ?: return@withContext Result.failure(Exception("User found, but profile information is missing."))
-
-                // 3. Get UserLocation and validate coordinates
-                val location = userSnapshot.child("location").getValue(UserLocation::class.java)
-
-                if (location != null) {
-                    if (!isValidCoordinate(location.latitude, location.longitude)) {
-                        return@withContext Result.failure(Exception("Found user, but their location coordinates are invalid."))
-                    }
-                } else {
-                    // We allow success without location, UI will handle the toast
-                }
-
-                Result.success(Pair(profile, location))
+            val normalizedPhone = phone.trim()
+            require(normalizedPhone.length <= MAX_PHONE_LENGTH) { "Phone number is too long" }
+            val data = ownerFunctions.call(
+                functionName = "findUserByPhone",
+                uid = installationIdentity.getOrCreateId(),
+                values = mapOf("phone" to normalizedPhone),
+            ) as? Map<*, *> ?: error("Invalid phone lookup response")
+            val matchMaps = (data["matches"] as? List<*>)
+                ?.mapNotNull { it as? Map<*, *> }
+                .orEmpty()
+            val compatibleMatches = if (matchMaps.isEmpty() && data["profile"] is Map<*, *>) {
+                listOf(data)
             } else {
-                Result.failure(Exception("No user found with this phone number."))
+                matchMaps
             }
+            val matches = compatibleMatches.map(::parseMatch)
+            require(matches.isNotEmpty()) { "No user found with this phone number." }
+            Result.success(matches)
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
-            Result.failure(Exception("Firebase Error: ${e.localizedMessage ?: "Unknown database error."}"))
+            if (
+                e is FirebaseFunctionsException &&
+                e.code == FirebaseFunctionsException.Code.NOT_FOUND
+            ) {
+                Result.failure(Exception("No user found with this phone number."))
+            } else {
+                Result.failure(Exception(e.localizedMessage ?: "Phone lookup failed."))
+            }
         }
     }
 
@@ -137,12 +141,31 @@ class PhoneLocatorRepositoryImpl @Inject constructor(
         val connectivityManager = context.getSystemService(android.content.Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
         val network = connectivityManager.activeNetwork ?: return false
         val actNw = connectivityManager.getNetworkCapabilities(network) ?: return false
-        return when {
-            actNw.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) -> true
-            actNw.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR) -> true
-            actNw.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET) -> true
-            else -> false
-        }
+        return actNw.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+    }
+
+    private fun parseMatch(match: Map<*, *>): PhoneLocatorMatch {
+        val profileData = match["profile"] as? Map<*, *>
+            ?: error("Invalid user profile response")
+        val profile = UserProfile(
+            uid = profileData.string("uid"),
+            name = profileData.string("name"),
+            phone = profileData.string("phone"),
+            avatarUrl = profileData.string("avatarUrl"),
+            avatarKey = profileData.string("avatarKey"),
+            hasOnline = profileData["hasOnline"] == true,
+            trackingAvailable = profileData["trackingAvailable"] == true,
+        )
+        require(profile.uid.isNotBlank()) { "Invalid user profile response" }
+        val locationData = match["location"] as? Map<*, *>
+        val location = locationData?.let {
+            UserLocation(
+                latitude = it.number("latitude"),
+                longitude = it.number("longitude"),
+                updatedAt = it.number("updatedAt").toLong(),
+            )
+        }?.takeIf { isValidCoordinate(it.latitude, it.longitude) }
+        return PhoneLocatorMatch(profile, location)
     }
 
     private fun isValidCoordinate(lat: Double, lng: Double): Boolean {
@@ -159,5 +182,14 @@ class PhoneLocatorRepositoryImpl @Inject constructor(
             city.isNotBlank() && country.isNotBlank() -> "$city, $country"
             else -> city.ifBlank { country }.ifBlank { null }
         }
+    }
+
+    private fun Map<*, *>.string(key: String): String = get(key)?.toString().orEmpty()
+
+    private fun Map<*, *>.number(key: String): Double =
+        (get(key) as? Number)?.toDouble() ?: Double.NaN
+
+    private companion object {
+        const val MAX_PHONE_LENGTH = 32
     }
 }

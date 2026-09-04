@@ -1,13 +1,17 @@
 package com.nhn.gps.location.phone.tracker.ui.setup_profile
 
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.functions.FirebaseFunctionsException
 import com.nhn.gps.location.phone.tracker.base.BaseViewModel
 import com.nhn.gps.location.phone.tracker.data.local.AppPreferences
+import com.nhn.gps.location.phone.tracker.data.model.Country
 import com.nhn.gps.location.phone.tracker.data.model.UserProfile
+import com.nhn.gps.location.phone.tracker.data.repository.CountryRepository
 import com.nhn.gps.location.phone.tracker.data.repository.UserRepository
 import com.nhn.gps.location.phone.tracker.navigation.AppDestination
 import com.nhn.gps.location.phone.tracker.navigation.NavigationManager
 import com.nhn.gps.location.phone.tracker.util.AvatarHelper
+import com.nhn.gps.location.phone.tracker.util.PhoneNumberFormatter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,13 +19,13 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import java.util.Locale
 import javax.inject.Inject
 
 sealed interface SetUpProfileUiState {
     object Idle : SetUpProfileUiState
     object Loading : SetUpProfileUiState
     object Success : SetUpProfileUiState
-    object PhoneAlreadyExists : SetUpProfileUiState
     data class Error(val message: String) : SetUpProfileUiState
 }
 
@@ -29,7 +33,9 @@ sealed interface SetUpProfileUiState {
 class SetUpProfileViewModel @Inject constructor(
     private val appPreferences: AppPreferences,
     private val navigationManager: NavigationManager,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    countryRepository: CountryRepository,
+    private val phoneNumberFormatter: PhoneNumberFormatter,
 ) : BaseViewModel() {
 
     private val _name = MutableStateFlow("")
@@ -38,19 +44,32 @@ class SetUpProfileViewModel @Inject constructor(
     private val _phone = MutableStateFlow("")
     val phone: StateFlow<String> = _phone.asStateFlow()
 
+    private val _selectedCountry = MutableStateFlow(
+        countryRepository.getCountries().firstOrNull {
+            it.iso.equals(Locale.getDefault().country, ignoreCase = true)
+        } ?: DEFAULT_COUNTRY,
+    )
+    val selectedCountry: StateFlow<Country> = _selectedCountry.asStateFlow()
+
     private val _avatarKey = MutableStateFlow<String>(AvatarHelper.DEFAULT_AVATAR_KEY)
     val avatarKey: StateFlow<String> = _avatarKey.asStateFlow()
 
     private val _uiState = MutableStateFlow<SetUpProfileUiState>(SetUpProfileUiState.Idle)
     val uiState: StateFlow<SetUpProfileUiState> = _uiState.asStateFlow()
 
-    val isSaveEnabled: StateFlow<Boolean> = combine(_name, _phone, _uiState) { name, phone, state ->
-        name.isNotBlank() && phone.isNotBlank() && isValidVietnamPhone(phone) && state !is SetUpProfileUiState.Loading
+    val isSaveEnabled: StateFlow<Boolean> = combine(
+        _name,
+        _phone,
+        _selectedCountry,
+        _uiState,
+    ) { name, phone, country, state ->
+        name.isNotBlank() &&
+            phoneNumberFormatter.isValid(country.dialCode, phone) &&
+            state !is SetUpProfileUiState.Loading
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
-    fun isValidVietnamPhone(phone: String): Boolean {
-        return phone.matches(Regex("^(03|05|07|08|09)\\d{8}$"))
-    }
+    fun isValidPhone(phone: String): Boolean =
+        phoneNumberFormatter.isValid(_selectedCountry.value.dialCode, phone)
 
     fun onNameChanged(name: String) {
         _name.value = name
@@ -58,6 +77,10 @@ class SetUpProfileViewModel @Inject constructor(
 
     fun onPhoneChanged(phone: String) {
         _phone.value = phone
+    }
+
+    fun onCountryChanged(country: Country) {
+        _selectedCountry.value = country
     }
 
     fun onAvatarChanged(avatarKey: String) {
@@ -70,32 +93,19 @@ class SetUpProfileViewModel @Inject constructor(
         launchCatching {
             _uiState.value = SetUpProfileUiState.Loading
             
-            val phone = _phone.value
-            val name = _name.value
+            val phone = _phone.value.trim().takeIf(String::isNotEmpty)?.let {
+                phoneNumberFormatter.normalize(_selectedCountry.value.dialCode, it)
+            }.orEmpty()
+            val name = _name.value.trim()
 
-            // Database rules require auth for both phone lookup and profile writes.
             val uid = try {
-                userRepository.signInAnonymously()
+                userRepository.getOrCreateInstallationId()
             } catch (e: Exception) {
-                _uiState.value = SetUpProfileUiState.Error(e.message ?: "Authentication failed")
+                _uiState.value = SetUpProfileUiState.Error(e.message ?: "Could not create installation profile")
                 return@launchCatching
             }
 
-            val existingUser = userRepository.findUserByPhone(phone)
-
-            if (existingUser != null) {
-                appPreferences.setUserId(existingUser.uid)
-                appPreferences.setUserName(existingUser.name)
-                appPreferences.setUserPhone(existingUser.phone)
-                appPreferences.setUserAvatar(existingUser.avatarUrl)
-                appPreferences.setUserAvatarKey(AvatarHelper.normalizeKey(existingUser.avatarKey))
-                
-                _uiState.value = SetUpProfileUiState.Success
-                navigateAfterProfileCreated()
-                return@launchCatching
-            }
-
-            val profile = UserProfile(
+            var profile = UserProfile(
                 uid = uid,
                 name = name,
                 phone = phone,
@@ -103,11 +113,20 @@ class SetUpProfileViewModel @Inject constructor(
                 avatarKey = AvatarHelper.normalizeKey(_avatarKey.value)
             )
 
-            // Save the profile under the authenticated anonymous UID.
-            userRepository.saveUserProfile(uid, profile)
+            // Phone is a locator index. It is never used to adopt another
+            // installation's profile.
+            var savedUid = uid
+            try {
+                userRepository.saveUserProfile(savedUid, profile)
+            } catch (error: FirebaseFunctionsException) {
+                if (!error.isOwnershipCollision()) throw error
+                savedUid = userRepository.createReplacementInstallationId()
+                profile = profile.copy(uid = savedUid)
+                userRepository.saveUserProfile(savedUid, profile)
+            }
 
             // Save local preferences.
-            appPreferences.setUserId(uid)
+            appPreferences.setUserId(savedUid)
             appPreferences.setUserName(name)
             appPreferences.setUserPhone(phone)
             appPreferences.setUserAvatar("")
@@ -126,4 +145,12 @@ class SetUpProfileViewModel @Inject constructor(
     fun resetState() {
         _uiState.value = SetUpProfileUiState.Idle
     }
+
+    private companion object {
+        val DEFAULT_COUNTRY = Country("Vietnam", "+84", "VN", "🇻🇳")
+    }
+
+    private fun FirebaseFunctionsException.isOwnershipCollision(): Boolean =
+        code == FirebaseFunctionsException.Code.PERMISSION_DENIED ||
+            code == FirebaseFunctionsException.Code.FAILED_PRECONDITION
 }

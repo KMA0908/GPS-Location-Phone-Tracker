@@ -119,7 +119,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="6dp"
-                        android:text="@string/your_information_is_secure_and_protected"
+                        android:text="@string/profile_friend_code_notice"
                         android:textColor="#6F6F6F"
                         android:textSize="12sp"/>
 

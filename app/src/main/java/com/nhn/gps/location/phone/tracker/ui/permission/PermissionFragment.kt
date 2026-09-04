@@ -30,7 +30,8 @@ class PermissionFragment : BaseFragment<FragmentPermissionBinding, PermissionVie
     private val locationLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
             ResumeAdGuard.onSystemDialogFinished()
-            val granted = results.values.all { it }
+            val granted = results[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                results[Manifest.permission.ACCESS_COARSE_LOCATION] == true
             viewModel.updatePermission(PermissionType.LOCATION, granted)
             withBinding {
                 updateSwitchUi(cardLocation.swPermission, granted)
@@ -108,21 +109,25 @@ class PermissionFragment : BaseFragment<FragmentPermissionBinding, PermissionVie
 
                 launch {
                     viewModel.requestPermission.collect { type ->
-                        ResumeAdGuard.onSystemDialogRequested()
                         when (type) {
-                            PermissionType.LOCATION -> locationLauncher.launch(
-                                arrayOf(
-                                    Manifest.permission.ACCESS_FINE_LOCATION,
-                                    Manifest.permission.ACCESS_COARSE_LOCATION
+                            PermissionType.LOCATION -> showLocationDisclosure {
+                                ResumeAdGuard.onSystemDialogRequested()
+                                locationLauncher.launch(
+                                    arrayOf(
+                                        Manifest.permission.ACCESS_FINE_LOCATION,
+                                        Manifest.permission.ACCESS_COARSE_LOCATION,
+                                    ),
                                 )
-                            )
+                            }
 
-                            PermissionType.CAMERA -> cameraLauncher.launch(Manifest.permission.CAMERA)
+                            PermissionType.CAMERA -> {
+                                ResumeAdGuard.onSystemDialogRequested()
+                                cameraLauncher.launch(Manifest.permission.CAMERA)
+                            }
                             PermissionType.NOTIFICATION -> {
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    ResumeAdGuard.onSystemDialogRequested()
                                     notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                } else {
-                                    ResumeAdGuard.onSystemDialogFinished()
                                 }
                             }
                         }
@@ -138,9 +143,9 @@ class PermissionFragment : BaseFragment<FragmentPermissionBinding, PermissionVie
     }
 
     private fun checkPermissions() {
-        if (!isPermissionGranted(Manifest.permission.ACCESS_FINE_LOCATION)) {
-            viewModel.updatePermission(PermissionType.LOCATION, false)
-        }
+        val locationGranted = isPermissionGranted(Manifest.permission.ACCESS_FINE_LOCATION) ||
+            isPermissionGranted(Manifest.permission.ACCESS_COARSE_LOCATION)
+        viewModel.updatePermission(PermissionType.LOCATION, locationGranted)
 
         if (!isPermissionGranted(Manifest.permission.CAMERA)) {
             viewModel.updatePermission(PermissionType.CAMERA, false)

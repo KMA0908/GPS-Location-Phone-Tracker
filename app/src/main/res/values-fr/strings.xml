@@ -40,6 +40,7 @@
     <string name="img_name">img nom</string>
     <string name="img_phone">img téléphone</string>
     <string name="your_phone">Votre téléphone</string>
+    <string name="your_phone_optional">Votre téléphone (facultatif)</string>
     <string name="enter_your_phone">Entrez votre téléphone</string>
     <string name="realtime_tracker_needs_access_to_your_location_to_show_your_position_and_friends_around_you_in_real_time">Le traceur en temps réel a besoin d\'accéder à votre localisation pour afficher votre position et vos amis autour de vous en temps réel</string>
     <string name="allow_while_using_app">Autoriser pendant l\'utilisation de l\'application</string>
@@ -403,7 +404,7 @@
     <string name="add_friend_error">L\'ami n\'a pas pu être ajouté. Vérifiez votre connexion et les autorisations de votre compte, puis réessayez.</string>
     <string name="remove_friend_error">L\'ami n\'a pas pu être supprimé. Vérifiez votre connexion et les autorisations de votre compte, puis réessayez.</string>
     <string name="friend_limit_title">Limite d\'amis atteinte</string>
-    <string name="friend_limit_message">Le plan gratuit permet d\'ajouter jusqu\'à %1$d amis. Passez à la version Premium pour en ajouter plus.</string>
+    <string name="friend_limit_message">Cette version permet d\'ajouter jusqu\'à %1$d amis.</string>
     <string name="route_end_navigation">Arrêter la navigation</string>
     <string name="route_navigation_title">Navigation</string>
     <string name="route_navigation_started">Navigation démarrée</string>
@@ -414,6 +415,7 @@
     <string name="route_arrived_description">Vous êtes arrivé à destination</string>
     <string name="zone_monitoring_active_title">Surveillance de zone active</string>
     <string name="zone_monitoring_active_text">GPS Location surveille vos zones enregistrées</string>
+    <string name="location_monitoring_channel">Partage de position et surveillance des zones</string>
     <string name="zone_alert_enter_title">Entré dans %1$s</string>
     <string name="zone_alert_leave_title">Sorti de %1$s</string>
     <string name="zone_alert_enter_text">Vous êtes entré dans cette zone</string>

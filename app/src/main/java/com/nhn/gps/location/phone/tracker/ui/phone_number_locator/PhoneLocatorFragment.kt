@@ -1,12 +1,18 @@
 package com.nhn.gps.location.phone.tracker.ui.phone_number_locator
 
+import android.app.Activity
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.os.Bundle
+import android.provider.ContactsContract
 import androidx.core.os.BundleCompat
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.transition.TransitionManager
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -50,6 +56,30 @@ class PhoneLocatorFragment : BaseFragment<FragmentPhoneLocatorBinding, PhoneLoca
     private var selectedCountry: Country? = null
     private var googleMap: GoogleMap? = null
     private var currentUserMarker: Marker? = null
+    private var multipleMatchesDialog: AlertDialog? = null
+
+    private val pickPhoneLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) { result ->
+        if (result.resultCode != Activity.RESULT_OK) return@registerForActivityResult
+        val uri = result.data?.data ?: return@registerForActivityResult
+        val number = runCatching {
+            requireContext().contentResolver.query(
+                uri,
+                arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
+                null,
+                null,
+                null,
+            )?.use { cursor ->
+                if (!cursor.moveToFirst()) return@use null
+                cursor.getString(0)
+            }
+        }.getOrNull()
+        if (!number.isNullOrBlank()) {
+            binding.layoutPhone.editText?.setText(number)
+            binding.layoutPhone.error = null
+        }
+    }
 
     // Lưu trữ thông tin Marker nếu Map chưa sẵn sàng
     private data class PendingMarker(val latLng: LatLng, val profile: UserProfile)
@@ -90,6 +120,10 @@ class PhoneLocatorFragment : BaseFragment<FragmentPhoneLocatorBinding, PhoneLoca
 
         layoutCountry.setEndIconOnClickListener {
             showCountrySelector()
+        }
+
+        layoutPhone.setEndIconOnClickListener {
+            openContactPicker()
         }
 
         btnFind.setOnClickListener {
@@ -150,6 +184,10 @@ class PhoneLocatorFragment : BaseFragment<FragmentPhoneLocatorBinding, PhoneLoca
                     showInfoBottomSheet(state.profile, null, null)
                     Toast.makeText(requireContext(), R.string.err_location_not_available, Toast.LENGTH_LONG).show()
                 }
+            }
+            is PhoneLocatorUiState.MultipleMatches -> {
+                showSearchMode()
+                showMultipleMatches(state.matches)
             }
             is PhoneLocatorUiState.NoResult -> {
                 showSearchMode()
@@ -278,6 +316,38 @@ class PhoneLocatorFragment : BaseFragment<FragmentPhoneLocatorBinding, PhoneLoca
             .show(parentFragmentManager, CountrySelectorBottomSheet.TAG)
     }
 
+    private fun openContactPicker() {
+        val intent = Intent(
+            Intent.ACTION_PICK,
+            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+        )
+        try {
+            pickPhoneLauncher.launch(intent)
+        } catch (_: ActivityNotFoundException) {
+            Toast.makeText(requireContext(), R.string.contact_picker_unavailable, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun showMultipleMatches(
+        matches: List<com.nhn.gps.location.phone.tracker.data.repository.PhoneLocatorMatch>,
+    ) {
+        if (multipleMatchesDialog?.isShowing == true) return
+        val labels = matches.map { match ->
+            val name = match.profile.name.ifBlank { getString(R.string.unnamed_user) }
+            val phone = match.profile.phone.ifBlank { "ID …${match.profile.uid.takeLast(6)}" }
+            "$name · $phone"
+        }.toTypedArray()
+        multipleMatchesDialog = AlertDialog.Builder(requireContext())
+            .setTitle(R.string.multiple_phone_users_title)
+            .setMessage(R.string.multiple_phone_users_message)
+            .setItems(labels) { _, which ->
+                matches.getOrNull(which)?.let(viewModel::selectMatch)
+            }
+            .setNegativeButton(android.R.string.cancel) { _, _ -> viewModel.resetState() }
+            .create()
+            .also(AlertDialog::show)
+    }
+
     private fun updateSelectedCountry(country: Country) {
         selectedCountry = country
         binding.layoutCountry.editText?.setText(getString(R.string.country_format, country.emoji, country.name, country.dialCode))
@@ -285,6 +355,8 @@ class PhoneLocatorFragment : BaseFragment<FragmentPhoneLocatorBinding, PhoneLoca
     }
 
     override fun onDestroyView() {
+        multipleMatchesDialog?.dismiss()
+        multipleMatchesDialog = null
         super.onDestroyView()
         googleMap = null
         currentUserMarker = null

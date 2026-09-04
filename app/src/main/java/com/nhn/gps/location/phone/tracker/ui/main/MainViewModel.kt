@@ -10,6 +10,7 @@ import com.nhn.gps.location.phone.tracker.data.repository.ExploreResult
 import com.nhn.gps.location.phone.tracker.data.repository.GeocodedLocation
 import com.nhn.gps.location.phone.tracker.data.repository.GeocoderUnavailableException
 import com.nhn.gps.location.phone.tracker.data.repository.PhoneLocatorRepository
+import com.nhn.gps.location.phone.tracker.data.repository.UserRepository
 import com.nhn.gps.location.phone.tracker.navigation.AppDestination
 import com.nhn.gps.location.phone.tracker.navigation.NavigationManager
 import com.nhn.gps.location.phone.tracker.ui.location.MapRouteRequest
@@ -40,6 +41,7 @@ class MainViewModel @Inject constructor(
     private val navigationManager: NavigationManager,
     private val exploreRepository: ExploreRepository,
     private val phoneLocatorRepository: PhoneLocatorRepository,
+    private val userRepository: UserRepository,
 ) : BaseViewModel() {
 
     private val _zoneAddressSearchState = MutableStateFlow<ZoneAddressSearchState>(ZoneAddressSearchState.Idle)
@@ -160,8 +162,12 @@ class MainViewModel @Inject constructor(
     val isLocationSharingEnabled: StateFlow<Boolean> = preferences.isLocationSharingEnabled.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = true
+        initialValue = false
     )
+
+    private val _isLocationSharingUpdating = MutableStateFlow(false)
+    val isLocationSharingUpdating: StateFlow<Boolean> =
+        _isLocationSharingUpdating.asStateFlow()
 
     val isNotificationEnabled: StateFlow<Boolean> = preferences.isNotificationEnabled.stateIn(
         scope = viewModelScope,
@@ -307,8 +313,19 @@ class MainViewModel @Inject constructor(
     }
 
     fun setLocationSharingEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            preferences.setLocationSharingEnabled(enabled)
+        if (_isLocationSharingUpdating.value) return
+        _isLocationSharingUpdating.value = true
+        launchCatching {
+            try {
+                val uid = preferences.userId.first()?.takeIf(String::isNotBlank)
+                    ?: error("Installation profile is unavailable")
+                // The backend disables availability and removes the stored location in
+                // one atomic update. Commit the local switch only after it succeeds.
+                userRepository.setLocationSharing(uid, enabled)
+                preferences.setLocationSharingEnabled(enabled)
+            } finally {
+                _isLocationSharingUpdating.value = false
+            }
         }
     }
 

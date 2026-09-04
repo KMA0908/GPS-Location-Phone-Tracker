@@ -40,6 +40,7 @@
     <string name="img_name">ছবির নাম</string>
     <string name="img_phone">ছবি ফোন</string>
     <string name="your_phone">আপনার ফোন</string>
+    <string name="your_phone_optional">আপনার ফোন (ঐচ্ছিক)</string>
     <string name="enter_your_phone">আপনার ফোন নম্বর লিখুন</string>
     <string name="realtime_tracker_needs_access_to_your_location_to_show_your_position_and_friends_around_you_in_real_time">রিয়েল-টাইমে আপনার অবস্থান এবং আপনার চারপাশের বন্ধুদের দেখানোর জন্য রিয়েল-টাইম ট্র্যাকারের আপনার অবস্থান অ্যাক্সেস করা প্রয়োজন</string>
     <string name="allow_while_using_app">অ্যাপ ব্যবহার করার সময় অনুমতি দিন</string>
@@ -403,7 +404,7 @@
     <string name="add_friend_error">বন্ধুকে যোগ করা যায়নি। আপনার সংযোগ এবং অ্যাকাউন্টের অনুমতি পরীক্ষা করুন, তারপর আবার চেষ্টা করুন।</string>
     <string name="remove_friend_error">বন্ধুকে সরানো যায়নি। আপনার সংযোগ এবং অ্যাকাউন্টের অনুমতি পরীক্ষা করুন, তারপর আবার চেষ্টা করুন।</string>
     <string name="friend_limit_title">বন্ধুর সীমা পৌঁছেছে</string>
-    <string name="friend_limit_message">ফ্রি প্ল্যানটি %1$d বন্ধু পর্যন্ত সমর্থন করে। আরও যোগ করতে প্রিমিয়ামে আপগ্রেড করুন।</string>
+    <string name="friend_limit_message">এই সংস্করণে সর্বোচ্চ %1$d জন বন্ধু যোগ করা যাবে।</string>
     <string name="route_end_navigation">নেভিগেশন শেষ করুন</string>
     <string name="route_navigation_title">নেভিগেশন</string>
     <string name="route_navigation_started">নেভিগেশন শুরু হয়েছে</string>
@@ -414,6 +415,7 @@
     <string name="route_arrived_description">আপনি আপনার গন্তব্যে পৌঁছেছেন</string>
     <string name="zone_monitoring_active_title">জোন পর্যবেক্ষণ সক্রিয়</string>
     <string name="zone_monitoring_active_text">জিপিএস অবস্থান আপনার সংরক্ষিত জোনগুলি পর্যবেক্ষণ করছে</string>
+    <string name="location_monitoring_channel">অবস্থান শেয়ারিং এবং জোন পর্যবেক্ষণ</string>
     <string name="zone_alert_enter_title">%1$s-এ প্রবেশ করেছে</string>
     <string name="zone_alert_leave_title">%1$s থেকে প্রস্থান করেছে</string>
     <string name="zone_alert_enter_text">আপনি এই জোনে প্রবেশ করেছেন</string>

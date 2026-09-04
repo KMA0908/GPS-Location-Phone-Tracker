@@ -40,6 +40,7 @@
     <string name="img_name">Namensbild</string>
     <string name="img_phone">Telefonbild</string>
     <string name="your_phone">Ihr Telefon</string>
+    <string name="your_phone_optional">Ihr Telefon (optional)</string>
     <string name="enter_your_phone">Telefonnummer eingeben</string>
     <string name="realtime_tracker_needs_access_to_your_location_to_show_your_position_and_friends_around_you_in_real_time">Der Echtzeit-Tracker benötigt Zugriff auf Ihren Standort, um Ihre Position und Freunde in Echtzeit anzuzeigen</string>
     <string name="allow_while_using_app">Bei Nutzung der App erlauben</string>
@@ -403,7 +404,7 @@
     <string name="add_friend_error">Freund konnte nicht hinzugefügt werden. Überprüfen Sie Ihre Verbindung und Kontoberechtigungen und versuchen Sie es erneut.</string>
     <string name="remove_friend_error">Freund konnte nicht entfernt werden. Überprüfen Sie Ihre Verbindung und Kontoberechtigungen und versuchen Sie es erneut.</string>
     <string name="friend_limit_title">Freundeslimit erreicht</string>
-    <string name="friend_limit_message">Der kostenlose Plan unterstützt bis zu %1$d Freunde. Upgrade auf Premium, um weitere hinzuzufügen.</string>
+    <string name="friend_limit_message">Diese Version unterstützt bis zu %1$d Freunde.</string>
     <string name="route_end_navigation">Navigation beenden</string>
     <string name="route_navigation_title">Navigation</string>
     <string name="route_navigation_started">Navigation gestartet</string>
@@ -414,6 +415,7 @@
     <string name="route_arrived_description">Sie haben Ihr Ziel erreicht</string>
     <string name="zone_monitoring_active_title">Zonenüberwachung aktiv</string>
     <string name="zone_monitoring_active_text">GPS Location überwacht Ihre gespeicherten Zonen</string>
+    <string name="location_monitoring_channel">Standortfreigabe und Zonenüberwachung</string>
     <string name="zone_alert_enter_title">%1$s betreten</string>
     <string name="zone_alert_leave_title">%1$s verlassen</string>
     <string name="zone_alert_enter_text">Sie haben diese Zone betreten</string>

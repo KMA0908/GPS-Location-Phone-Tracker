@@ -40,6 +40,7 @@
     <string name="img_name">img naam</string>
     <string name="img_phone">img foon</string>
     <string name="your_phone">Jou foon</string>
+    <string name="your_phone_optional">Jou foon (opsioneel)</string>
     <string name="enter_your_phone">Voer jou foon in</string>
     <string name="realtime_tracker_needs_access_to_your_location_to_show_your_position_and_friends_around_you_in_real_time">Intydse spoorsnyer benodig toegang tot jou ligging om jou posisie en vriende rondom jou intyds te wys</string>
     <string name="allow_while_using_app">Laat toe terwyl die toepassing gebruik word</string>
@@ -403,7 +404,7 @@
     <string name="add_friend_error">Vriend kon nie bygevoeg word nie. Gaan jou verbinding en rekeningtoestemmings na, en probeer dan weer.</string>
     <string name="remove_friend_error">Vriend kon nie verwyder word nie. Gaan jou verbinding en rekeningtoestemmings na, en probeer dan weer.</string>
     <string name="friend_limit_title">Vriendlimiet bereik</string>
-    <string name="friend_limit_message">Die gratis plan ondersteun tot %1$d vriende. Gradeer op na Premium om meer by te voeg.</string>
+    <string name="friend_limit_message">Hierdie weergawe ondersteun tot %1$d vriende.</string>
     <string name="route_end_navigation">Beëindig navigasie</string>
     <string name="route_navigation_title">Navigasie</string>
     <string name="route_navigation_started">Navigasie begin</string>
@@ -414,6 +415,7 @@
     <string name="route_arrived_description">Jy het jou bestemming bereik</string>
     <string name="zone_monitoring_active_title">Sone-monitering aktief</string>
     <string name="zone_monitoring_active_text">GPS Location hou jou gestoorde sones dop</string>
+    <string name="location_monitoring_channel">Liggingdeling en sonemonitering</string>
     <string name="zone_alert_enter_title">%1$s binnegegaan</string>
     <string name="zone_alert_leave_title">%1$s verlaat</string>
     <string name="zone_alert_enter_text">Jy het hierdie sone binnegegaan</string>

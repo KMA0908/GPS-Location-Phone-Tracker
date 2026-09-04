@@ -35,7 +35,7 @@ app/src/main/java/com/nhn/gps/location/phone/tracker/
 
 ## Phát triển tiếp tính năng GPS
 
-1. Tạo `data/location` cho `FusedLocationProviderClient` và nguồn vị trí nền.
-2. Tạo `domain` cho model/use case theo dõi thành viên hoặc thiết bị.
-3. Tạo `ui/map`, `ui/tracking`, `ui/permission` theo feature.
-4. Chỉ xin quyền background location khi flow sản phẩm thực sự cần và đã đáp ứng chính sách Google Play.
+1. Vị trí được lấy bằng `FusedLocationProviderClient` chỉ khi `MainActivity` đang hiển thị.
+2. Chia sẻ vị trí và kiểm tra cảnh báo vùng dừng khi app xuống nền hoặc bị đóng.
+3. App chỉ xin quyền vị trí khi đang sử dụng; không khai báo background location, foreground location service hay tự chạy lại sau khi khởi động máy.
+4. Nếu bổ sung theo dõi nền ở phiên bản sau, cần thiết kế lại disclosure, runtime permission và hồ sơ khai báo Google Play trước khi phát hành.

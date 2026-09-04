@@ -1,9 +1,7 @@
 package com.nhn.gps.location.phone.tracker.di
 
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.appcheck.FirebaseAppCheck
+import com.google.firebase.functions.FirebaseFunctions
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -16,17 +14,10 @@ object FirebaseModule {
 
     @Provides
     @Singleton
-    fun provideFirestore(): FirebaseFirestore = FirebaseFirestore.getInstance()
+    fun provideAppCheck(): FirebaseAppCheck = FirebaseAppCheck.getInstance()
 
     @Provides
     @Singleton
-    fun provideDatabase(): FirebaseDatabase = FirebaseDatabase.getInstance()
-
-    @Provides
-    @Singleton
-    fun provideAuth(): FirebaseAuth = FirebaseAuth.getInstance()
-
-    @Provides
-    @Singleton
-    fun provideStorage(): FirebaseStorage = FirebaseStorage.getInstance()
+    fun provideFunctions(): FirebaseFunctions =
+        FirebaseFunctions.getInstance("asia-southeast1")
 }

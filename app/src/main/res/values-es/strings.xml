@@ -40,6 +40,7 @@
     <string name="img_name">img nombre</string>
     <string name="img_phone">img teléfono</string>
     <string name="your_phone">Tu teléfono</string>
+    <string name="your_phone_optional">Tu teléfono (opcional)</string>
     <string name="enter_your_phone">Ingresa tu teléfono</string>
     <string name="realtime_tracker_needs_access_to_your_location_to_show_your_position_and_friends_around_you_in_real_time">El rastreador en tiempo real necesita acceso a tu ubicación para mostrar tu posición y amigos a tu alrededor en tiempo real</string>
     <string name="allow_while_using_app">Permitir mientras se usa la aplicación</string>
@@ -403,7 +404,7 @@
     <string name="add_friend_error">No se pudo agregar al amigo. Verifica tu conexión y los permisos de tu cuenta, luego inténtalo de nuevo.</string>
     <string name="remove_friend_error">No se pudo eliminar al amigo. Verifica tu conexión y los permisos de tu cuenta, luego inténtalo de nuevo.</string>
     <string name="friend_limit_title">Límite de amigos alcanzado</string>
-    <string name="friend_limit_message">El plan gratuito admite hasta %1$d amigos. Actualiza a Premium para agregar más.</string>
+    <string name="friend_limit_message">Esta versión admite hasta %1$d amigos.</string>
     <string name="route_end_navigation">Finalizar navegación</string>
     <string name="route_navigation_title">Navegación</string>
     <string name="route_navigation_started">Navegación iniciada</string>
@@ -414,6 +415,7 @@
     <string name="route_arrived_description">Has llegado a tu destino</string>
     <string name="zone_monitoring_active_title">Monitoreo de zonas activo</string>
     <string name="zone_monitoring_active_text">GPS Location está vigilando tus zonas guardadas</string>
+    <string name="location_monitoring_channel">Compartir ubicación y monitorear zonas</string>
     <string name="zone_alert_enter_title">Ingresó a %1$s</string>
     <string name="zone_alert_leave_title">Salió de %1$s</string>
     <string name="zone_alert_enter_text">Ingresaste a esta zona</string>

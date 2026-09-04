@@ -11,7 +11,6 @@ import android.net.NetworkCapabilities
 import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.auth.FirebaseAuth
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -22,13 +21,17 @@ import com.nhn.gps.location.phone.tracker.BuildConfig
 import com.nhn.gps.location.phone.tracker.base.BaseViewModel
 import com.nhn.gps.location.phone.tracker.data.local.AppPreferences
 import com.nhn.gps.location.phone.tracker.data.model.FriendLocation
+import com.nhn.gps.location.phone.tracker.data.model.hasVisibleSharedLocation
 import com.nhn.gps.location.phone.tracker.data.model.UserLocation
 import com.nhn.gps.location.phone.tracker.data.repository.FriendRepository
 import com.nhn.gps.location.phone.tracker.data.repository.GoogleRouteTravelMode
 import com.nhn.gps.location.phone.tracker.data.repository.LocationRepository
+import com.nhn.gps.location.phone.tracker.data.repository.UserRepository
 import com.nhn.gps.location.phone.tracker.data.repository.ZoneRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -56,8 +59,8 @@ class LocationViewModel @Inject constructor(
     private val friendRepository: FriendRepository,
     private val fusedLocationClient: FusedLocationProviderClient,
     private val appPreferences: AppPreferences,
+    private val userRepository: UserRepository,
     private val zoneRepository: ZoneRepository,
-    private val firebaseAuth: FirebaseAuth,
 ) : BaseViewModel() {
 
     private val _rawSelfLocation = MutableStateFlow<LatLng?>(null)
@@ -75,6 +78,9 @@ class LocationViewModel @Inject constructor(
     private val syncMutex = Mutex()
     private val connectivityManager = appContext.getSystemService(ConnectivityManager::class.java)
     private var isLocationUpdatesStarted = false
+    private var isForegroundActive = false
+    private var friendsObservationJob: Job? = null
+    private var sharingObservationJob: Job? = null
     private var isNetworkCallbackRegistered = false
     @Volatile private var isNetworkValidated = false
 
@@ -113,7 +119,6 @@ class LocationViewModel @Inject constructor(
     }
 
     init {
-        observeAllLocations()
         viewModelScope.launch {
             combine(friendsLocations, appliedFriendSearchQuery) { friends, query ->
                 if (query.isBlank()) friends else friends.filter {
@@ -142,6 +147,9 @@ class LocationViewModel @Inject constructor(
 
     @SuppressLint("MissingPermission")
     fun startForegroundLocationUpdates() {
+        isForegroundActive = true
+        startObservingFriends()
+        startObservingSharingChanges()
         registerNetworkCallback()
         if (isLocationUpdatesStarted || !hasLocationPermission()) return
         isLocationUpdatesStarted = true
@@ -170,39 +178,69 @@ class LocationViewModel @Inject constructor(
     /** Kept for existing Fragment callers; registration itself is idempotent. */
     fun getCurrentLocation() = startForegroundLocationUpdates()
 
-    private fun observeAllLocations() {
-        launchCatching {
-            appPreferences.userId
-                .distinctUntilChanged()
-                .collectLatest { myUid ->
-                    _friendsLocations.value = emptyList()
-                    _isFriendsDataLoaded.value = false
+    private fun startObservingFriends() {
+        if (friendsObservationJob?.isActive == true) return
+        friendsObservationJob = viewModelScope.launch {
+            try {
+                appPreferences.userId
+                    .distinctUntilChanged()
+                    .collectLatest { myUid ->
+                        _friendsLocations.value = emptyList()
+                        _isFriendsDataLoaded.value = false
 
-                    if (myUid.isNullOrBlank()) return@collectLatest
+                        if (myUid.isNullOrBlank()) return@collectLatest
 
-                    Log.d("LocationVM", "Observing friends after active user changed")
-                    friendRepository.getFriends(myUid).collectLatest { locations ->
-                        Log.d("LocationVM", "Received ${locations.size} friends locations")
-                        _friendsLocations.value = locations
-                        _isFriendsDataLoaded.value = true
-                        locations.forEach { friend ->
-                            zoneRepository.processLocation(
-                                LatLng(friend.latitude, friend.longitude),
-                                subjectId = "friend:${friend.id}",
-                                subjectName = friend.name.ifBlank { "Friend" },
-                            )
+                        Log.d(TAG, "Observing friends after active user changed")
+                        friendRepository.getFriends(myUid).collectLatest { locations ->
+                            Log.d(TAG, "Received ${locations.size} friends locations")
+                            _friendsLocations.value = locations
+                            _isFriendsDataLoaded.value = true
+                            locations.filter { it.hasVisibleSharedLocation() }.forEach { friend ->
+                                zoneRepository.processLocation(
+                                    LatLng(friend.latitude, friend.longitude),
+                                    subjectId = "friend:${friend.id}",
+                                    subjectName = friend.name.ifBlank { "Friend" },
+                                )
+                            }
                         }
+                    }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                Log.e(TAG, "friend_location_observation_failed", error)
+                _isFriendsDataLoaded.value = true
+            }
+        }
+    }
+
+    private fun startObservingSharingChanges() {
+        if (sharingObservationJob?.isActive == true) return
+        sharingObservationJob = viewModelScope.launch {
+            appPreferences.isLocationSharingEnabled
+                .distinctUntilChanged()
+                .collectLatest { enabled ->
+                    lastSyncedLocation = null
+                    syncAvailabilityWithForegroundState()
+                    if (enabled && isForegroundActive) {
+                        _rawSelfLocation.value?.let(::syncLocationWithFirebase)
                     }
                 }
         }
     }
 
     fun stopForegroundLocationUpdates() {
+        val wasForegroundActive = isForegroundActive
+        isForegroundActive = false
         if (isLocationUpdatesStarted) {
             isLocationUpdatesStarted = false
             fusedLocationClient.removeLocationUpdates(locationCallback)
             debugLog("foreground_location_stopped")
         }
+        friendsObservationJob?.cancel()
+        friendsObservationJob = null
+        sharingObservationJob?.cancel()
+        sharingObservationJob = null
+        if (wasForegroundActive) syncAvailabilityWithForegroundState()
         unregisterNetworkCallback()
     }
 
@@ -245,20 +283,18 @@ class LocationViewModel @Inject constructor(
 
     private fun syncLocationWithFirebase(latLng: LatLng) {
         viewModelScope.launch {
+            if (!isForegroundActive) return@launch
             if (!appPreferences.isLocationSharingEnabled.first()) return@launch
             if (!isNetworkValidated) {
                 debugLog("network_unavailable")
                 return@launch
             }
 
-            val authUid = firebaseAuth.currentUser?.uid ?: return@launch
             val activeUid = appPreferences.userId.first()
-            if (activeUid.isNullOrBlank() || activeUid != authUid) {
-                Log.e(TAG, "location_sync_failed type=UidMismatch")
-                return@launch
-            }
+            if (activeUid.isNullOrBlank()) return@launch
 
             syncMutex.withLock {
+                if (!isForegroundActive) return@withLock
                 val previous = lastSyncedLocation
                 if (LocationSyncPolicy.shouldSync(isNetworkValidated, previous, latLng)) {
                     val movedMeters = LocationMovementPolicy.distanceMeters(previous, latLng)
@@ -268,7 +304,7 @@ class LocationViewModel @Inject constructor(
                         longitude = latLng.longitude,
                         updatedAt = System.currentTimeMillis()
                     )
-                    repository.updateSelfLocation(authUid, userLocation)
+                    repository.updateSelfLocation(activeUid, userLocation)
                         .onSuccess {
                             lastSyncedLocation = latLng
                             debugLog("location_sync_success")
@@ -277,6 +313,22 @@ class LocationViewModel @Inject constructor(
                             Log.e(TAG, "location_sync_failed type=${error.javaClass.simpleName}", error)
                         }
                 }
+            }
+        }
+    }
+
+    private fun syncAvailabilityWithForegroundState() {
+        viewModelScope.launch {
+            syncMutex.withLock {
+                val activeUid = appPreferences.userId.first()
+                if (activeUid.isNullOrBlank()) return@withLock
+                val sharingEnabled = appPreferences.isLocationSharingEnabled.first()
+                val available = isForegroundActive && hasLocationPermission() && sharingEnabled
+                runCatching { userRepository.updateAvailability(activeUid, available) }
+                    .onFailure { error ->
+                        if (error is CancellationException) throw error
+                        Log.e(TAG, "availability_sync_failed", error)
+                    }
             }
         }
     }

@@ -1,5 +1,6 @@
 package com.nhn.gps.location.phone.tracker.ui.friend
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
@@ -40,7 +41,6 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import java.io.InputStream
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -62,6 +62,21 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
     private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         ResumeAdGuard.onSystemDialogFinished()
         uri?.let { scanQrFromUri(it) }
+    }
+
+    private val cameraPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        ResumeAdGuard.onSystemDialogFinished()
+        if (granted) {
+            showAddFriendInterThen(::openCameraScanner)
+        } else if (isAdded) {
+            Toast.makeText(
+                requireContext(),
+                R.string.camera_permission_required,
+                Toast.LENGTH_SHORT,
+            ).show()
+        }
     }
 
     override fun createBinding(
@@ -93,17 +108,7 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
         }
 
         layoutScanQR.btnOpenCamera.setOnClickListener {
-            showAddFriendInterThen {
-                cameraContainer.isVisible = true
-                layoutCamera.barcodeScanner.decodeContinuous(barcodeCallback)
-                layoutCamera.barcodeScanner.resume()
-                checkFlashSupport()
-                (activity as? MainActivity)?.showScreenNative(
-                    GpsAdPlacement.NATIVE_QR_CAMERA,
-                    GpsAdViewBinder.NativeFormat.MEDIUM,
-                )
-                cameraContainer.post(::updateCustomFramingRect)
-            }
+            requestOpenCamera()
         }
         
         layoutScanQR.btnMyQR.setOnClickListener {
@@ -145,7 +150,7 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
             viewDim.isVisible = false
             viewModel.clearFoundFriend()
             if (cameraContainer.isVisible) {
-                layoutCamera.barcodeScanner.resume()
+                resumeScannerIfPermitted()
             }
         }
 
@@ -193,8 +198,7 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
 
     private fun scanQrFromUri(uri: Uri) {
         try {
-            val inputStream: InputStream? = requireContext().contentResolver.openInputStream(uri)
-            val bitmap = BitmapFactory.decodeStream(inputStream)
+            val bitmap = requireContext().contentResolver.openInputStream(uri)?.use(BitmapFactory::decodeStream)
             if (bitmap == null) {
                 Toast.makeText(requireContext(), "Failed to load image", Toast.LENGTH_SHORT).show()
                 return
@@ -270,7 +274,7 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
                     viewModel.friendNotFound.collect {
                         showNotFoundDialog()
                         if (binding.cameraContainer.isVisible) {
-                            binding.layoutCamera.barcodeScanner.resume()
+                            resumeScannerIfPermitted()
                         }
                     }
                 }
@@ -279,7 +283,7 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
                     viewModel.alreadyFriend.collect {
                         showAlreadyFriendDialog()
                         if (binding.cameraContainer.isVisible) {
-                            binding.layoutCamera.barcodeScanner.resume()
+                            resumeScannerIfPermitted()
                         }
                     }
                 }
@@ -291,8 +295,8 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
                 }
 
                 launch {
-                    viewModel.premiumRequired.collect { limit ->
-                        showPremiumRequiredDialog(limit)
+                    viewModel.friendLimitReached.collect { limit ->
+                        showFriendLimitReachedDialog(limit)
                     }
                 }
 
@@ -340,7 +344,7 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
             .show()
     }
 
-    private fun showPremiumRequiredDialog(limit: Int) {
+    private fun showFriendLimitReachedDialog(limit: Int) {
         AlertDialog.Builder(requireContext())
             .setTitle(R.string.friend_limit_title)
             .setMessage(getString(R.string.friend_limit_message, limit))
@@ -369,7 +373,7 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
     override fun onResume() {
         super.onResume()
         if (binding.cameraContainer.isVisible) {
-            binding.layoutCamera.barcodeScanner.resume()
+            resumeScannerIfPermitted()
         }
     }
 
@@ -383,6 +387,38 @@ class AddFriendFragment : BaseFragment<FragmentAddFriendBinding, AddFriendViewMo
         val hasFlash = requireContext().packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)
         binding.layoutCamera.headerCamera.layoutFlash.isVisible = hasFlash
     }
+
+    private fun requestOpenCamera() {
+        if (hasCameraPermission()) {
+            showAddFriendInterThen(::openCameraScanner)
+        } else {
+            ResumeAdGuard.onSystemDialogRequested()
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
+
+    private fun openCameraScanner() = with(binding) {
+        if (!hasCameraPermission()) return@with
+        cameraContainer.isVisible = true
+        layoutCamera.barcodeScanner.decodeContinuous(barcodeCallback)
+        layoutCamera.barcodeScanner.resume()
+        checkFlashSupport()
+        (activity as? MainActivity)?.showScreenNative(
+            GpsAdPlacement.NATIVE_QR_CAMERA,
+            GpsAdViewBinder.NativeFormat.MEDIUM,
+        )
+        cameraContainer.post(::updateCustomFramingRect)
+    }
+
+    private fun resumeScannerIfPermitted() {
+        if (hasCameraPermission()) binding.layoutCamera.barcodeScanner.resume()
+    }
+
+    private fun hasCameraPermission(): Boolean =
+        ContextCompat.checkSelfPermission(
+            requireContext(),
+            Manifest.permission.CAMERA,
+        ) == PackageManager.PERMISSION_GRANTED
 
     private fun toggleFlash() {
         isFlashOn = !isFlashOn

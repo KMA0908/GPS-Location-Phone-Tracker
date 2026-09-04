@@ -62,7 +62,7 @@ class ShowQrFriendFragment : BaseFragment<FragmentShowQrFriendBinding, FriendLis
                 return@launch
             }
 
-            val payload = if (mode == FriendCodeDisplayMode.QR) "gps_friend:$uid" else uid
+            val payload = if (mode == FriendCodeDisplayMode.QR) FriendCode.encode(uid) else uid
             binding.tvCode.text = uid
 
             if (mode == FriendCodeDisplayMode.QR) {

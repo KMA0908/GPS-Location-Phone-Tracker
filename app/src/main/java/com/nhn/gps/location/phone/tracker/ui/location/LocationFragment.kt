@@ -48,6 +48,7 @@ import com.nhn.gps.location.phone.tracker.ads.GpsAdPlacement
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
 import com.nhn.gps.location.phone.tracker.data.local.AppPreferences
 import com.nhn.gps.location.phone.tracker.data.model.FriendLocation
+import com.nhn.gps.location.phone.tracker.data.model.hasVisibleSharedLocation
 import com.nhn.gps.location.phone.tracker.data.repository.GoogleRoute
 import com.nhn.gps.location.phone.tracker.data.repository.GoogleRoutesInvalidResponseException
 import com.nhn.gps.location.phone.tracker.data.repository.GoogleRoutesNoRouteException
@@ -375,13 +376,20 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
     }
 
     private fun onSearchFriendClick(friend: FriendLocation) {
+        if (!friend.hasVisibleSharedLocation()) {
+            Toast.makeText(requireContext(), R.string.route_destination_unavailable, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val position = LatLng(friend.latitude, friend.longitude)
+        if (!isValidRoutePoint(position)) {
+            Toast.makeText(requireContext(), R.string.route_destination_unavailable, Toast.LENGTH_SHORT).show()
+            return
+        }
         viewModel.recordFriendSearch(friend.id)
         googleMap?.animateCamera(
             CameraUpdateFactory.newLatLngZoom(
-                LatLng(
-                    friend.latitude,
-                    friend.longitude
-                ), DEFAULT_ZOOM
+                position,
+                DEFAULT_ZOOM,
             )
         )
     }
@@ -829,8 +837,10 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
 
     private fun centerCameraOnAll() {
         val map = googleMap ?: return
-        val self = viewModel.selfLocation.value
-        val friends = viewModel.friendsLocations.value
+        val self = viewModel.selfLocation.value?.takeIf(::isValidRoutePoint)
+        val friends = viewModel.friendsLocations.value.filter {
+            isValidRoutePoint(LatLng(it.latitude, it.longitude))
+        }
 
         if (self == null && friends.isEmpty()) return
 
@@ -1951,7 +1961,10 @@ class LocationFragment : BaseFragment<FragmentLocationBinding, LocationViewModel
 
     private fun showFriendMarkers(friends: List<FriendLocation>) {
         val map = googleMap ?: return
-        val validFriends = friends.filter { isValidRoutePoint(LatLng(it.latitude, it.longitude)) }
+        val validFriends = friends.filter {
+            it.hasVisibleSharedLocation() &&
+                isValidRoutePoint(LatLng(it.latitude, it.longitude))
+        }
 
         val friendIds = validFriends.map { it.id }.toSet()
         val iterator = friendMarkers.entries.iterator()

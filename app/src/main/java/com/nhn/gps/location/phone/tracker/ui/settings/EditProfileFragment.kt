@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.os.BundleCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
@@ -15,11 +16,12 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.nhn.gps.location.phone.tracker.R
 import com.nhn.gps.location.phone.tracker.base.BaseFragment
 import com.nhn.gps.location.phone.tracker.databinding.FragmentEditProfileBinding
+import com.nhn.gps.location.phone.tracker.data.model.Country
 import com.nhn.gps.location.phone.tracker.navigation.AppDestination
 import com.nhn.gps.location.phone.tracker.ui.friend.FriendCodeDisplayMode
 import com.nhn.gps.location.phone.tracker.ui.main.MainViewModel
+import com.nhn.gps.location.phone.tracker.ui.phone_number_locator.CountrySelectorBottomSheet
 import com.nhn.gps.location.phone.tracker.util.loadAvatar
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
@@ -41,6 +43,32 @@ class EditProfileFragment : BaseFragment<FragmentEditProfileBinding, EditProfile
 
         etName.addTextChangedListener {
             viewModel.onNameChanged(it?.toString().orEmpty())
+        }
+
+        etPhone.addTextChangedListener {
+            val phone = it?.toString().orEmpty()
+            viewModel.onPhoneChanged(phone)
+            etPhone.error = if (phone.isNotBlank() && !viewModel.isValidPhone(phone)) {
+                getString(R.string.invalid_phone)
+            } else {
+                null
+            }
+        }
+
+        tvPhoneCountry.setOnClickListener {
+            CountrySelectorBottomSheet.newInstance(viewModel.selectedCountry.value.iso)
+                .show(parentFragmentManager, CountrySelectorBottomSheet.TAG)
+        }
+
+        parentFragmentManager.setFragmentResultListener(
+            CountrySelectorBottomSheet.REQUEST_KEY,
+            viewLifecycleOwner,
+        ) { _, bundle ->
+            BundleCompat.getParcelable(
+                bundle,
+                CountrySelectorBottomSheet.EXTRA_COUNTRY,
+                Country::class.java,
+            )?.let(viewModel::onCountryChanged)
         }
 
         ivEditName.setOnClickListener {
@@ -110,6 +138,8 @@ class EditProfileFragment : BaseFragment<FragmentEditProfileBinding, EditProfile
                 launch {
                     viewModel.canEditProfile.collectLatest { canEdit ->
                         binding.etName.isEnabled = canEdit
+                        binding.etPhone.isEnabled = canEdit
+                        binding.tvPhoneCountry.isEnabled = canEdit
                         binding.ivEditName.isEnabled = canEdit
                         binding.btnChangeAvatar.isEnabled = canEdit
                         binding.ivEditName.alpha = if (canEdit) 1f else 0.45f
@@ -117,13 +147,25 @@ class EditProfileFragment : BaseFragment<FragmentEditProfileBinding, EditProfile
                     }
                 }
                 launch {
-                    mainViewModel.userPhone.collectLatest { phone ->
-                        binding.tvPhone.text = phone.ifBlank { "+84 000 0000" }
+                    viewModel.currentPhone.collectLatest { phone ->
+                        if (binding.etPhone.text.toString() != phone) {
+                            binding.etPhone.setText(phone)
+                        }
+                    }
+                }
+                launch {
+                    viewModel.selectedCountry.collectLatest { country ->
+                        binding.tvPhoneCountry.text =
+                            getString(R.string.phone_country_prefix, country.emoji, country.dialCode)
                     }
                 }
                 launch {
                     mainViewModel.userId.collectLatest { id ->
-                        binding.tvUserId.text = getString(R.string.user_id_prefix, id?.takeLast(8) ?: "00000000")
+                        binding.tvUserId.text = if (id.isNullOrBlank()) {
+                            getString(R.string.uid_unavailable)
+                        } else {
+                            getString(R.string.user_id_prefix, id)
+                        }
                     }
                 }
                 launch {
@@ -151,15 +193,6 @@ class EditProfileFragment : BaseFragment<FragmentEditProfileBinding, EditProfile
                             is EditProfileUiState.Success -> {
                                 binding.btnSave.isEnabled = true
                                 Toast.makeText(requireContext(), R.string.profile_updated, Toast.LENGTH_SHORT).show()
-                                viewModel.resetState()
-                            }
-                            is EditProfileUiState.IdentityMismatch -> {
-                                binding.btnSave.isEnabled = false
-                                MaterialAlertDialogBuilder(requireContext())
-                                    .setTitle(R.string.profile_edit_device_mismatch_title)
-                                    .setMessage(R.string.profile_edit_device_mismatch_message)
-                                    .setPositiveButton(R.string.ok, null)
-                                    .show()
                                 viewModel.resetState()
                             }
                             is EditProfileUiState.Error -> {

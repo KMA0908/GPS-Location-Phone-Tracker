@@ -40,6 +40,7 @@
     <string name="img_name">이름 이미지</string>
     <string name="img_phone">전화기 이미지</string>
     <string name="your_phone">전화번호</string>
+    <string name="your_phone_optional">전화번호(선택 사항)</string>
     <string name="enter_your_phone">전화번호를 입력하세요</string>
     <string name="realtime_tracker_needs_access_to_your_location_to_show_your_position_and_friends_around_you_in_real_time">실시간 추적기는 실시간으로 귀하의 위치와 주변 친구를 표시하기 위해 위치 접근이 필요합니다</string>
     <string name="allow_while_using_app">앱 사용 중에만 허용</string>
@@ -403,7 +404,7 @@
     <string name="add_friend_error">친구를 추가할 수 없습니다. 연결 상태 및 계정 권한을 확인한 후 다시 시도하세요.</string>
     <string name="remove_friend_error">친구를 삭제할 수 없습니다. 연결 상태 및 계정 권한을 확인한 후 다시 시도하세요.</string>
     <string name="friend_limit_title">친구 한도 도달</string>
-    <string name="friend_limit_message">무료 플랜은 최대 %1$d명의 친구를 지원합니다. 더 추가하려면 프리미엄으로 업그레이드하세요.</string>
+    <string name="friend_limit_message">이 버전은 최대 %1$d명의 친구를 지원합니다.</string>
     <string name="route_end_navigation">내비게이션 종료</string>
     <string name="route_navigation_title">내비게이션</string>
     <string name="route_navigation_started">내비게이션이 시작되었습니다</string>
@@ -414,6 +415,7 @@
     <string name="route_arrived_description">목적지에 도착했습니다</string>
     <string name="zone_monitoring_active_title">존 모니터링 활성화됨</string>
     <string name="zone_monitoring_active_text">GPS Location이 저장된 존을 감시하고 있습니다</string>
+    <string name="location_monitoring_channel">위치 공유 및 존 모니터링</string>
     <string name="zone_alert_enter_title">%1$s 진입</string>
     <string name="zone_alert_leave_title">%1$s 이탈</string>
     <string name="zone_alert_enter_text">이 존에 진입했습니다</string>

@@ -40,6 +40,7 @@
     <string name="img_name">img nome</string>
     <string name="img_phone">img telefone</string>
     <string name="your_phone">Seu telefone</string>
+    <string name="your_phone_optional">Seu telefone (opcional)</string>
     <string name="enter_your_phone">Digite seu telefone</string>
     <string name="realtime_tracker_needs_access_to_your_location_to_show_your_position_and_friends_around_you_in_real_time">O rastreador em tempo real precisa de acesso à sua localização para mostrar sua posição e amigos ao seu redor em tempo real</string>
     <string name="allow_while_using_app">Permitir durante o uso do aplicativo</string>
@@ -403,7 +404,7 @@
     <string name="add_friend_error">Não foi possível adicionar o amigo. Verifique sua conexão e as permissões da conta e tente novamente.</string>
     <string name="remove_friend_error">Não foi possível remover o amigo. Verifique sua conexão e as permissões da conta e tente novamente.</string>
     <string name="friend_limit_title">Limite de amigos atingido</string>
-    <string name="friend_limit_message">O plano gratuito suporta até %1$d amigos. Atualize para o Premium para adicionar mais.</string>
+    <string name="friend_limit_message">Esta versão permite até %1$d amigos.</string>
     <string name="route_end_navigation">Encerrar navegação</string>
     <string name="route_navigation_title">Navegação</string>
     <string name="route_navigation_started">Navegação iniciada</string>
@@ -414,6 +415,7 @@
     <string name="route_arrived_description">Você chegou ao seu destino</string>
     <string name="zone_monitoring_active_title">Monitoramento de zona ativo</string>
     <string name="zone_monitoring_active_text">O GPS Location está vigiando suas zonas salvas</string>
+    <string name="location_monitoring_channel">Compartilhamento de localização e monitoramento de zonas</string>
     <string name="zone_alert_enter_title">Entrou em %1$s</string>
     <string name="zone_alert_leave_title">Suiu de %1$s</string>
     <string name="zone_alert_enter_text">Você entrou nesta zona</string>

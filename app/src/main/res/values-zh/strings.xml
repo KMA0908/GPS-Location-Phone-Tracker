@@ -40,6 +40,7 @@
     <string name="img_name">姓名图像</string>
     <string name="img_phone">电话图像</string>
     <string name="your_phone">您的电话</string>
+    <string name="your_phone_optional">您的电话（可选）</string>
     <string name="enter_your_phone">输入您的电话</string>
     <string name="realtime_tracker_needs_access_to_your_location_to_show_your_position_and_friends_around_you_in_real_time">实时追踪器需要访问您的位置，以便实时显示您和周围的朋友</string>
     <string name="allow_while_using_app">使用应用时允许</string>
@@ -403,7 +404,7 @@
     <string name="add_friend_error">无法添加好友。请检查您的网络连接和账户权限，然后重试。</string>
     <string name="remove_friend_error">无法删除好友。请检查您的网络连接和账户权限，然后重试。</string>
     <string name="friend_limit_title">已达到好友上限</string>
-    <string name="friend_limit_message">免费计划支持最多 %1$d 个好友。升级到高级版以添加更多好友。</string>
+    <string name="friend_limit_message">此版本最多支持 %1$d 位好友。</string>
     <string name="route_end_navigation">结束导航</string>
     <string name="route_navigation_title">导航</string>
     <string name="route_navigation_started">导航已开始</string>
@@ -414,6 +415,7 @@
     <string name="route_arrived_description">您已到达目的地</string>
     <string name="zone_monitoring_active_title">区域监控已激活</string>
     <string name="zone_monitoring_active_text">GPS Location 正在监控您保存的区域</string>
+    <string name="location_monitoring_channel">位置共享和区域监控</string>
     <string name="zone_alert_enter_title">进入 %1$s</string>
     <string name="zone_alert_leave_title">离开 %1$s</string>
     <string name="zone_alert_enter_text">您进入了该区域</string>

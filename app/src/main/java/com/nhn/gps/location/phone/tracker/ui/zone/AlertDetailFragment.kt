@@ -23,6 +23,7 @@ import com.nhn.gps.location.phone.tracker.data.model.Zone
 import com.nhn.gps.location.phone.tracker.data.model.ZoneAlert
 import com.nhn.gps.location.phone.tracker.data.model.ZoneAlertType
 import com.nhn.gps.location.phone.tracker.data.model.ZoneStatus
+import com.nhn.gps.location.phone.tracker.data.local.AppPreferences
 import com.nhn.gps.location.phone.tracker.data.repository.ZoneRepository
 import com.nhn.gps.location.phone.tracker.data.repository.UserRepository
 import com.nhn.gps.location.phone.tracker.databinding.FragmentAlertDetailLocalBinding
@@ -31,6 +32,7 @@ import com.nhn.gps.location.phone.tracker.ui.location.LocationViewModel
 import com.nhn.gps.location.phone.tracker.navigation.AppDestination
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CancellationException
 import java.text.SimpleDateFormat
@@ -46,6 +48,7 @@ class AlertDetailFragment : BaseFragment<FragmentAlertDetailLocalBinding, MainVi
     
     @Inject lateinit var zoneRepository: ZoneRepository
     @Inject lateinit var userRepository: UserRepository
+    @Inject lateinit var appPreferences: AppPreferences
     
     private var map: GoogleMap? = null
     private var currentAlert: ZoneAlert? = null
@@ -86,7 +89,7 @@ class AlertDetailFragment : BaseFragment<FragmentAlertDetailLocalBinding, MainVi
                         }
                     }
                     launch {
-                        val currentUid = userRepository.getCurrentUserId().orEmpty()
+                        val currentUid = appPreferences.userId.first().orEmpty()
                         val shouldResolveFriend = alert.userId.isNotBlank() && alert.userId != currentUid ||
                             alert.userId.isBlank() && alert.userName != "You"
 

@@ -40,12 +40,15 @@
     <string name="img_name">ảnh tên</string>
     <string name="img_phone">ảnh điện thoại</string>
     <string name="your_phone">Điện thoại của bạn</string>
+    <string name="your_phone_optional">Số điện thoại của bạn (không bắt buộc)</string>
     <string name="enter_your_phone">Nhập số điện thoại của bạn</string>
     <string name="realtime_tracker_needs_access_to_your_location_to_show_your_position_and_friends_around_you_in_real_time">Trình theo dõi thời gian thực cần quyền truy cập vào vị trí của bạn để hiển thị vị trí của bạn và bạn bè xung quanh bạn trong thời gian thực</string>
     <string name="allow_while_using_app">Cho phép khi dùng ứng dụng</string>
     <string name="allow_once">Chỉ lần này</string>
     <string name="not_now">Để sau</string>
     <string name="allow_location_access">Cho phép truy cập vị trí</string>
+    <string name="location_data_disclosure_title">Cách ứng dụng sử dụng dữ liệu vị trí</string>
+    <string name="location_data_disclosure_message">GPS Location Phone Tracker sử dụng vị trí chính xác khi ứng dụng đang mở để hiển thị vị trí của bạn, chia sẻ vị trí hiện tại khi bạn bật chia sẻ và kiểm tra cảnh báo vùng. Việc cập nhật vị trí dừng khi ứng dụng đóng hoặc không được sử dụng. Chia sẻ mặc định được tắt và bạn có thể dừng trong Cài đặt.</string>
     <string name="realtime_tracker">Theo dõi thời gian thực</string>
     <string name="todo">Cần làm</string>
     <string name="search">Tìm kiếm</string>
@@ -63,7 +66,7 @@
     <string name="add_friend_error">Không thể thêm bạn bè. Hãy kiểm tra kết nối và quyền tài khoản rồi thử lại.</string>
     <string name="remove_friend_error">Không thể xóa bạn bè. Hãy kiểm tra kết nối và quyền tài khoản rồi thử lại.</string>
     <string name="friend_limit_title">Đã đạt giới hạn bạn bè</string>
-    <string name="friend_limit_message">Gói miễn phí hỗ trợ tối đa %1$d người bạn. Hãy nâng cấp Premium để thêm bạn.</string>
+    <string name="friend_limit_message">Phiên bản này hỗ trợ tối đa %1$d người bạn.</string>
     <string name="cancel">Hủy</string>
     <string name="remove">Xóa</string>
     <string name="ok">OK</string>
@@ -160,6 +163,8 @@
     <string name="zone_alerts">Cảnh báo vùng</string>
     <string name="my_friend">Bạn bè của tôi</string>
     <string name="phone_number_locator">Định vị số điện thoại</string>
+    <string name="phone_locator_index_title">Tìm người dùng đã đăng ký ứng dụng</string>
+    <string name="phone_locator_privacy_subtitle">Chỉ bạn bè mới thấy vị trí chính xác khi người đó bật chia sẻ và đang mở ứng dụng</string>
     <string name="trusted_by_millions">Được hàng triệu người tin dùng</string>
     <string name="fast_secure">Nhanh chóng &amp; Bảo mật</string>
     <string name="country">Quốc gia</string>
@@ -179,9 +184,16 @@
 
     <!-- Phone Locator -->
     <string name="err_enter_phone">Vui lòng nhập số điện thoại</string>
-    <string name="err_location_not_available">Đã tìm thấy người dùng, nhưng vị trí của họ không khả dụng.</string>
+    <string name="err_location_not_available">Đã tìm thấy người dùng. Vị trí chỉ khả dụng với bạn bè khi người đó bật chia sẻ và đang mở ứng dụng.</string>
     <string name="err_no_user_found">Không tìm thấy người dùng với số này.</string>
     <string name="country_format">%1$s %2$s (%3$s)</string>
+    <string name="phone_country_prefix">%1$s %2$s</string>
+    <string name="default_phone_country_prefix">🇻🇳 +84</string>
+    <string name="select_phone_from_contacts">Chọn từ danh bạ</string>
+    <string name="multiple_phone_users_title">Tìm thấy nhiều người dùng</string>
+    <string name="multiple_phone_users_message">Chọn hồ sơ bạn muốn tìm vị trí.</string>
+    <string name="contact_picker_unavailable">Không thể mở danh bạ</string>
+    <string name="unnamed_user">Người dùng chưa đặt tên</string>
     <string name="country_region">Quốc gia / Khu vực</string>
     <string name="updating">Đang cập nhật…</string>
     <string name="carrier">Nhà mạng</string>
@@ -399,6 +411,7 @@
     <string name="dialog_type_map_traffic">Giao thông</string>
     <string name="zone_monitoring_active_title">Đang theo dõi vùng</string>
     <string name="zone_monitoring_active_text">GPS Location đang theo dõi các vùng đã lưu</string>
+    <string name="location_monitoring_channel">Chia sẻ vị trí và theo dõi vùng</string>
     <string name="zone_alert_enter_title">Đã vào %1$s</string>
     <string name="zone_alert_leave_title">Đã rời khỏi %1$s</string>
     <string name="zone_alert_enter_text">Bạn đã đi vào vùng này</string>
@@ -433,4 +446,6 @@
     <string name="time">Thời gian</string>
     <string name="no_matching_notifications">Không có thông báo phù hợp</string>
     <string name="notification_filter_title">Lọc và sắp xếp</string>
+    <string name="camera_permission_required">Cần cấp quyền camera để quét mã QR.</string>
+    <string name="notification_permission_required">Hãy cấp quyền thông báo để bật thông báo.</string>
 </resources>

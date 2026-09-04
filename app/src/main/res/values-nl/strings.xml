@@ -40,6 +40,7 @@
     <string name="img_name">img naam</string>
     <string name="img_phone">img telefoon</string>
     <string name="your_phone">Uw telefoon</string>
+    <string name="your_phone_optional">Uw telefoon (optioneel)</string>
     <string name="enter_your_phone">Voer uw telefoonnummer in</string>
     <string name="realtime_tracker_needs_access_to_your_location_to_show_your_position_and_friends_around_you_in_real_time">Realtime tracker heeft toegang tot uw locatie nodig om uw positie en vrienden om u heen in realtime te tonen</string>
     <string name="allow_while_using_app">Toestaan bij gebruik van app</string>
@@ -403,7 +404,7 @@
     <string name="add_friend_error">Vriend kon niet worden toegevoegd. Controleer je verbinding en accountmachtigingen en probeer het opnieuw.</string>
     <string name="remove_friend_error">Vriend kon niet worden verwijderd. Controleer je verbinding en accountmachtigingen en probeer het opnieuw.</string>
     <string name="friend_limit_title">Vriendenlimiet bereikt</string>
-    <string name="friend_limit_message">Het gratis abonnement ondersteunt maximaal %1$d vrienden. Upgrade naar Premium om er meer toe te voegen.</string>
+    <string name="friend_limit_message">Deze versie ondersteunt maximaal %1$d vrienden.</string>
     <string name="route_end_navigation">Navigatie beëindigen</string>
     <string name="route_navigation_title">Navigatie</string>
     <string name="route_navigation_started">Navigatie gestart</string>
@@ -414,6 +415,7 @@
     <string name="route_arrived_description">U heeft uw bestemming bereikt</string>
     <string name="zone_monitoring_active_title">Zonemonitoring actief</string>
     <string name="zone_monitoring_active_text">GPS Location houdt uw opgeslagen zones in de gaten</string>
+    <string name="location_monitoring_channel">Locatie delen en zonemonitoring</string>
     <string name="zone_alert_enter_title">%1$s binnengegaan</string>
     <string name="zone_alert_leave_title">%1$s verlaten</string>
     <string name="zone_alert_enter_text">U bent deze zone binnengegaan</string>

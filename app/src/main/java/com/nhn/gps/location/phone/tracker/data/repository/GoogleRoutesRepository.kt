@@ -1,7 +1,7 @@
 package com.nhn.gps.location.phone.tracker.data.repository
 
 import com.google.android.gms.maps.model.LatLng
-import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.appcheck.FirebaseAppCheck
 import com.google.maps.android.PolyUtil
 import com.nhn.gps.location.phone.tracker.BuildConfig
 import android.util.Log
@@ -39,7 +39,7 @@ class GoogleRoutesInvalidResponseException(message: String) : IOException(messag
 
 @Singleton
 class GoogleRoutesRepository @Inject constructor(
-    private val auth: FirebaseAuth,
+    private val appCheck: FirebaseAppCheck,
 ) {
 
     suspend fun computeRoute(
@@ -47,7 +47,7 @@ class GoogleRoutesRepository @Inject constructor(
         destination: LatLng,
         travelMode: GoogleRouteTravelMode,
     ): GoogleRoute = withContext(Dispatchers.IO) {
-        val idToken = authenticatedIdToken()
+        val appCheckToken = appCheckToken()
         val requestBody = JSONObject().put(
             "data",
             JSONObject()
@@ -62,7 +62,7 @@ class GoogleRoutesRepository @Inject constructor(
             connection.readTimeout = READ_TIMEOUT_MS
             connection.doOutput = true
             connection.setRequestProperty("Content-Type", "application/json; charset=UTF-8")
-            connection.setRequestProperty("Authorization", "Bearer $idToken")
+            connection.setRequestProperty("X-Firebase-AppCheck", appCheckToken)
             connection.outputStream.bufferedWriter(Charsets.UTF_8).use { writer ->
                 writer.write(requestBody.toString())
             }
@@ -96,18 +96,12 @@ class GoogleRoutesRepository @Inject constructor(
         }
     }
 
-    private suspend fun authenticatedIdToken(): String {
-        val user = auth.currentUser ?: auth.signInAnonymously().await().user
+    private suspend fun appCheckToken(): String {
+        return appCheck.getAppCheckToken(false).await().token.takeIf(String::isNotBlank)
             ?: throw GoogleRoutesException(
                 httpCode = 403,
-                backendStatus = "UNAUTHENTICATED",
-                backendMessage = "Anonymous authentication failed",
-            )
-        return user.getIdToken(false).await().token
-            ?: throw GoogleRoutesException(
-                httpCode = 403,
-                backendStatus = "UNAUTHENTICATED",
-                backendMessage = "Firebase ID token is unavailable",
+                backendStatus = "APP_CHECK_FAILED",
+                backendMessage = "App Check token is unavailable",
             )
     }
 

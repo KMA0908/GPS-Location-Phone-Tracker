@@ -79,7 +79,8 @@ class ZoneRepositoryImpl @Inject constructor(
     ) = mutex.withLock {
         val zones = decodeZones(preferences.zonesJson.first())
         if (zones.isEmpty()) return@withLock
-        
+
+        val notificationsEnabled = preferences.isNotificationEnabled.first()
         val states = decodeStates(preferences.zoneStatesJson.first()).toMutableMap()
         val alerts = decodeAlerts(preferences.zoneAlertsJson.first()).toMutableList()
         var changed = false
@@ -136,7 +137,7 @@ class ZoneRepositoryImpl @Inject constructor(
                 )
                 alerts.add(0, alert)
                 alertsChanged = true
-                notificationManager.get().notify(alert)
+                if (notificationsEnabled) notificationManager.get().notify(alert)
             }
 
             if (decision.stateChanged) {
@@ -172,7 +173,7 @@ class ZoneRepositoryImpl @Inject constructor(
                         )
                         alerts.add(0, alert)
                         alertsChanged = true
-                        notificationManager.get().notify(alert)
+                        if (notificationsEnabled) notificationManager.get().notify(alert)
                         if (BuildConfig.DEBUG && !isEnter) {
                             Log.d(TAG, "zone_exit_notification_sent zoneId=${zone.id}")
                         }

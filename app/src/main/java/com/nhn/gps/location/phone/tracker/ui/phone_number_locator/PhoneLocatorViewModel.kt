@@ -3,6 +3,7 @@ package com.nhn.gps.location.phone.tracker.ui.phone_number_locator
 import androidx.lifecycle.viewModelScope
 import com.nhn.gps.location.phone.tracker.base.BaseViewModel
 import com.nhn.gps.location.phone.tracker.data.repository.PhoneLocatorRepository
+import com.nhn.gps.location.phone.tracker.data.repository.PhoneLocatorMatch
 import com.nhn.gps.location.phone.tracker.util.PhoneNumberFormatter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -31,14 +32,19 @@ class PhoneLocatorViewModel @Inject constructor(
             _uiState.value = PhoneLocatorUiState.Loading
             
             // Thực hiện Normalize số điện thoại trước khi truyền vào Repository
-            val normalizedPhone = phoneFormatter.normalize(dialCode, phone)
+            val normalizedPhone = runCatching { phoneFormatter.normalize(dialCode, phone) }
+                .getOrElse {
+                    _uiState.value = PhoneLocatorUiState.Error(it.message ?: "Invalid phone number")
+                    return@launch
+                }
             
             repository.findUserByPhone(normalizedPhone).fold(
-                onSuccess = { (profile, location) ->
-                    val address = location?.let { 
-                        repository.getAddressFromLocation(it.latitude, it.longitude) 
+                onSuccess = { matches ->
+                    if (matches.size == 1) {
+                        resolveMatch(matches.first())
+                    } else {
+                        _uiState.value = PhoneLocatorUiState.MultipleMatches(matches)
                     }
-                    _uiState.value = PhoneLocatorUiState.Success(profile, location, address)
                 },
                 onFailure = { error ->
                     val errorMessage = error.message ?: ""
@@ -50,6 +56,21 @@ class PhoneLocatorViewModel @Inject constructor(
                 }
             )
         }
+    }
+
+    fun selectMatch(match: PhoneLocatorMatch) {
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
+            resolveMatch(match)
+        }
+    }
+
+    private suspend fun resolveMatch(match: PhoneLocatorMatch) {
+        _uiState.value = PhoneLocatorUiState.Loading
+        val address = match.location?.let {
+            repository.getAddressFromLocation(it.latitude, it.longitude)
+        }
+        _uiState.value = PhoneLocatorUiState.Success(match.profile, match.location, address)
     }
 
     fun resetState() {

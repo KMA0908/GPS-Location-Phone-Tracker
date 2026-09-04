@@ -40,6 +40,7 @@
     <string name="img_name">img pangalan</string>
     <string name="img_phone">img telepono</string>
     <string name="your_phone">Iyong telepono</string>
+    <string name="your_phone_optional">Iyong telepono (opsyonal)</string>
     <string name="enter_your_phone">Ipasok ang iyong telepono</string>
     <string name="realtime_tracker_needs_access_to_your_location_to_show_your_position_and_friends_around_you_in_real_time">Kailangan ng realtime tracker ng pag-access sa iyong lokasyon upang ipakita ang iyong posisyon at mga kaibigan sa paligid mo sa real-time</string>
     <string name="allow_while_using_app">Payagan habang ginagamit ang app</string>
@@ -403,7 +404,7 @@
     <string name="add_friend_error">Hindi maidagdag ang kaibigan. Suriin ang iyong koneksyon at mga pahintulot sa account, pagkatapos ay subukang muli.</string>
     <string name="remove_friend_error">Hindi maalis ang kaibigan. Suriin ang iyong koneksyon at mga pahintulot sa account, pagkatapos ay subukang muli.</string>
     <string name="friend_limit_title">Naabot na ang limitasyon sa kaibigan</string>
-    <string name="friend_limit_message">Sinusuportahan ng libreng plano ang hanggang %1$d na mga kaibigan. Mag-upgrade sa Premium para magdagdag pa.</string>
+    <string name="friend_limit_message">Sinusuportahan ng bersyong ito ang hanggang %1$d kaibigan.</string>
     <string name="route_end_navigation">Tapusin ang nabigasyon</string>
     <string name="route_navigation_title">Nabigasyon</string>
     <string name="route_navigation_started">Nagsimula ang nabigasyon</string>
@@ -414,6 +415,7 @@
     <string name="route_arrived_description">Nakarating ka na sa iyong patutunguhan</string>
     <string name="zone_monitoring_active_title">Aktibo ang pag-monitor sa zone</string>
     <string name="zone_monitoring_active_text">Binabantayan ng Lokasyon ng GPS ang iyong mga naka-save na zone</string>
+    <string name="location_monitoring_channel">Pagbabahagi ng lokasyon at pagsubaybay sa zone</string>
     <string name="zone_alert_enter_title">Pumasok sa %1$s</string>
     <string name="zone_alert_leave_title">Umalis sa %1$s</string>
     <string name="zone_alert_enter_text">Pumasok ka sa zone na ito</string>
